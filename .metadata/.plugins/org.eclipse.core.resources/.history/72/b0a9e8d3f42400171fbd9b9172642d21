@@ -1,0 +1,80 @@
+/*
+ * os.h
+ *
+ *  Created on: Apr 18, 2017
+ *      Author: warlo
+ */
+
+#ifndef XV6CPP_OS_H_
+#define XV6CPP_OS_H_
+
+#include <cstdint>
+#include <sys\queue.h>
+#include <algorithm>
+//#include <macros.h>
+#include <cassert>
+
+namespace xv6 {
+// helper functions for enums
+// cast enum
+template<typename E>
+constexpr static inline typename std::underlying_type<E>::type cast_underlying(E val) {
+	return static_cast<typename std::underlying_type<E>::type>(val);
+}
+
+template<typename E>
+constexpr static inline E combine_flags(E val, E val) {
+	return static_cast<E>(cast_underlying(val) | cast_underlying(val));
+}
+template<typename E, typename... Args>
+constexpr static inline E combine_flags(E&& val, Args&&... args) {
+	return static_cast<E>(cast_underlying(val) | cast_underlying(combine_flags(std::forward<Args>(args)...)));
+}
+template<typename E, typename... Args>
+static inline void set_flag(E& reg, Args&&... args) {
+	reg = combine_flags((E)reg,std::forward<Args>(args)...);
+}
+template<typename E, typename... Args>
+static inline void clear_flag(E& reg, Args&&... args) {
+	reg = static_cast<E>(cast_underlying(reg) & ~cast_underlying(combine_flags(std::forward<Args>(args)...)));
+}
+template<typename E, typename... Args>
+constexpr static inline bool has_flag(E reg, Args&&... args) {
+	return  (cast_underlying(reg) & cast_underlying(combine_flags<E>(std::forward<Args>(args)...)))
+			== cast_underlying(combine_flags<E>(std::forward<Args>(args)...));
+}
+enum class irq_prio {
+	Critical = 0,
+	Clock = 1,
+	Tty = 2,
+	Bio = 3,
+	Normal = 15,
+};
+class user {
+public:
+	void sleep(void* ptr,int priority);
+	void wakeup(void* ptr);
+	irq_prio spl(irq_prio prio);
+};
+
+class irq_lock {
+	user& u;
+	irq_prio pri;
+public:
+	irq_lock(user &u, irq_prio pri = irq_prio::Clock) :
+		u(u), pri(u.spl(pri)) {}
+	~irq_lock() { u.spl(pri); }
+	irq_lock& operator=(irq_prio p) { u.spl(p); return *this; }
+	bool operator==(const irq_lock& lck) { return pri == lck.pri; }
+};
+
+
+class os {
+public:
+	os();
+	virtual ~os();
+};
+
+} /* namespace xv6 */
+
+#endif /* XV6CPP_OS_H_ */

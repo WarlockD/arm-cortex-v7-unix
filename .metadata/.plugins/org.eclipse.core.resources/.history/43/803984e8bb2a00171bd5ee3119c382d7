@@ -1,0 +1,31 @@
+#ifndef _CLIST_HPP_
+#define _CLIST_HPP_
+
+#include <cstdint>
+#include <cstddef>
+
+
+namespace os {
+
+
+	template<size_t _NCLIST, size_t _CBSIZE=16>
+	class ccache {
+	public:
+		constexpr static size_t CBSIZE = _CBSIZE;
+		constexpr static size_t NCLIST = _NCLIST;
+		struct cblock {
+			cblock* _next;
+			char info[CBSIZE];
+		};
+		struct clist {
+			size_t count;
+			cblock* _next;
+			cblock* _prev;
+		};
+protected:
+
+
+};
+
+
+#endif

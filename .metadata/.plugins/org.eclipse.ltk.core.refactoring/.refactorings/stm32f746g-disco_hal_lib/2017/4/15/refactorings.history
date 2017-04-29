@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;stm32f746g-disco_hal_lib/Utilities/FatFs/src/ffconf_template.h&apos; to &apos;ffconf.h&apos;" description="Rename resource &apos;ffconf_template.h&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="Utilities/FatFs/src/ffconf_template.h" name="ffconf.h" stamp="1491735541396" updateReferences="true"/>
+</session>

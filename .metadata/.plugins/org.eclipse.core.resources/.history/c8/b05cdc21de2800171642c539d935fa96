@@ -1,0 +1,20 @@
+/*
+ * nuttxinode.cpp
+ *
+ *  Created on: Apr 24, 2017
+ *      Author: warlo
+ */
+
+#include "nuttxinode.h"
+
+namespace nuttx {
+	static nuttx_inode  nuttx_inode::g_rootnode("");
+
+	  int init(int pshared, int value);
+	  int destroy();
+	  int wait();
+	  int timedwait(const struct timespec* abstime);
+	  int trywait();
+	  bool post();
+	  bool getvalue(int* sval);
+} /* namespace xv6 */

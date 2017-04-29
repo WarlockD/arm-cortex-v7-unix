@@ -1,0 +1,4 @@
+1488722089333	Rename resource 'stm32f4'
+1488722188609	Rename resource 'stm32f4'
+1489240317091	Move 'os.h' to 'include'
+1489241239478	Rename resource 'os_config_template.h'

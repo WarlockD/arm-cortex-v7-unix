@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Rename resource &apos;f9_os/src/xv6cpp/fs.h&apos; to &apos;inode.h&apos;" description="Rename resource &apos;fs.h&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/xv6cpp/fs.h" name="inode.h" stamp="1492856831118" updateReferences="true"/>&#x0A;<refactoring comment="Rename resource &apos;f9_os/src/xv6cpp/fs.cpp&apos; to &apos;inode.cpp&apos;" description="Rename resource &apos;fs.cpp&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/xv6cpp/fs.cpp" name="inode.cpp" stamp="1492856836607" updateReferences="true"/>
+</session>

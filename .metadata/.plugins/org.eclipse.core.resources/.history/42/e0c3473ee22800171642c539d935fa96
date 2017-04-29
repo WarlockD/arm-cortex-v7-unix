@@ -1,0 +1,66 @@
+/*
+ * nuttxinode.cpp
+ *
+ *  Created on: Apr 24, 2017
+ *      Author: warlo
+ */
+
+#include "nuttxinode.h"
+#include "bitmap.h"
+#include <cassert>
+
+#define CONFIG_SEM_PREALLOCHOLDERS 20
+namespace nuttx {
+	//static nuttx_inode  nuttx_inode::g_rootnode("");
+/* Preallocated holder structures */
+	static bitops::bitmap_table_t<semholder_t,CONFIG_SEM_PREALLOCHOLDERS> g_holderalloc;
+
+	semholder_t *sem_t::allocholder(sem_t *sem) {
+		semholder_t* h = g_holderalloc.create();
+		assert(h);
+		LIST_INSERT_HEAD(&sem->_hhead, h, _flink);
+		return h;
+	}
+	 semholder_t* sem_t::findholder(pid_t pid) {
+		 semholder_t* h;
+		 LIST_FOREACH(h, &_hhead, _flink)
+		 	 if(h->_hpid == pid) return h;
+		 return nullptr;
+	 }
+	 semholder_t* sem_t::findorallocateholder() {
+		 semholder_t* h;
+		 LIST_FOREACH(h, &_hhead, _flink)
+		 if(h->_hpid == pid) return h;
+			 semholder_t* h;
+			 LIST_FOREACH(h, &_hhead, _flink)
+			 	 if(h->_hpid == pid) return h;
+			 return nullptr;
+		 }
+
+	static semholder_t* findholder(sem_t*)
+
+	  semholder_t* sem_t::addholder(pid_t pid){
+
+	  }
+	  semholder_t* sem_t::releaseholder(pid_t pid){
+
+	  }
+	  int sem_t::destroy(){
+		  getpid()
+	  }
+	  int sem_t::wait(){
+
+	  }
+	  int sem_t::timedwait(const struct timespec* abstime){
+
+	  }
+	  int sem_t::trywait(){
+
+	  }
+	  bool sem_t::post(){
+
+	  }
+	  bool sem_t::getvalue(int* sval){
+
+	  }
+} /* namespace xv6 */

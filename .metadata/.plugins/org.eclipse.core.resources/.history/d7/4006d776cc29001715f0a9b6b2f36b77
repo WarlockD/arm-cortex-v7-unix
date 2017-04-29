@@ -1,0 +1,335 @@
+
+#include "nuttxinode.h"
+#include "bitmap.h"
+#include <cassert>
+#include <cstring>
+#include <errno.h>
+
+#ifndef DEBUGASSERT
+#define DEBUGASSERT(a) assert(a)
+#endif
+
+#define CONFIG_SEM_PREALLOCHOLDERS 20
+#define getpid() (0) /* filler */
+#define pid_t int16_t
+namespace nuttx {
+	inode *inode::g_root_inode = nullptr;
+	int inode::dir_compare(const char *fname, const char *nname)
+	{
+	  if (!nname) return 1;
+	  if (!fname)return -1;
+	  for (;;)
+		{
+		  if(*nname=='\0'){
+			  if (dir_end(*fname))
+				  return 0; /* Yes.. return match */
+			  else
+				  return 1;/* No... return find name > node name */
+		  }
+		  else if (dir_end(*fname)){ /* At end of find name? */
+			  return -1; /* Yes... return find name < node name */
+			}
+		  /* Check for non-matching characters */
+		  else if (*fname > *nname)  return 1;
+		  else if (*fname < *nname)  return -1;
+		  else { fname++; nname++; }
+		}
+	  return 0; // never gets here
+	}
+	const char *inode::dir_nextname(const char *name)
+	{
+		while (*name && !dir_sep(*name)) name++;
+		if (*name) name++; // skip over the '/'
+		return name;
+	}
+	const char *inode::dir_basename(const char *name)
+	{
+		const char *basename = nullptr;
+		for (;;) {
+			name = dir_nextname(name);
+			if (name == nullptr || *name == '\0') break;
+			basename = name;
+		}
+		return basename;
+	}
+#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+static int _inode_linktarget(FAR struct inode *node,
+                             FAR struct inode_search_s *desc)
+{
+  unsigned int count = 0;
+  bool save;
+  int ret = -ENOENT;
+
+  DEBUGASSERT(desc != NULL && node != NULL);
+
+  /* An infinite loop is avoided only by the loop count.
+   *
+   * REVISIT:  The ELOOP error should be reported to the application in that
+   * case but there is no simple mechanism to do that.
+   */
+
+  save = desc->nofollow;
+  while (INODE_IS_SOFTLINK(node))
+    {
+      FAR const char *link = (FAR const char *)node->u.i_link;
+
+      /* Reset and reinitialize the search descriptor.  */
+
+      RELEASE_SEARCH(desc);
+      SETUP_SEARCH(desc, link, true);
+
+      /* Look up inode associated with the target of the symbolic link */
+
+      ret = _inode_search(desc);
+      if (ret < 0)
+        {
+          break;
+        }
+
+      /* Limit the number of symbolic links that we pass through */
+
+      if (++count > SYMLOOP_MAX)
+        {
+          ret = -ELOOP;
+          break;
+        }
+
+      /* Set up for the next time through the loop */
+
+      node = desc->node;
+      DEBUGASSERT(node != NULL);
+      desc->linktgt = link;
+    }
+
+  desc->nofollow = save;
+  return ret;
+}
+#endif
+
+#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+static int _inode_linktarget(struct inode *node,
+                             struct inode_search_s *desc);
+#endif
+
+
+
+/****************************************************************************
+ * Name: _inode_search
+ *
+ * Description:
+ *   Find the inode associated with 'path' returning the inode references
+ *   and references to its companion nodes.  This is the internal, common
+ *   implementation of inode_search().
+ *
+ *   If a mountpoint is encountered in the search prior to encountering the
+ *   terminal node, the search will terminate at the mountpoint inode.  That
+ *   inode and the relative path from the mountpoint, 'relpath' will be
+ *   returned.
+ *
+ *   If a soft link is encountered that is not the terminal node in the path,
+ *   that link WILL be deferenced unconditionally.
+ *
+ * Assumptions:
+ *   The caller holds the g_inode_sem semaphore
+ *
+ ****************************************************************************/
+
+int inode::_search(inode_search_s *desc)
+{
+   const char   *name;
+   struct inode *node    = g_root_inode;
+   struct inode *left    = NULL;
+   struct inode *above   = NULL;
+   const char   *relpath = NULL;
+  int ret = -ENOENT;
+
+  /* Get the search path, skipping over the leading '/'.  The leading '/' is
+   * mandatory because only absolte paths are expected in this context.
+   */
+
+  DEBUGASSERT(desc != NULL && desc->path != NULL);
+  name  = desc->path;
+
+  if (*name != '/')
+    {
+      return -EINVAL;
+    }
+
+  /* Skip over the leading '/' */
+
+  while (*name == '/')
+    {
+      name++;
+    }
+
+  /* Special case the root directory.  There is no root inode and there is
+   * no name for the root.
+   */
+
+  if (*name == '\0')
+    {
+      /* This is a bug.  I don't know how to handle this case yet. */
+
+      return -ENOSYS;
+    }
+
+  /* Traverse the pseudo file system node tree until either (1) all nodes
+   * have been examined without finding the matching node, or (2) the
+   * matching node is found.
+   */
+
+  while (node != NULL)
+    {
+      int result = dir_compare(name, node->name);
+
+      /* Case 1:  The name is less than the name of the node.
+       * Since the names are ordered, these means that there
+       * is no peer node with this name and that there can be
+       * no match in the fileystem.
+       */
+
+      if (result < 0)
+        {
+          node = NULL;
+          break;
+        }
+
+      /* Case 2: the name is greater than the name of the node.
+       * In this case, the name may still be in the list to the
+       * "right"
+       */
+
+      else if (result > 0)
+        {
+          /* Continue looking to the "right" of this inode. */
+
+          left = node;
+          node = node->i_peer;
+        }
+
+      /* The names match */
+
+      else
+        {
+          /* Now there are three remaining possibilities:
+           *   (1) This is the node that we are looking for.
+           *   (2) The node we are looking for is "below" this one.
+           *   (3) This node is a mountpoint and will absorb all request
+           *       below this one
+           */
+
+          name = dir_nextname(name);
+          if (*name == '\0' || node->is_mountpt())
+            {
+              /* Either (1) we are at the end of the path, so this must be the
+               * node we are looking for or else (2) this node is a mountpoint
+               * and will handle the remaining part of the pathname
+               */
+
+              relpath = name;
+              ret = 0;
+              break;
+            }
+          else
+            {
+              /* More nodes to be examined in the path "below" this one. */
+
+#ifdef CONFIG_PSEUDOFS_SOFTLINKS
+              /* Was the node a soft link?  If so, then we need need to
+               * continue below the target of the link, not the link itself.
+               */
+
+              if (INODE_IS_SOFTLINK(node))
+                {
+                  int status;
+
+                  /* If this intermediate inode in the is a soft link, then
+                   * (1) get the name of the full path of the soft link, (2)
+                   * recursively look-up the inode referenced by the soft
+                   * link, and (3) continue searching with that inode instead.
+                   */
+
+                  status = _inode_linktarget(node, desc);
+                  if (status < 0)
+                    {
+                      /* Probably means that the the target of the symbolic
+                       * link does not exist.
+                       */
+
+                      ret = status;
+                      break;
+                    }
+                  else
+                    {
+                      FAR struct inode *newnode = desc->node;
+
+                      if (newnode != node)
+                        {
+                          /* The node was a valid symbolic link and we have
+                           * jumped to a different, spot in the the pseudo
+                           * file system tree.
+                           */
+
+                          /* Check if this took us to a mountpoint. */
+
+                          if (INODE_IS_MOUNTPT(newnode))
+                            {
+                              /* Return the mountpoint information.
+                               * NOTE that the last path to the link target
+                               * was already set by _inode_linktarget().
+                               */
+
+                              node    = newnode;
+                              above   = NULL;
+                              left    = NULL;
+                              relpath = name;
+
+                              ret     = 0;
+                              break;
+                            }
+
+                          /* Continue from this new inode. */
+
+                          node = newnode;
+                        }
+                    }
+                }
+#endif
+              /* Keep looking at the next level "down" */
+
+              above = node;
+              left  = NULL;
+              node  = node->i_child;
+            }
+        }
+    }
+
+  /* The node may or may not be null as per one of the following four cases
+   * cases:
+   *
+   * With node = NULL
+   *
+   *   (1) We went left past the final peer:  The new node name is larger
+   *       than any existing node name at that level.
+   *   (2) We broke out in the middle of the list of peers because the name
+   *       was not found in the ordered list.
+   *   (3) We went down past the final parent:  The new node name is
+   *       "deeper" than anything that we currently have in the tree.
+   *
+   * With node != NULL
+   *
+   *   (4) When the node matching the full path is found
+   */
+
+  desc->path    = name;
+  desc->node    = node;
+  desc->peer    = left;
+  desc->parent  = above;
+  desc->relpath = relpath;
+  return ret;
+}
+
+
+
+
+};

@@ -1,0 +1,18 @@
+/*
+ * vnode.h
+ *
+ *  Created on: Apr 24, 2017
+ *      Author: warlo
+ */
+
+#ifndef XV6CPP_VNODE_H_
+#define XV6CPP_VNODE_H_
+
+namespace xv6 {
+
+class vnode {
+};
+
+} /* namespace xv6 */
+
+#endif /* XV6CPP_VNODE_H_ */

@@ -1,0 +1,65 @@
+/*
+ * fs.h
+ *
+ *  Created on: Apr 18, 2017
+ *      Author: warlo
+ */
+
+#ifndef XV6CPP_FS_H_
+#define XV6CPP_FS_H_
+
+
+
+#include <cstdint>
+#include <sys\types.h>
+#include "ObjectCache.h"
+
+
+namespace xv6 {
+	static constexpr size_t NDIRECT = 12;
+
+	struct inode;
+	struct pipe;
+
+	struct file {
+	    enum file_type { FD_NONE, FD_PIPE, FD_INODE };
+	    file_type 	type;
+	    char         readable;
+	    char         writable;
+	    uint32_t      off;
+	    // we can union this
+	    union {
+	    	struct pipe  *pipe;
+	    	struct inode *ip;
+	    };
+	    static void* operator new(std::size_t sz);
+	    static void operator delete(void* ptr);
+	    void dup();
+	};
+
+	// in-memory copy of an inode
+	struct inode {
+
+		enum inode_flags {
+			I_BUSY =0x1,
+			I_VALID=0x2
+		};
+		dev_t    		dev;        // Device number
+		uint32_t    	inum;       // Inode number
+		inode_flags     flags;      // I_BUSY, I_VALID
+		short   		type;       // copy of disk inode
+		short   		nlink;
+		uint32_t    	size;
+		uint32_t    	addrs[NDIRECT+1];
+		inode() : dev(0), inum(0), flags(0), type(0), nlink(0),size(0) {}
+
+	};
+	#define I_BUSY 0x1
+	#define I_VALID 0x2
+
+
+
+
+} /* namespace xv6 */
+
+#endif /* XV6CPP_FS_H_ */

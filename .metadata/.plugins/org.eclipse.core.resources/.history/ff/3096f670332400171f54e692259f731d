@@ -1,0 +1,29 @@
+/*
+ * ObjectCache.cpp
+ *
+ *  Created on: Apr 18, 2017
+ *      Author: warlo
+ */
+
+#include "ObjectCache.h"
+
+namespace xv6 {
+
+static volatile list_head<int> test;
+
+template<class T, typename K, typename HASH_FUNC, size_t BUCKETS,size_t STATIC_CACHE_SIZE>
+
+class my_inode {
+	int dev;
+	int nlinks;
+	int size;
+	int addr[14];
+public:
+	my_inode(){}
+};
+auto hash_func = [](int k)-> int { return k; };
+typedef static_cache<my_inode,int,decltype(hash_func),15,50> inode_cache_t;
+//template<class T, typename K, typename HASH_FUNC, size_t BUCKETS,size_t STATIC_CACHE_SIZE>
+inode_cache_t inode_cache;
+
+} /* namespace xv6 */

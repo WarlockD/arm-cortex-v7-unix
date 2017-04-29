@@ -1,0 +1,540 @@
+05:56:38 **** Incremental Build of configuration Debug for project f9_temp ****
+make all 
+'Building file: ../startup/startup_stm32f746xx.s'
+'Invoking: MCU GCC Assembler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-as -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -g -o "startup/startup_stm32f746xx.o" "../startup/startup_stm32f746xx.s"
+'Finished building: ../startup/startup_stm32f746xx.s'
+' '
+'Building file: ../Src/main.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Src/main.d" -MT"Src/main.o" -o "Src/main.o" "../Src/main.c"
+'Finished building: ../Src/main.c'
+' '
+'Building file: ../Src/stm32f7xx_hal_msp.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Src/stm32f7xx_hal_msp.d" -MT"Src/stm32f7xx_hal_msp.o" -o "Src/stm32f7xx_hal_msp.o" "../Src/stm32f7xx_hal_msp.c"
+'Finished building: ../Src/stm32f7xx_hal_msp.c'
+' '
+'Building file: ../Src/stm32f7xx_it.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Src/stm32f7xx_it.d" -MT"Src/stm32f7xx_it.o" -o "Src/stm32f7xx_it.o" "../Src/stm32f7xx_it.c"
+'Finished building: ../Src/stm32f7xx_it.c'
+' '
+'Building file: ../Src/system_stm32f7xx.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Src/system_stm32f7xx.d" -MT"Src/system_stm32f7xx.o" -o "Src/system_stm32f7xx.o" "../Src/system_stm32f7xx.c"
+'Finished building: ../Src/system_stm32f7xx.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_can.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_can.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_can.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_can.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_can.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_can.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cec.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cec.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cec.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cec.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cec.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cec.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_crc_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cryp_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dac_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dcmi_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dfsdm.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dfsdm.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dfsdm.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dfsdm.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dfsdm.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dfsdm.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma2d.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma2d.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma2d.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma2d.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma2d.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma2d.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dsi.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dsi.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dsi.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dsi.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dsi.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dsi.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_eth.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_eth.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_eth.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_eth.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_eth.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_eth.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_gpio.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_gpio.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_gpio.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_gpio.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_gpio.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_gpio.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hash_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hcd.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hcd.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hcd.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hcd.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hcd.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_hcd.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2s.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2s.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2s.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2s.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2s.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2s.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_irda.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_irda.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_irda.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_irda.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_irda.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_irda.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_iwdg.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_iwdg.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_iwdg.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_iwdg.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_iwdg.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_iwdg.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_jpeg.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_jpeg.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_jpeg.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_jpeg.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_jpeg.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_jpeg.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_lptim.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_lptim.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_lptim.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_lptim.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_lptim.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_lptim.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_ltdc_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mdios.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mdios.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mdios.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mdios.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mdios.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mdios.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mmc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mmc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mmc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mmc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mmc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_mmc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nand.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nand.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nand.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nand.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nand.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nand.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nor.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nor.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nor.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nor.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nor.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_nor.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pcd_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_qspi.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_qspi.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_qspi.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_qspi.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_qspi.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_qspi.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rng.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rng.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rng.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rng.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rng.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rng.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rtc_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sai_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sd.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sd.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sd.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sd.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sd.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sd.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sdram.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sdram.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sdram.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sdram.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sdram.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sdram.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smartcard_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smbus.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smbus.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smbus.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smbus.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smbus.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_smbus.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spdifrx.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spdifrx.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spdifrx.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spdifrx.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spdifrx.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spdifrx.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spi.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spi.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spi.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spi.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spi.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spi.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sram.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sram.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sram.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sram.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sram.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sram.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_wwdg.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_wwdg.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_wwdg.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_wwdg.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_wwdg.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_wwdg.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_adc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_adc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_adc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_adc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_adc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_adc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_crc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_crc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_crc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_crc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_crc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_crc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dac.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dac.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dac.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dac.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dac.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dac.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma2d.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma2d.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma2d.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma2d.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma2d.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_dma2d.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_exti.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_exti.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_exti.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_exti.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_exti.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_exti.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_fmc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_fmc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_fmc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_fmc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_fmc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_fmc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_gpio.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_gpio.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_gpio.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_gpio.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_gpio.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_gpio.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_i2c.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_i2c.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_i2c.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_i2c.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_i2c.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_i2c.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_lptim.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_lptim.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_lptim.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_lptim.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_lptim.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_lptim.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_pwr.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_pwr.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_pwr.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_pwr.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_pwr.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_pwr.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rcc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rcc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rcc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rcc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rcc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rcc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rng.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rng.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rng.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rng.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rng.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rng.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rtc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rtc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rtc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rtc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rtc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_rtc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_spi.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_spi.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_spi.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_spi.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_spi.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_spi.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_tim.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_tim.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_tim.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_tim.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_tim.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_tim.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usart.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usart.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usart.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usart.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usart.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usart.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usb.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usb.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usb.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usb.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usb.c"
+'Finished building: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usb.c'
+' '
+'Building file: ../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_utils.c'
+'Invoking: MCU GCC Compiler'
+C:\Users\warlo\temp_pro\f9_temp\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -D__weak=__attribute__((weak)) -D__packed=__attribute__((__packed__)) -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/warlo/temp_pro/f9_temp/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/warlo/temp_pro/f9_temp/Drivers/CMSIS/Include"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_utils.d" -MT"Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_utils.o" -o "Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_utils.o" "../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_utils.c"
+../Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_utils.c:43:26: fatal error: stm32_assert.h: No such file or directory
+compilation terminated.
+make: *** [Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_utils.o] Error 1
+
+05:57:14 Build Finished (took 36s.148ms)
+

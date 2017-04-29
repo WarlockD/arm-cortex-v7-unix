@@ -1,0 +1,18 @@
+/*
+ * fs.cpp
+ *
+ *  Created on: Apr 18, 2017
+ *      Author: warlo
+ */
+
+#include "fs.h"
+namespace {
+	static constexpr size_t CACHE_SIZE = 64;
+	using inode_cache_t = xv6::static_cache<xv6::inode,CACHE_SIZE>;
+	static inode_cache_t inode_cache;
+};
+namespace xv6 {
+
+	inode::inode_cache_t inode::cache;
+
+} /* namespace xv6 */

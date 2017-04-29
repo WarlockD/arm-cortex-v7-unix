@@ -1,0 +1,33 @@
+/*
+ * fs.h
+ *
+ *  Created on: Apr 18, 2017
+ *      Author: warlo
+ */
+
+#ifndef XV6CPP_FS_H_
+#define XV6CPP_FS_H_
+
+
+
+
+
+
+namespace xv6 {
+
+
+
+
+class bkdrv {
+	int open(dev_t dev);
+
+};
+class fs {
+public:
+	fs();
+	virtual ~fs();
+};
+
+} /* namespace xv6 */
+
+#endif /* XV6CPP_FS_H_ */

@@ -1,0 +1,18 @@
+/*
+ * utility.hpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#ifndef OS_UTILITY_HPP_
+#define OS_UTILITY_HPP_
+
+namespace os {
+
+class utility {
+};
+
+} /* namespace os */
+
+#endif /* OS_UTILITY_HPP_ */

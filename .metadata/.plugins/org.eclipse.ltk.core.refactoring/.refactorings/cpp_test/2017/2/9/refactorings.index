@@ -1,0 +1,7 @@
+1488114635052	Move 2 resources to 'nuttx'
+1488199892200	Move 'clock.h' to 'include'
+1488200596860	Rename resource 'stm32_timers.c'
+1488202816139	Rename resource 'stm32_helpers.h'
+1488212368226	Rename resource 'typeinfo.h'
+1488218821287	Rename resource 'clock.h'
+1488220355919	Move 'sched' to 'src'

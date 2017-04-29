@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Rename resource &apos;f9_os/src/xv6/memide.c&apos; to &apos;qspiide.c&apos;" description="Rename resource &apos;memide.c&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/xv6/memide.c" name="qspiide.c" stamp="1489941007276" updateReferences="true"/>&#x0A;<refactoring comment="Rename resource &apos;f9_os/src/xv6/ffconf_template.h&apos; to &apos;ffconf.h&apos;" description="Rename resource &apos;ffconf_template.h&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/xv6/ffconf_template.h" name="ffconf.h" stamp="1489942891189" updateReferences="true"/>
+</session>

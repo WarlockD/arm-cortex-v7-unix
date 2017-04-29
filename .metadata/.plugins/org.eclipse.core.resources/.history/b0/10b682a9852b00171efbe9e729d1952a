@@ -1,0 +1,59 @@
+/*
+ * memory.hpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#ifndef OS_MEMORY_HPP_
+#define OS_MEMORY_HPP_
+
+namespace os {
+	/*
+	 * Each address space is associated with one or more thread.
+	 * AS represented as linked list of fpages, mappings are the same.
+	 */
+	enum class map_action_t{ MAP, GRANT, UNMAP } ;
+	enum class mempool_tag_t {
+		MPT_KERNEL_TEXT,
+		MPT_KERNEL_DATA,
+		MPT_USER_TEXT,
+		MPT_USER_DATA,
+		MPT_AVAILABLE,
+		MPT_DEVICES,
+		MPT_UNKNOWN = -1
+	} ;
+	enum class mpu_state_t {
+		DISABLED,
+		ENABLED
+	} ;
+	class fpage;
+	struct as_t{
+		uint32_t as_spaceid;	/*! Space Identifier */
+		fpage *first;	/*! head of fpage list */
+
+		fpage *mpu_first;	/*! head of MPU fpage list */
+		fpage *mpu_stack_first;	/*! head of MPU stack fpage list */
+		uint32_t shared;	/*! shared user number */
+	} ;
+	/**
+	 * Memory pool represents area of physical address space
+	 * We set flags to it (kernel & user permissions),
+	 * and rules for fpage creation
+	 */
+	struct mempool_t {
+	#ifdef CONFIG_DEBUG
+		const char *name;
+	#endif
+
+		memptr_t start;
+		memptr_t end;
+
+		uint32_t flags;
+		uint32_t tag;
+	} ;
+
+
+} /* namespace os */
+
+#endif /* OS_MEMORY_HPP_ */

@@ -1,0 +1,30 @@
+#include <os\list.hpp>
+#include <sys\queue.h>
+
+using namespace sys;
+
+struct test_entry {
+	int value;
+	slist_entry<test_entry> list1;
+	slist_entry<test_entry> list2;
+	constexpr test_entry() : value(0) {}
+};
+
+slist_head<slist_entry<test_entry> head1(&test_entry::list1);
+slist_head head2(&test_entry::list2);
+
+test_entry stuff[20];
+
+
+extern "C" void try_list() {
+	int count = 22;
+	for(auto &a : stuff) {
+		SLIST_INSERT_HEAD(&head2,&a,list2);
+	}
+
+	for(auto &a : stuff) {
+		a.value = count++;
+		slist_insert_head(head1,&a,&test_entry::list1);
+	}
+
+}

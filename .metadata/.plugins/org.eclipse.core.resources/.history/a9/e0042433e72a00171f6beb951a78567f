@@ -1,0 +1,281 @@
+#ifndef _ATOMIC_H_
+#define _ATOMIC_H_
+
+//#include "conf.h"
+#include <cstdint>
+#include <cstddef>
+#include <functional>
+#include <type_traits>
+
+
+namespace ASM {
+	template<typename T, size_t size> struct EXCLUSIVE {};
+	template<typename T> struct EXCLUSIVE<T,1> {
+		static constexpr bool type_is_signed = std::is_unsigned<T>::value;
+		static constexpr bool type_size = 1;
+		using type = T;
+
+		__attribute__((always_inline)) static inline uint32_t STREX(T value, volatile T *addr){
+			uint32_t result;
+			   __asm volatile ("strexb %0, %2, %1" : "=&r" (result), "=Q" (*addr) : "r" (value) );
+			   return(result);
+		}
+		__attribute__((always_inline)) static inline T LDREX(volatile T *addr)
+		{
+		    uint32_t result;
+		    __asm volatile ("ldrexb %0, %1" : "=r" (result) : "Q" (*addr) );
+		   return static_cast<T>(result);
+		}
+		__attribute__((always_inline)) static inline void CLREX(void)
+		{
+		  __asm volatile ("clrex" ::: "memory");
+		}
+	};
+
+	template<typename T> struct EXCLUSIVE<T,2> {
+		static constexpr bool type_is_signed = std::is_unsigned<T>::value;
+		static constexpr bool type_size = 2;
+		using type = T;
+
+		__attribute__((always_inline)) static inline uint32_t STREX(T value, volatile T *addr){
+			uint32_t result;
+			   __asm volatile ("strexh %0, %2, %1" : "=&r" (result), "=Q" (*addr) : "r" (value) );
+			   return(result);
+		}
+		__attribute__((always_inline)) static inline T LDREX(volatile T *addr)
+		{
+		    uint32_t result;
+		    __asm volatile ("ldrexh %0, %1" : "=r" (result) : "Q" (*addr) );
+		   return static_cast<T>(result);
+		}
+		__attribute__((always_inline)) static inline void CLREX(void)
+		{
+		  __asm volatile ("clrex" ::: "memory");
+		}
+		template<typename = typename std::enable_if<type_is_signed>::type>
+		__attribute__((always_inline)) static inline T REV(T value)
+		{
+		  _return static_cast<T>(__builtin_bswap16(value));
+		}
+
+	};
+	template<typename T> struct EXCLUSIVE<T,4> {
+		static constexpr bool type_is_signed = std::is_unsigned<T>::value;
+		static constexpr bool type_size = 2;
+		using type = T;
+
+		__attribute__((always_inline)) static inline uint32_t STREX(T value, volatile T *addr){
+			uint32_t result;
+			   __asm volatile ("strex %0, %2, %1" : "=&r" (result), "=Q" (*addr) : "r" (value) );
+			   return(result);
+		}
+		__attribute__((always_inline)) static inline T LDREX(volatile T *addr)
+		{
+		    uint32_t result;
+		    __asm volatile ("ldrex %0, %1" : "=r" (result) : "Q" (*addr) );
+		   return static_cast<T>(result);
+		}
+		__attribute__((always_inline)) static inline void CLREX(void)
+		{
+		  __asm volatile ("clrex" ::: "memory");
+		}
+	};
+
+
+}
+template<typename T, typename EX = ASM::EXCLUSIVE<T,sizeof(T)>>
+static inline T test_and_set(T *word)
+{
+	T value = EX::LDREX(word);
+	return EX::STREX(static_cast<T>(1), word)==0 || value;
+}
+
+template<typename T, typename = typename std::enable_if<sizeof(T) == 2>::type>
+static inline T test_and_set(T *word)
+{
+	register T result = 1;
+	__asm__ __volatile__(
+	    "mov r1, #1\n"
+	    "mov r2, %[word]\n"
+	    "ldrexh r0, [r2]\n"	/* Load value [r2] */
+	    "cmp r0, #0\n"	/* Checking is word set to 1 */
+	    "itt eq\n"
+	    "strexheq r0, r1, [r2]\n"
+	    "moveq %[result], r0\n"
+	    : [result] "=r"(result)
+	    : [word] "r"(word)
+	    : "r0", "r1", "r2");
+	return result == 0;
+}
+
+
+static inline uint32_t test_and_set_word(uint32_t *word)
+{
+	register T result = 1;
+	__asm__ __volatile__(
+	    "mov r1, #1\n"
+	    "mov r2, %[word]\n"
+	    "ldreb r0, [r2]\n"	/* Load value [r2] */
+	    "cmp r0, #0\n"	/* Checking is word set to 1 */
+	    "itt eq\n"
+	    "strexeq r0, r1, [r2]\n"
+	    "moveq %[result], r0\n"
+	    : [result] "=r"(result)
+	    : [word] "r"(word)
+	    : "r0", "r1", "r2");
+	return result == 0;
+}
+
+
+static inline  uint32_t test_and_set_bit(uint32_t *word, int bitmask)
+{
+	register int result = 1;
+
+	__asm__ __volatile__(
+	    "mov r2, %[word]\n"
+	    "ldrex r0, [r2]\n"		/* Load value [r2] */
+	    "tst r0, %[bitmask]\n"	/* Compare value with bitmask */
+
+	    "ittt eq\n"
+	    "orreq r1, r0, %[bitmask]\n"	/* Set bit: r1 = r0 | bitmask */
+	    "strexeq r0, r1, [r2]\n"		/* Write value back to [r2] */
+	    "moveq %[result], r0\n"
+	    : [result] "=r"(result)
+	    : [word] "r"(word), [bitmask] "r"(bitmask)
+	    : "r0", "r1", "r2");
+
+	return result == 0;
+}
+
+/*
+ * ARMv6 UP and SMP safe atomic ops.  We use load exclusive and
+ * store exclusive to ensure that these are atomic.  We may loop
+ * to ensure that the update happens.
+ */
+// fix these with enable if to check type sizes
+template<typename T, typename I, template std::enable_if<sizeof(T) == 4>::type>
+inline void atomic_add(T *v, I i)
+{
+	T tmp;
+	int result;
+	__asm__ __volatile__("@ atomic_add\n"
+			"1:	ldrex	%0, [%2]\n"
+			"	add	%0, %0, %3\n"
+			"	strex	%1, %0, [%2]\n"
+			"	teq	%1, #0\n"
+			"	bne	1b"
+	: "=&r" (result), "=&r" (tmp)
+	: "r" (v), "Ir" (i)
+	: "cc");
+}
+template<typename I, typename T>
+inline T atomic_add_return(I i, T *v)
+{
+	T tmp;
+	T result;
+	__asm__ __volatile__("@ atomic_add_return\n"
+			"1:	ldrex	%0, [%2]\n"
+			"	add	%0, %0, %3\n"
+			"	strex	%1, %0, [%2]\n"
+			"	teq	%1, #0\n"
+			"	bne	1b"
+	: "=&r" (result), "=&r" (tmp)
+	: "r" (v), "Ir" (i)
+	: "cc");
+	return result;
+}
+template<typename I, typename T>
+inline void atomic_sub(I i, T *v)
+{
+	T tmp;
+	T result;
+	__asm__ __volatile__("@ atomic_sub\n"
+			"1:	ldrex	%0, [%2]\n"
+			"	sub	%0, %0, %3\n"
+			"	strex	%1, %0, [%2]\n"
+			"	teq	%1, #0\n"
+			"	bne	1b"
+	: "=&r" (result), "=&r" (tmp)
+	: "r" (v), "Ir" (i)
+	: "cc");
+}
+template<typename I, typename T>
+inline T atomic_sub_return(I i, T *v)
+{
+	T tmp;
+	T result;
+	__asm__ __volatile__("@ atomic_sub_return\n"
+			"1:	ldrex	%0, [%2]\n"
+			"	sub	%0, %0, %3\n"
+			"	strex	%1, %0, [%2]\n"
+			"	teq	%1, #0\n"
+			"	bne	1b"
+	: "=&r" (result), "=&r" (tmp)
+	: "r" (v), "Ir" (i)
+	: "cc");
+	return result;
+}
+template<typename I1, typename I2,typename T>
+inline T atomic_cmpxchg(T *ptr, I1 oldv,I2 newv)
+{
+	T oldval, res;
+	do {
+		__asm__ __volatile__("@ atomic_cmpxchg\n"
+		"ldrex	%1, [%2]\n"
+		"mov	%0, #0\n"
+		"teq	%1, %3\n"
+		"strexeq %0, %4, [%2]\n"
+			: "=&r" (res), "=&r" (oldval)
+			: "r" (ptr), "Ir" (oldv), "r" (newv)
+			: "cc");
+	} while (res);
+	return oldval;
+}
+template<typename T>
+inline void atomic_clear_mask(T mask, T *addr)
+{
+	T tmp, tmp2;
+
+	__asm__ __volatile__("@ atomic_clear_mask\n"
+"1:	ldrex	%0, [%2]\n"
+"	bic	%0, %0, %3\n"
+"	strex	%1, %0, [%2]\n"
+"	teq	%1, #0\n"
+"	bne	1b"
+	: "=&r" (tmp), "=&r" (tmp2)
+	: "r" (addr), "Ir" (mask)
+	: "cc");
+}
+template<typename T>
+	inline T atomic_cmpxchg(T *ptr, T oldv,T newv, size_short)
+	{
+		T oldval, res;
+		do {
+			__asm__ __volatile__("@ atomic_cmpxchg\n"
+			"ldrexh	%1, [%2]\n"
+			"mov	%0, #0\n"
+			"teq	%1, %3\n"
+			"strexheq %0, %4, [%2]\n"
+				: "=&r" (res), "=&r" (oldval)
+				: "r" (ptr), "Ir" (oldv), "r" (newv)
+				: "cc");
+		} while (res);
+		return oldval;
+	}
+	template<typename T>
+	inline T atomic_cmpxchg(T *ptr, T oldv,T newv, size_byte)
+	{
+		T oldval, res;
+		do {
+			__asm__ __volatile__("@ atomic_cmpxchg\n"
+			"ldrexn	%1, [%2]\n"
+			"mov	%0, #0\n"
+			"teq	%1, %3\n"
+			"strexneq %0, %4, [%2]\n"
+				: "=&r" (res), "=&r" (oldval)
+				: "r" (ptr), "Ir" (oldv), "r" (newv)
+				: "cc");
+		} while (res);
+		return oldval;
+	}
+#endif

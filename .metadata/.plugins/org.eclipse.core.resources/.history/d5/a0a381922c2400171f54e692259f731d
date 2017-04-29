@@ -1,0 +1,188 @@
+/*
+ * ObjectCache.h
+ *
+ *  Created on: Apr 18, 2017
+ *      Author: warlo
+ */
+
+#ifndef XV6CPP_OBJECTCACHE_H_
+#define XV6CPP_OBJECTCACHE_H_
+
+#include <cstdint>
+#include <sys\queue.h>
+#include <algorithm>
+//#include <macros.h>
+#include <cassert>
+namespace xv6 {
+
+template<class T> class list_head {
+public:
+	class list_entry {
+	public:
+		using type = T;
+		using head_type = list_head<T>;
+		using entry_type =  list_entry;
+		using entry_pointer = entry_type*;
+		list_entry() : _next(nullptr), _prev(&_next) , obj() {}
+		operator type&() { return obj; }
+		operator const type&() const { return obj; }
+		entry_pointer next() { return _next; }
+		entry_pointer prev() { return *_prev; }
+		const entry_pointer next() const { return _next; }
+		const entry_pointer prev() const { return _prev == &_next  ? nullptr : *_prev; }
+		const bool valid() const { return _prev != &_next; }
+		void remove() {
+			if(_next == nullptr && _prev == &_next) return;
+			if(_next != nullptr) _next->_prev = _prev;
+			*_prev = _next;
+			_clear();
+		}
+		void insert_after(entry_pointer elm){
+			assert(elm && valid() && !elm->valid());
+			if((elm->_next = _next) != nullptr)
+				_next->_prev = & elm->_next;
+			_next = elm;
+			elm->_next = &_next;
+		}
+		void insert_before(entry_pointer elm){
+			assert(elm && valid() && !elm->valid());
+			elm->_prev = _prev;
+			elm->_next = this;
+			*_prev = elm;
+			_prev = &elm->_next;
+		}
+	private:
+		friend head_type;
+		friend class entry_it;
+		void _clear() { _next == NULL;_prev == &_next; }
+		entry_type *_next;	/* next element */
+		entry_type **_prev;	/* address of previous next element */
+		type obj;
+	};
+	template<bool reverse, bool is_const> class entry_iterator {
+	public:
+		using head_type = list_head<T>;
+		using entry_type =  list_entry;
+		using type = T;
+#if 0
+		// redundent
+		using type = typename std::conditional<is_const,
+				const T,
+				T>::type;
+#endif
+		using entry_pointer = typename std::conditional<is_const,
+				const entry_type*,
+				entry_type*>::type;
+
+		entry_iterator(entry_pointer start=nullptr) : _current(start) {}
+		operator type&() { return _current->obj; }
+		operator const type&() const { return _current->obj; }
+	    // overloaded prefix ++ operator
+		entry_iterator operator++ () {
+			if(_current != nullptr)
+				_current = reverse ? _current->prev() : _current->next();
+			return entry_iterator(_current);
+		}
+		entry_iterator operator++ (int) {
+			entry_iterator t(_current);
+			if(_current != nullptr)
+				_current = reverse ? _current->prev() : _current->next();
+			return t;
+		}
+		entry_iterator operator-- () {
+			if(_current != nullptr)
+				_current = reverse ? _current->next() : _current->prev();
+			return entry_iterator(_current);
+		}
+		entry_iterator operator-- (int) {
+			entry_iterator t(_current);
+			if(_current != nullptr)
+				_current = reverse ? _current->next() : _current->prev();
+			return t;
+		}
+		bool operator==(const entry_iterator& r) const { return _current == r._current; }
+		bool operator!=(const entry_iterator& r) const { return _current != r._current; }
+	private:
+		entry_pointer _current;
+	};
+	using type = T;
+	using head_type = list_head<T>;
+	using entry_type =  list_entry;
+	using entry_pointer = entry_type*;
+	using iterator = entry_iterator<false,false>;
+	using const_iterator = entry_iterator<false,true>;
+	using reverse_iterator = entry_iterator<true,false>;
+	using const_reverse_iterator = entry_iterator<true,true>;
+	list_head() : _first(nullptr) {}
+	void insert_head(entry_pointer elm) {
+		assert(elm && !elm->valid());
+		if((elm->_next = _first) != nullptr)
+			_first->_prev = elm->_next;
+		_first = elm;
+		elm->_prev = &_first;
+	}
+	iterator begin() { return iterator(_first); }
+	iterator end() { return iterator(nullptr); }
+	const_iterator begin() const { return const_iterator(_first); }
+	const_iterator end() const { return const_iterator(nullptr); }
+	reverse_iterator rbegin() { return reverse_iterator(_first); }
+	reverse_iterator rend() { return reverse_iterator(nullptr); }
+	const_reverse_iterator rbegin() const { return const_reverse_iterator(_first); }
+	const_reverse_iterator rend() const { return const_reverse_iterator(nullptr); }
+protected:
+	entry_pointer _first;
+	friend entry_type;
+};
+
+// HASH_FUNC is size_t hash(const T& obj)
+template<class T, typename HASH_FUNC, size_t BUCKETS,size_t STATIC_CACHE_SIZE>
+class static_cache {
+	static_assert(BUCKETS%2 == 0, "Needs to be divisiable by 2");
+	using type = T;
+	using hashf = HASH_FUNC;
+	//using hash_entry = hash_head::list_entry;
+	enum obj_state {
+		C_FREE = 0,
+		C_ALLOC = 1<<0,
+		C_LOCKED = 1<<1,
+		C_WANTED = 1<<2,
+	};
+	struct hash_entry {
+		T obj;
+		int ref;
+		obj_state state;
+		hash_entry() : obj(), ref(0), state(C_FREE) {}
+	};
+	using hash_head = list_head<hash_entry>;
+public:
+	static_cache() { for(hash_entry e : cache) freelist.insert_head(&e); }
+	T* alloc(bool lock = false); // lock it on alloc
+
+	template<class WAIT_FUNC> void lock(T* o, WAIT_FUNC func) {
+		assert(o);
+		struct hash_entry* e = static_cast<struct hash_entry*>(o);
+		if(e->state & C_LOCKED){
+			e->state |= C_WANTED;
+			while(e->state & C_LOCKED) func();
+		}
+		e->state |= C_LOCKED;
+	}
+	void lock(T* o) {
+		assert(o);
+		struct hash_entry* e = static_cast<struct hash_entry*>(o);
+		if(e->state & C_LOCKED){
+			e->state |= C_WANTED;
+			while(e->state & C_LOCKED);
+		}
+		e->state |= C_LOCKED;
+	}
+	void unlock(T* o);
+protected:
+	hash_head buckets[BUCKETS];
+	hash_head freelist;
+	hash_entry cache[STATIC_CACHE_SIZE];
+};
+
+} /* namespace xv6 */
+
+#endif /* XV6CPP_OBJECTCACHE_H_ */

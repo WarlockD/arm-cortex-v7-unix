@@ -1,0 +1,191 @@
+/*
+ * nuttxinode.cpp
+ *
+ *  Created on: Apr 24, 2017
+ *      Author: warlo
+ */
+
+#include "nuttxinode.h"
+#include "bitmap.h"
+#include <cassert>
+
+#define CONFIG_SEM_PREALLOCHOLDERS 20
+#define getpid() (0) /* filler */
+#define pid_t int16_t
+namespace nuttx {
+#define NO_HOLDER ((pid_t)-1);
+	using alloc_table_t = bitops::bitmap_table_t<nuttx_inode, 64>;
+	static alloc_table_t alloc_table;
+
+	void* nuttx_inode::operator new(size_t size){
+		assert(size < alloc_table_t::TYPE_SIZE);
+		return alloc_table.alloc();
+	}
+	void nuttx_inode::operator delete(void *ptr){
+		alloc_table.free(ptr);
+	}
+	struct inode_sem_s
+	{
+	  bitops::simple_semaphore   sem;     /* The semaphore */
+	  pid_t   holder;  /* The current holder of the semaphore */
+	  int16_t count;   /* Number of counts held */
+	  inode_sem_s() : sem(1), holder(-1), count(0) {}
+	  void take(){
+		  pid_t me = getpid();
+		  if(me == holder){
+			  count++;
+			  assert(count > 0);
+		  } else {
+			  sem.wait();
+			  holder= me;
+			  count = 1;
+		  }
+	  }
+	  void give(){
+		  assert(holder == getpid());
+		  if(count >1) count--;
+		  else {
+			  holder = NO_HOLDER;
+			  count =0;
+			  sem.post();
+		  }
+	  }
+	};
+	static inode_sem_s g_inode_sem;
+	static nuttx_inode  _g_rootnode("");
+	static nuttx_inode *g_root_inode = &_g_rootnode;
+
+	int nuttx_inode::dir_compare(const char *fname, const char *nname)
+	{
+	  if (!nname) return 1;
+	  if (!fname)return -1;
+	  for (;;)
+	    {
+	      if(*nname=='\0'){
+	          if (dir_sep(*fname))
+	              return 0; /* Yes.. return match */
+	          else
+	              return 1;/* No... return find name > node name */
+	      }
+	      else if (dir_sep(*fname)){ /* At end of find name? */
+	          return -1; /* Yes... return find name < node name */
+	        }
+	      /* Check for non-matching characters */
+	      else if (*fname > *nname)  return 1;
+	      else if (*fname < *nname)  return -1;
+	      else { fname++; nname++; }
+	    }
+	  return 0; // never gets here
+	}
+	const char *nuttx_inode::dir_nextname(const char *name)
+	{
+		while (*name && !dirchar(*name)) name++;
+		if (*name) name++; // skip over the '/'
+		return name;
+	}
+	const char *nuttx_inode::dir_basename(const char *name)
+	{
+		const char *basename = nullptr;
+		for (;;) {
+			name = inode_nextname(name);
+			if (name == nullptr || *name == '\0') break;
+			basename = name;
+		}
+		return basename;
+	}
+	nuttx_inode *nuttx_inode::root_find(const char *path, const char **relpath){
+		if (path == nullptr || path[0] == '\0' || !dirchar(path[0]))  return nullptr;
+		return g_root_inode->find(path,relpath);
+	}
+	nuttx_inode *nuttx_inode::find(const char *path, const char **relpath)
+	{
+		nuttx_inode * n;
+		LIST_FOREACH(n, &_child, _peer) {
+			if(dir_compare(path, n->_name)==0) {
+		          name = dir_nextname(path);
+		          if (*name == '\0' || n->_flags == type::mountpt){
+		        	  if(relpath) relpath = name; //
+		        	  return n; // found
+		          } else {
+		        	  return n->find(name,relpath); // go up a level
+		          }
+			}
+		}
+	  return nullptr;
+	}
+	nuttx_inode::~nuttx_inode() {
+		//release();
+		assert(_crefs==0);
+	}
+	void nuttx_inode::release()
+	{
+		if (bitops::atomic_sub_return(1,&_crefs) <= 0){
+			g_inode_sem.take();
+			LIST_REMOVE(this,_peer); // we should be unlinked already but this just makes sure
+			nuttx_inode*c,*n;
+			LIST_FOREACH_SAFE(c, &_child, _peer,n)
+				c->release(); // release all the children
+			g_inode_sem.give();
+			_crefs = 0;
+			delete this;
+		}
+	}
+	nuttx_inode * nuttx_inode::link(const char* name, type t=type::special){
+
+	}
+	nuttx_inode * nuttx_inode::unlink(const char* path){
+		const char  *name = path;
+		nuttx_inode *node;
+		nuttx_inode *peer;
+		nuttx_inode *parent;
+		if(path == nullptr) return nullptr;
+		node = search(&name, &peer, &parent, (const char **)NULL);
+		  /* Verify parameters.  Ignore null paths and relative paths */
+
+		  if (path == NULL || path[0] != '/')
+		    {
+		      return NULL;
+		    }
+
+		  /* Find the node to unlink */
+
+
+		  if (node)
+		    {
+		      /* If peer is non-null, then remove the node from the right of
+		       * of that peer node.
+		       */
+
+		      if (peer)
+		        {
+		          peer->i_peer = node->i_peer;
+		        }
+
+		      /* If parent is non-null, then remove the node from head of
+		       * of the list of children.
+		       */
+
+		      else if (parent)
+		        {
+		          parent->i_child = node->i_peer;
+		        }
+
+		      /* Otherwise, we must be removing the root inode. */
+
+		      else
+		        {
+		           g_root_inode = node->i_peer;
+		        }
+
+		      node->i_peer = NULL;
+		    }
+
+		  return node;
+	}
+	void nuttx_inode::unlink(){
+		g_inode_sem.take();
+		LIST_REMOVE(this,_peer);
+		g_inode_sem.give();
+	}
+
+} /* namespace xv6 */

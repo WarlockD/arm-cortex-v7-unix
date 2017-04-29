@@ -1,0 +1,71 @@
+/*
+ * nuttxinode.h
+ *
+ *  Created on: Apr 24, 2017
+ *      Author: warlo
+ */
+
+#ifndef XV6CPP_NUTTXINODE_H_
+#define XV6CPP_NUTTXINODE_H_
+
+#include "os.h"
+#include "list.h"
+
+namespace nuttx {
+
+enum class PRIOINHERIT {
+	ENABLE,
+	DISABLE,
+};
+class semholder_t
+{
+	LIST_CLASS_ENTRY(semholder_t) _flink;
+	pid_t _hpid;			// holder
+	//struct tcb_s *htcb;        /* Holder TCB */
+	int16_t _counts;                /* Number of counts owned by this holder */
+};
+
+/* This is the generic semaphore structure. */
+struct timespec; /* Defined in time.h */
+struct sem_t
+{
+  volatile int16_t _semcount;     /* >0 -> Num counts available */
+                                 /* <0 -> Num tasks waiting for semaphore */
+  /* If priority inheritance is enabled, then we have to keep track of which
+   * tasks hold references to the semaphore.
+   */
+  PRIOINHERIT 		_flags;                 /* See PRIOINHERIT_FLAGS_* definitions */
+  LIST_CLASS_HEAD(,sem_t) _hhead;
+  sem_t(int16_t c) : _semcount(c), _flags(PRIOINHERIT::ENABLE), _hhead( LIST_HEAD_INITIALIZER(&_hhead) ) {}
+
+  int init(int pshared, unsinged int vlaue);
+  int destroy();
+  int wait();
+  int timedwait(const struct timespec* abstime);
+  int trywait();
+  bool post();
+  bool getvalue(int* sval);
+};
+
+
+class inode {
+public:
+
+
+	nuttx_inode(const char* name) : _peer(nullptr), _child(nullptr), _crefs(1), _flags(0), _mode(0), _name(name) {}
+	inline const char* name() const { return _name; }
+	inline uint16_t flags() const { return _flags; }
+	inline mode_t mode() const { return _mode; }
+protected:
+	nuttx_inode *	_peer;     /* Link to same level inode */
+	nuttx_inode *	_child;    /* Link to lower level inode */
+	int16_t			_crefs;    /* References to inode */
+	uint16_t		_flags;    /* Flags for inode */
+	mode_t			_mode;	 /* Access mode flags */
+	const char* 	_name;/* Name of inode (variable) */
+	static nuttx_inode  g_rootnode;
+};
+
+} /* namespace xv6 */
+
+#endif /* XV6CPP_NUTTXINODE_H_ */

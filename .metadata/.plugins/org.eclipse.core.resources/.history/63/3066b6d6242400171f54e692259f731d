@@ -1,0 +1,172 @@
+/*
+ * ObjectCache.h
+ *
+ *  Created on: Apr 18, 2017
+ *      Author: warlo
+ */
+
+#ifndef XV6CPP_OBJECTCACHE_H_
+#define XV6CPP_OBJECTCACHE_H_
+
+#include <cstdint>
+#include <sys\queue.h>
+#include <algorithm>
+//#include <macros.h>
+#include <cassert>
+namespace xv6 {
+
+template<class T> class list_head {
+public:
+	class list_entry {
+	public:
+		using type = T;
+		using head_type = list_head<T>;
+		using entry_type =  list_entry;
+		using entry_pointer = entry_type*;
+		list_entry() : _next(nullptr), _prev(&_next) , obj() {}
+		operator type&() { return obj; }
+		operator const type&() const { return obj; }
+		entry_pointer next() { return _next; }
+		entry_pointer prev() { return *_prev; }
+		const entry_pointer next() const { return _next; }
+		const entry_pointer prev() const { return _prev == &_next  ? nullptr : *_prev; }
+		const bool valid() const { return _prev != &_next; }
+		void remove() {
+			if(_next == nullptr && _prev == &_next) return;
+			if(_next != nullptr) _next->_prev = _prev;
+			*_prev = _next;
+			_clear();
+		}
+		void insert_after(entry_pointer elm){
+			assert(elm && valid() && !elm->valid());
+			if((elm->_next = _next) != nullptr)
+				_next->_prev = & elm->_next;
+			_next = elm;
+			elm->_next = &_next;
+		}
+		void insert_before(entry_pointer elm){
+			assert(elm && valid() && !elm->valid());
+			elm->_prev = _prev;
+			elm->_next = this;
+			*_prev = elm;
+			_prev = &elm->_next;
+		}
+	private:
+		friend head_type;
+		friend class entry_it;
+		void _clear() { _next == NULL;_prev == &_next; }
+		entry_type *_next;	/* next element */
+		entry_type **_prev;	/* address of previous next element */
+		type obj;
+	};
+	template<bool reverse, bool is_const> class entry_it {
+		using type = T;
+		using head_type = list_head<T>;
+		using entry_type =  list_entry;
+		using entry_pointer = entry_type*;
+		using  it_type = typename std::conditional<is_const,
+				const entry_pointer,
+				entry_pointer>::type;
+		it_type _current;
+	public:
+		entry_it(entry_pointer start=nullptr) : _current(start) {}
+		operator type&() { return _current->obj; }
+		operator const type&() const { return _current->obj; }
+	    // overloaded prefix ++ operator
+		entry_it operator++ () {
+			if(_current != nullptr)
+				_current = reverse ? _current->prev() : _current->next();
+			return entry_it(_current);
+		}
+		entry_it operator++ (int) {
+			entry_it t(_current);
+			if(_current != nullptr)
+				_current = reverse ? _current->prev() : _current->next();
+			return t;
+		}
+		entry_it operator-- () {
+			if(_current != nullptr)
+				_current = reverse ? _current->next() : _current->prev();
+			return entry_it(_current);
+		}
+		entry_it operator-- (int) {
+			entry_it t(_current);
+			if(_current != nullptr)
+				_current = reverse ? _current->next() : _current->prev();
+			return t;
+		}
+		bool operator==(const entry_it& r) const { return _current == r._current; }
+		bool operator!=(const entry_it& r) const { return _current != r._current; }
+	};
+	using type = T;
+	using head_type = list_head<T>;
+	using entry_type =  list_entry;
+	using entry_pointer = entry_type*;
+	list_head() : _first(nullptr) {}
+	void insert_head(entry_pointer elm) {
+		assert(elm && !elm->valid());
+		if((elm->_next = _first) != nullptr)
+			_first->_prev = elm->_next;
+		_first = elm;
+		elm->_prev = &_first;
+	}
+
+protected:
+	entry_pointer _first;
+	friend entry_type;
+};
+
+#if 0
+
+// HASH_FUNC is size_t hash(const T& obj)
+template<class T,typename HASH_FUNC, size_t BUCKETS,size_t STATIC_CACHE_SIZE>
+class ObjectCache {
+	using type = T;
+	using hashf = HASH_FUNC;
+	enum obj_state {
+		C_FREE = 0,
+		C_ALLOC = BIT(0),
+		C_LOCKED = BIT(1),
+		C_WANTED = BIT(2)
+	};
+	// copyied from sys queue
+	class list_entry {
+	public:
+		list_entry *le_next;	/* next element */
+		list_entry **le_prev;	/* address of previous next element */
+		obj_state state;
+		int ref;
+		T obj;
+	};
+	class list_head {
+		list_entry* first;
+	public:
+
+	};
+protected:
+	list_entry* buckets[BUCKETS];
+	list_entry* freelist;
+	list_entry cache[STATIC_CACHE_SIZE];
+	void _reset_eveything() {
+		std::fill(buckets, buckets+BUCKETS, NULL);
+		std::fill(cache, cache+BUCKETS, NULL);
+		freelist = NULL;
+		for(list_entry* e : cache) {
+
+		}
+	}
+public:
+	ObjectCache() {
+		std::fill(buckets, buckets+BUCKETS, NULL);
+		std::fill(cache, cache+BUCKETS, NULL);
+		freelist = NULL;
+		for(list_entry* e : cache) {
+
+		}
+	}
+
+};
+#endif
+} /* namespace xv6 */
+
+#endif /* XV6CPP_OBJECTCACHE_H_ */

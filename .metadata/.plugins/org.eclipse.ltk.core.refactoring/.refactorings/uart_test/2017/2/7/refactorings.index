@@ -1,0 +1,6 @@
+1487107676310	Move 'usb.h' to 'usb'
+1487108354023	Move 'usb' to 'dev'
+1487108521474	Move 'usb' to 'netbsd'
+1487428449875	Move 20 resources to 'stm32f429'
+1487429478127	Move 71 resources to 'stm32f4'
+1487439310094	Move 'board' to 'include'
