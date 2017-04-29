@@ -9,10 +9,13 @@
 #define OS_MEMORY_HPP_
 
 
-#include "bitmap.hpp"
-#include <sys\queue.h>
+
+//#include <sys\queue.h>
 
 #include "types.hpp"
+#include "slist.hpp"
+
+
 namespace os {
 	class as_t;
 	/*
@@ -51,9 +54,10 @@ namespace os {
 		static constexpr uint32_t FPAGE_ALWAYS    = 0x1;     /*! Fpage is always mapped in MPU */
 		static constexpr uint32_t FPAGE_CLONE     = 0x2;     /*! Fpage is mapped from other AS */
 		static constexpr uint32_t FPAGE_MAPPED    = 0x4;     /*! Fpage is mapped with MAP (  unavailable in original AS) */
-		fpage_t *as_next;
-		fpage_t *map_next;
-		fpage_t *mpu_next;
+		sys::slist_entry<fpage_t> as;
+		sys::slist_entry<fpage_t> map;
+		sys::slist_entry<fpage_t> mpu;
+
 		union {
 			struct {
 				uint32_t base;
@@ -106,10 +110,15 @@ namespace os {
 
 	struct as_t{
 		uint32_t as_spaceid;	/*! Space Identifier */
-		fpage_t *first;	/*! head of fpage list */
 
-		fpage_t *mpu_first;	/*! head of MPU fpage list */
-		fpage_t *mpu_stack_first;	/*! head of MPU stack fpage list */
+		sys::slist_head<fpage_t,&fpage_t::as> as_head;
+		sys::slist_head<fpage_t,&fpage_t::map> map_head;
+		sys::slist_head<fpage_t,&fpage_t::mpu> mpu_head;
+
+		//fpage_t *first;	/*! head of fpage list */
+
+	//	fpage_t *mpu_first;	/*! head of MPU fpage list */
+		//fpage_t *mpu_stack_first;	/*! head of MPU stack fpage list */
 		uint32_t shared;	/*! shared user number */
 		static int map_area(as_t& src, as_t& dst, memptr_t base, size_t size, map_action_t action, bool is_priviliged);
 		static as_t *as_create(uint32_t as_spaceid);
@@ -120,6 +129,9 @@ namespace os {
 		static void mpu_enable(mpu_state_t i);
 		static void mpu_setup_region(int n, fpage_t *fp);
 		int mpu_select_lru(uint32_t addr);
+		static constexpr size_t CONFIG_MAX_ADRESS_SPACES = 54;
+		void* operator new(size_t size);
+		void operator delete(void* ptr);
 	} ;
 	/**
 	 * Memory pool represents area of physical address space
@@ -138,6 +150,5 @@ namespace os {
 	} ;
 
 
-} /* namespace os */
-}
+}; /* namespace os */
 #endif /* OS_MEMORY_HPP_ */

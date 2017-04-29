@@ -1,0 +1,14 @@
+/*
+ * memory.cpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#include <os/memory.hpp>
+
+namespace os {
+ bitops::bitmap_table_t<as_t,CONFIG_MAX_ADRESS_SPACES> as_t::as_table;
+
+
+};

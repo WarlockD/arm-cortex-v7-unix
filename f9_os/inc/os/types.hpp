@@ -18,7 +18,7 @@
 namespace os {
 	typedef uintptr_t memptr_t;
 	using ptr_t = uint32_t;
-	//using memptr_t = uintptr_t;
+	using memptr_t = uintptr_t;
 	using l4_thread_t = uint32_t;
 
 

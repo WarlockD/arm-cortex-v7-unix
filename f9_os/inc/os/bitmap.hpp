@@ -345,11 +345,6 @@ namespace bitops {
 		void clear() { memset(_bitmap,0,sizeof(_bitmap)); }
 	};
 	// an object of this class dosn't
-	class gc_object {
-
-	};
-
-
 
 	// static alocation of types using a bitmap for
 	// allocation tracking
@@ -573,6 +568,6 @@ namespace bitops {
 	}
 	template<typename T, size_t _COUNT, size_t _TYPE_SIZE>
 	using RebindAlloc = typename std::allocator_traits<bitmap_table_t<T,_COUNT,_TYPE_SIZE>>::template bitmap_table_t<T>;
-} /* namespace xv6 */
+}; /* namespace xv6 */
 
 #endif /* XV6CPP_BITMAP_H_ */

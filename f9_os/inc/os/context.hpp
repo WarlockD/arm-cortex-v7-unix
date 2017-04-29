@@ -7,6 +7,7 @@
 
 #ifndef OS_CONTEXT_HPP_
 #define OS_CONTEXT_HPP_
+#include <os/slist.hpp>
 #include "types.hpp"
 
 namespace os {
