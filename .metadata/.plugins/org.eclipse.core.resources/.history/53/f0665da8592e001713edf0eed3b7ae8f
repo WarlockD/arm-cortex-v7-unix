@@ -1,0 +1,86 @@
+/*
+ * memory.cpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#include <os/memory.hpp>
+#include "bitmap.hpp"
+#include <cstdint>
+#include <cstddef>
+#include <cassert>
+// memory.c stuff
+namespace os{
+uintptr_t mapent::rmalloc(mapent* map, size_t nelms, size_t size){
+	 	 mapent *ep, *fp;
+	    long addr;
+
+	    /* first check arguments */
+	    assert(size >= 0);
+	    if (!size) return 0;
+
+	    fp = 0;
+	    /* try to find the smallest fit */
+	    for (ep = (struct mapent *)mp + 1; ep < mp->m_limit; ep++) {
+	        if (!ep->m_addr) {
+	            /* unused slots terminate the list */
+	            break;
+	        }
+	        if (ep->m_size == size) {
+	            /* found exact match, use it, ... */
+	            addr = ep->m_addr;
+	            /* copy over the remaining slots ... */
+	            ovbcopy(ep + 1,ep,(char *)mp->m_limit - (char *)(ep + 1));
+	            /* and mark the last slot as unused */
+	            mp->m_limit[-1].m_addr = 0;
+	            return addr;
+	        }
+	        if (ep->m_size > size
+	            && (!fp
+	            || fp->m_size > ep->m_size)) {
+	            /* found a larger slot, remember the smallest of these */
+	            fp = ep;
+	        }
+	    }
+	    if (fp) {
+	        /* steal requested size from a larger slot */
+	        addr = fp->m_addr;
+	        fp->m_addr += size;
+	        fp->m_size -= size;
+	        return addr;
+	    }
+	    return 0;
+}
+void mapent::rmfree(mapent* map, size_t nelms, void* ptr, size_t size){
+
+}
+#if 0
+			mapent ep;
+			ep.size =0;
+			ep.ptr = addr;
+
+		    struct mapent *ep;
+
+		    /* mapsize had better be at least 2 */
+		    if (nelem < 2 || addr <= 0 || size < 0)
+		        panic("rminit %s",name);
+		    mp->m_name = name;
+		    mp->m_limit = (struct mapent *)mp + nelem;
+
+		    /* initially the first entry describes all free space */
+		    ep = (struct mapent *)mp + 1;
+		    ep->m_size = size;
+		    ep->m_addr = addr;
+		    /* the remaining slots are unused (indicated by m_addr == 0) */
+		    while (++ep < mp->m_limit)
+		        ep->m_addr = 0;
+
+
+		}
+		void* resource_map::alloc(size_t size) {
+			return nullptr
+		}
+#endif
+
+};

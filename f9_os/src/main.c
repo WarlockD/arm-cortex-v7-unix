@@ -136,23 +136,25 @@ void xv6_init() {
 	while(1);
 }
 void try_list();
+void scmrtos_test_start();
 int main(void)
 {
 	 /* Configure the system clock @ 200 Mhz */
-	HAL_Init();
+		HAL_Init();
 	  SystemClock_Config();
 
 	  MX_GPIO_Init();
 	  MX_USART1_UART_Init();
 	  printk_setup(uartputc, NULL, SERIAL_OPTIONS);
-
 	  printk("Booting %s\r\n", __TIME__);
+
 	 // uint32_t old_msp = __get_MSP();
 	 // __set_PSP((old_msp +KPAGEMASK) & (~KPAGEMASK));
 	 // __set_CONTROL(0x03);
 	 // traps_v7m_init();
-	   try_list();
-	  v7_test();
+	 //  try_list();
+	//  v7_test();
+	  scmrtos_test_start();
 	  while(1);
 	  __asm volatile ( "swi #0" ::);
 	//  traps_v7m_init();

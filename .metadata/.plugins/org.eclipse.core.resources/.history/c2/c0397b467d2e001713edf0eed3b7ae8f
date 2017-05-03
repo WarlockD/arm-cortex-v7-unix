@@ -1,0 +1,93 @@
+/*
+ * ktimer.cpp
+ *
+ *  Created on: Apr 30, 2017
+ *      Author: warlo
+ */
+
+#include <os/ktimer.hpp>
+#include "bitmap.hpp"
+#include <stm32f7xx.h>
+
+namespace {
+static void init_systick(uint32_t tick_reload, uint32_t tick_next_reload)
+{
+	/* 250us at 168Mhz */
+	SysTick->LOAD = tick_reload - 1;
+	SysTick->VAL = 0;
+	SysTick->CTRL = 0x00000007;
+
+	if (tick_next_reload)
+		SysTick->LOAD = tick_next_reload - 1;
+}
+static void systick_disable(){ SysTick->CTRL = 0x00000000; }
+static uint32_t systick_now() { return SysTick->VAL;}
+static  uint32_t systick_flag_count() { return (SysTick->CTRL & (1 << 16)) >> 16; }
+static void ktimer_init(void)
+{
+	init_systick(CONFIG_KTIMER_HEARTBEAT, 0);
+}
+
+static void ktimer_disable(void)
+{
+	if (ktimer_enabled) {
+		ktimer_enabled = 0;
+	}
+}
+
+static void ktimer_enable(uint32_t delta)
+{
+	if (!ktimer_enabled) {
+		ktimer_delta = delta;
+		ktimer_time = 0;
+		ktimer_enabled = 1;
+
+#if defined(CONFIG_KDB) && \
+    defined(CONFIG_KTIMER_TICKLESS) && defined(CONFIG_KTIMER_TICKLESS_VERIFY)
+		tickless_verify_start(ktimer_now, ktimer_delta);
+#endif	/* CONFIG_KDB */
+	}
+}
+};
+namespace os {
+#define CONFIG_MAX_KT_EVENTS 30
+	bitops::bitmap_table_t<ktimer_event_t,CONFIG_MAX_KT_EVENTS> ktimer_event_table;
+//DECLARE_KTABLE(ktimer_event_t, ktimer_event_table, CONFIG_MAX_KT_EVENTS);
+
+/* Next chain of events which will be executed */
+ktimer_event_t *event_queue = NULL;
+
+/*
+ * Simple ktimer implementation
+ */
+
+static uint64_t ktimer_now=0;
+static uint32_t ktimer_enabled = 0;
+static uint32_t ktimer_delta = 0;
+static long long ktimer_time = 0;
+
+//extern uint32_t SystemCoreClock;
+} /* namespace os */
+
+extern "C" void SysTick_Handler(void)
+{
+	++os::ktimer_now;
+#if 0
+	if (ktimer_enabled && ktimer_delta > 0) {
+		++ktimer_time;
+		--ktimer_delta;
+
+		if (ktimer_delta == 0) {
+			ktimer_enabled = 0;
+			ktimer_time = ktimer_delta = 0;
+
+#if defined(CONFIG_KDB) && \
+    defined(CONFIG_KTIMER_TICKLESS) && defined(CONFIG_KTIMER_TICKLESS_VERIFY)
+			tickless_verify_stop(ktimer_now);
+#endif	/* CONFIG_KDB */
+
+			softirq_schedule(KTE_SOFTIRQ);
+		}
+	}
+#endif
+}

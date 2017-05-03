@@ -90,6 +90,7 @@ SECTIONS
   {
     . = ALIGN(4);
     kernel_text_start = .;
+    _stext = .;		/* text start */
     *(.text)           /* .text sections (code) */
     *(.text*)          /* .text* sections (code) */
     *(.glue_7)         /* glue arm to thumb code */

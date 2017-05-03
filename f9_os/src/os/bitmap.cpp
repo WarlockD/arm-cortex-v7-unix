@@ -50,5 +50,4 @@ uint32_t test_and_set_bit(uint32_t *word, int bitmask)
 }
 //};
 };
-};
 

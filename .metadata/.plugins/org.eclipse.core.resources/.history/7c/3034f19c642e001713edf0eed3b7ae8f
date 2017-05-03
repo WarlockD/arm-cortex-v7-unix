@@ -1,0 +1,75 @@
+/*
+ * memory.cpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#include <os/memory.hpp>
+#include <os/atomic.hpp>
+#include "bitmap.hpp"
+#include <cstdint>
+#include <cstddef>
+#include <cassert>
+// memory.c stuff
+#include <cstdlib>
+#include <cstring>
+
+static uintptr_t memory_start=0;
+static uintptr_t memory_end=0;
+static uintptr_t memory_size=0;
+static uintptr_t memory_page_count=0;
+static uintptr_t memory_heap_start=0;
+static uintptr_t memory_heap_end=0;
+namespace os{
+	constexpr size_t PAGE_SIZE = 4096;
+	constexpr size_t MAX_MEMOREY = 16 * 1024 * 1024; // 16 megabyte support for right now
+
+	struct bitops::bitmap_t<MAX_MEMOREY/PAGE_SIZE> page_bitmap;
+	void kmemory_init(){
+		extern char __end __asm("_end");
+		memory_start =  (reinterpret_cast<uintptr_t>(&__end)+(PAGE_SIZE-1)) & ~PAGE_SIZE;
+		memory_end = (ARM::MSP::get()-(PAGE_SIZE-1)) & ~PAGE_SIZE;
+		memory_size=memory_end-memory_start;
+		memory_page_count=memory_size/PAGE_SIZE;
+		memory_heap_end=memory_heap_start=memory_start;
+		// and just ot make sure the math works up right
+		ASSERT((memory_page_count*PAGE_SIZE)==memory_size);
+		printk("kmemory start=%p end=%p size=%d pages=%d\r\n",memory_start,memory_end, memory_end-memory_start,memory_page_count);
+
+		for(uint32_t i=0;i<memory_page_count;i++){
+			page_bitmap[i].clear();
+		}
+		memory_page_count =
+		uintptr_t stack = ARM::MSP::get();
+		reinterpret_cast<void*>(rmalloc(size));
+	}
+	void* kalloc(size_t size){
+
+	}
+	void kfree(void*ptr, size_t size){
+
+	}
+};
+
+// hack for right now
+
+extern "C" caddr_t _sbrk(int incr)
+{
+	extern char end __asm("end");
+	static char* heap_end = NULL;
+	char *prev_heap_end;
+	//assert(cpu);
+	if (heap_end== 0) { heap_end = &end; } // } ,sizeof(uint32_t)); }
+	//assert(proc);
+	prev_heap_end = heap_end;
+	if ((prev_heap_end + incr) > (char *)__get_MSP())
+	{
+//		write(1, "Heap and stack collision\n", 25);
+//		abort();
+		errno = ENOMEM;
+		return (caddr_t) -1;
+	}
+	heap_end += incr;
+	return (caddr_t) prev_heap_end;
+}

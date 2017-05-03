@@ -1,6 +1,6 @@
-11:00:40 **** Incremental Build of configuration Debug for project stm32f746g-disco_hal_lib ****
+12:24:59 **** Incremental Build of configuration Debug for project stm32f746g-disco_hal_lib ****
 make all 
 make: Nothing to be done for `all'.
 
-11:00:41 Build Finished (took 609ms)
+12:25:00 Build Finished (took 659ms)
 

@@ -1,0 +1,111 @@
+/*
+ * memory.hpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#ifndef OS_MEMORY_HPP_
+#define OS_MEMORY_HPP_
+
+
+
+//#include <sys\queue.h>
+
+#include "types.hpp"
+#include "slist.hpp"
+
+
+namespace os {
+	namespace mpu {
+		enum class Access  : uint8_t {
+			None = 0x0,
+			PrivReadWrite = 0x1,
+			PrivReadWrite_UserReadOnly= 0x2,
+			Full = 0x3,
+			PrivReadOnly= 0x5,
+			ReadOnly = 0x6,
+		};
+		enum class RegionSize : uint8_t {
+			_32B = 0xx04U,
+			_64B = 0xx05U,
+			_128B = 0xx06U,
+			_256B = 0xx07U,
+			_512B = 0xx08U,
+			_1KB = 0xx09U,
+			_2KB = 0xx0AU,
+			_4KB = 0xx0BU,
+			_8KB = 0xx0CU,
+			_16KB = 0xx0DU,
+			_32KB = 0xx0EU,
+			_64KB = 0xx0FU,
+			_128KB = 0xx10U,
+			_256KB = 0xx11U,
+			_512KB = 0xx12U,
+			_1MB = 0xx13U,
+			_2MB = 0xx14U,
+			_4MB = 0xx15U,
+			_8MB = 0xx16U,
+			_16MB = 0xx17U,
+			_32MB = 0xx18U,
+			_64MB = 0xx19U,
+			_128MB = 0xx1AU,
+			_256MB = 0xx1BU,
+			_512MB = 0xx1CU,
+			_1GB = 0xx1DU,
+			_2GB = 0xx1EU,
+			_4GB = 0xx1FU,
+		};
+		enum class CacheInfo {
+			StronglyOrdered = 0x0,
+			SharedDevice  = 0x1,
+			WriteThoughNoWriteAllocate  = 02,
+			WriteBackNoWriteAllocate  = 0x3,
+			NonCacheable  = 0x4,
+			WriteBackReadWriteAllocate  = 0x7,
+			NonShareableDevice  = 0x8
+		};
+		class Attribites {
+			static constexpr volatile uint32_t* MPU_REG_START = (volatile uint32_t*)0xE000ED90;
+			uint32_t _reg;
+		public:
+			constexpr Attribites(uint32_t reg=0) : _reg(0) {}
+			constexpr bool neverExecute() const { return (_reg & (1<<28U) )!= 0; }
+			constexpr Access access() const { return static_cast<Access>((_reg >> 24) & 3); }
+			constexpr bool shareable() const { return (_reg & (1<<18U) )!= 0; }
+			constexpr bool cacheable() const { return (_reg & (1<<17U) )!= 0; }
+			constexpr bool bufferable() const { return (_reg & (1<<16U) )!= 0; }
+			constexpr bool subregonEnabled(int sub) const { return ((_reg >>8) & (1<<sub)) != 0; }
+			constexpr bool cacheSettings() const { return static_cast<Access>((_reg >> 16) & 31); }
+			constexpr bool enabled() const { return (_reg & 1 )!= 0; }
+			constexpr RegionSize size() const { return static_cast<RegionSize>((_reg >>1)&0x1F); }
+		};
+	};
+	//struct map coremap[CMAPSIZ];	/* space for core allocation */
+	//struct map swapmap[SMAPSIZ];	/* space for swap allocation */
+	template<size_t _NELMS>
+	class resource_map {
+		struct mapent {
+		    size_t    	size;             /* size of this segment of the map */
+		    union {
+			    void*    	ptr;             /* start of segment */
+			    uintptr_t 	addr;
+		    };
+		};
+		const char    *_name;            /* name of resource, for messages */
+		mapent *_limit;    /* address of last slot in map */
+		mapent _maps[_NELMS];
+
+		//static  resource_map *kmemmap, *mbmap, *swapmap;
+		//int     nswapmap;
+		const static size_t ARGMAPSIZE = 16;
+	public:
+		constexpr static size_t NELMS = _NELMS;
+		resource_map(void* addr, size_t size, const char* name=nullptr);
+		constexpr size_t elements() const { return  NELMS; }
+		uintptr_t alloc(size_t size);
+		void free(void* ptr, size_t size);
+	};
+
+}; /* namespace os */
+#endif /* OS_MEMORY_HPP_ */

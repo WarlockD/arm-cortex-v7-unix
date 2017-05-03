@@ -1,0 +1,18 @@
+/*
+ * memory.cpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#include <os/memory.hpp>
+#include "bitmap.hpp"
+#include <cstdint>
+#include <cstddef>
+#include <cassert>
+// memory.c stuff
+#include <cstdlib>
+#include <cstring>
+namespace os{
+
+};

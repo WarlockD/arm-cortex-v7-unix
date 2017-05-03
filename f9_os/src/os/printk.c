@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stm32f7xx.h>
+#include <assert.h>
+
 //#include "buf.h"
 //#include "user.h"
 //#include "tty.h"
@@ -14,17 +17,113 @@ struct tty;
 #include <sys\times.h>
 
 #endif
-static void default_flush() {
+#define QUEUE_LEN 512
+#define QUEUE_OK		0x0
+#define	QUEUE_OVERFLOW		0x1
+#define	QUEUE_EMPTY		0x2
+
+/**
+ * Queue control block
+ */
+struct queue_t {
+	uint32_t top;		/*!< queue top */
+	uint32_t end;		/*!< queue end */
+	size_t size;		/*!< the size of the allocated queue */
+	uint8_t data[QUEUE_LEN];		/*!< pointer to the starting position of buffer */
+};
+struct queue_t kqueue = { 0 ,0 , QUEUE_LEN };
+static uint32_t queue_length(struct queue_t *queue)
+{
+	return (queue->end >= queue->top) ?
+	       (queue->end - queue->top) :
+	       (queue->size + queue->top - queue->end);
+}
+
+uint32_t queue_init(struct queue_t *queue, uint8_t *addr, size_t size)
+{
+	queue->top = 0;
+	queue->end = 0;
+	queue->size = size;
+//	queue->data = addr;
+
+	return QUEUE_OK;
+}
+
+uint32_t queue_push(struct queue_t *queue, uint8_t element)
+{
+	if (queue_length(queue) == queue->size)
+		return QUEUE_OVERFLOW;
+
+	++queue->end;
+
+	if (queue->end == (queue->size - 1))
+		queue->end = 0;
+
+	queue->data[queue->end] = element;
+
+	return QUEUE_OK;
+}
+
+int queue_is_empty(struct queue_t *queue)
+{
+	return queue_length(queue) == 0;
+}
+
+uint32_t queue_pop(struct queue_t *queue, uint8_t *element)
+{
+	if (queue_length(queue) == 0)
+		return QUEUE_EMPTY;
+
+	++queue->top;
+
+	if (queue->top == (queue->size - 1))
+		queue->top = 0;
+
+	*element = queue->data[queue->top];
+
+	return QUEUE_OK;
+}
+
+
+static void empty_flush() {
 	//fflush(stdout);
 }
-static int empty_putchar(int c) { return c; }
-static void empty_flush() {}
+static int empty_putchar(int c) {
+	assert(queue_push(&kqueue,c)==QUEUE_OK);
+	return c;
+}
+static int debug_putchar(int c) { return ITM_SendChar(c); }
+
 static printk_options_t printk_options = 0;
-static int (*printk_putchar)(int) = empty_putchar;
-static void (*printk_flush)() = default_flush;
+static int (*_printk_putchar)(int) = empty_putchar;
+static void (*_printk_flush)() = empty_flush;
 #define HAS_OPTION(O) (printk_options & (O))
 
-#define PUTCHAR(C,...) printk_putchar(C)
+static void printk_flush() {
+	if(_printk_putchar != empty_putchar && !queue_is_empty(&kqueue)){
+		uint8_t ch;
+		while(queue_pop(&kqueue,&ch)== QUEUE_OK) _printk_putchar(ch);
+	}
+	if(_printk_flush != NULL) _printk_flush();
+}
+static void push_char(int c) {
+	while(queue_push(&kqueue,c)!=QUEUE_OK) printk_flush();
+}
+static int printk_putchar(int c){
+	switch(c) {
+	case '\r': break; // ignore
+	case '\n':
+		push_char('\r');
+		push_char('\n');
+		printk_flush();
+		break;
+	default:
+		push_char(c);
+		break;
+	}
+	return c;
+}
+
 typedef struct params_s {
     int len;
     int num1;
@@ -35,33 +134,20 @@ typedef struct params_s {
 } params_t;
 
 void printk_setup(int (*outchar)(int), void(*flush)(),printk_options_t options){
-	printk_flush();
-	printk_putchar = outchar;
-	if((void*)printk_putchar == (void*)empty_putchar && flush == NULL){
-		printk_flush = default_flush;
-	} else if(flush == NULL) {
-		printk_flush = empty_flush;
-	}else {
-		printk_flush = flush;
+	if(empty_putchar == _printk_putchar && !queue_is_empty(&kqueue)){
+		uint8_t ch;
+		while(queue_pop(&kqueue,&ch)== QUEUE_OK) outchar(ch);
+	} else {
+		printk_flush();
 	}
+	_printk_flush = flush;
+	_printk_putchar = outchar;
 	printk_options = options;
 }
 
-void putck(int c) {
-	if(c == '\r') {
-		if(HAS_OPTION(PRINTK_NEWLINEAFTERRETURN)) {
-			printk_putchar('\n');
-			if(HAS_OPTION(PRINTK_FLUSHONNEWLINE)) printk_flush();
-		}
-		if(!HAS_OPTION(PRINTK_IGNORERETURN)) return;
-	} else if(c == '\n') {
-		if(HAS_OPTION(PRINTK_RETURNAFTERNEWLINE))  printk_putchar('\r');
-		if(HAS_OPTION(PRINTK_IGNORENEWLINE)) return;
-	}
-	printk_putchar(c);
-}
+
 void putsk(const char* str){
-	while(*str)putck(*str++);
+	while(*str)printk_putchar(*str++);
 }
 void writek(const uint8_t* data, size_t len){
 	// ignores line options
@@ -216,7 +302,6 @@ static char * ksprintn(uint32_t ul, int base,int* lenp)
 }
 static void kprintnumber(uint32_t ul, int base, int width, int max, int pad_begin,int pad_end) {
 	int tmp;
-	int ch;
 	const char* p = ksprintn(ul, base, &tmp);
     if (width && (width -= tmp) > 0) while (width-- > 0 && max-- > 0) printk_putchar(pad_begin);
     while (max-- > 0){
@@ -290,9 +375,7 @@ void kprintf(const char *fmt, int flags, struct tty *tp, va_list ap)
         width = 0;
         while ((ch = *(uint8_t *)fmt++) != '%') {
         	if(ch == '\0') return;
-        	if(ch == '\r') continue;
-        	else if(ch == '\n') {
-           		printk_putchar('\r');
+        	if(ch == '\n') {
             	printk_putchar('\n');
             	print_timestamp(&time_stamp);
         	} else printk_putchar(ch);
@@ -320,40 +403,47 @@ reswitch:
             p = va_arg(ap, char *);
             q = ksprintn(ul, *p++, NULL);
             while ((ch = *q--))
-            	PUTCHAR(ch, flags, tp);
+            	printk_putchar(ch);
 
             if (!ul)
                 break;
 
             for (tmp = 0; (n = *p++); ) {
                 if (ul & (1 << (n - 1))) {
-                	PUTCHAR(tmp ? ',' : '<', flags, tp);
+                	printk_putchar(tmp ? ',' : '<');
                     for (; (n = *p) > ' '; ++p)
-                    	PUTCHAR(n, flags, tp);
+                    	printk_putchar(n);
                     tmp = 1;
                 } else
                     for (; *p > ' '; ++p)
                         continue;
             }
             if (tmp)
-            	PUTCHAR('>', flags, tp);
+            	printk_putchar('>');
             break;
         case 'c':
-        	PUTCHAR(va_arg(ap, int), flags, tp);
+        	printk_putchar(va_arg(ap, int));
             break;
         case 'r':
             p = va_arg(ap, char *);
             kprintf(p, flags, tp, va_arg(ap, va_list));
             break;
+        case 't': // time stamp format, its two digts, first and second
+        	printk_putchar('[');
+        	kprintnumber(va_arg(ap, int),10,4,4,' ',' ');
+        	printk_putchar('.');
+        	kprintnumber(va_arg(ap, int),10,0,4,' ','0');
+        	printk_putchar(']');
+        	break;
         case 's':
             p = va_arg(ap, char *);
             while ((ch = *p++))
-            	PUTCHAR(ch, flags, tp);
+            	printk_putchar(ch);
             break;
         case 'd':
             ul = lflag ? va_arg(ap, long) : va_arg(ap, int);
             if ((long)ul < 0) {
-            	PUTCHAR('-', flags, tp);
+            	printk_putchar('-');
                 ul = -(long)ul;
             }
             base = 10;
@@ -371,8 +461,8 @@ reswitch:
             base = 16;
             width = 8;
             padc = '0';
-            PUTCHAR('0',flags,tp);
-            PUTCHAR('x',flags,tp);
+            printk_putchar('0');
+            printk_putchar('x');
             goto number;
         case 'x':
             ul = lflag ? va_arg(ap, unsigned long) : va_arg(ap, unsigned int);
@@ -382,18 +472,18 @@ number:
 		p = ksprintn(ul, base, &tmp);
             if (width && (width -= tmp) > 0)
                 while (width--)
-                	PUTCHAR(padc, flags, tp);
+                	printk_putchar(padc);
             while ((ch = *p--))
-            	PUTCHAR(ch, flags, tp);
+            	printk_putchar(ch);
             break;
         default:
-        	PUTCHAR('%', flags, tp);
+        	printk_putchar('%');
             if (lflag)
-            	PUTCHAR('l', flags, tp);
+            	printk_putchar('l');
             /* FALLTHROUGH */
             // no break
         case '%':
-        	PUTCHAR(ch, flags, tp);
+        	printk_putchar(ch);
         	break;
         }
     }

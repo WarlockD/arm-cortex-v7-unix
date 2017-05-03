@@ -1,0 +1,10 @@
+#ifndef _CONF_H_
+#define _CONF_H_
+
+namespace os {
+	static constexpr size_t CONFIG_LARGEST_FPAGE_SHIFT=16;
+	static constexpr size_t CONFIG_SMALLEST_FPAGE_SHIFT=8;
+	static constexpr size_t CONFIG_KIP_EXTRA_SIZE=128;
+};
+
+#endif

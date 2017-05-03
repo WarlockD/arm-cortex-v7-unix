@@ -1,0 +1,18 @@
+/*
+ * ktimer.hpp
+ *
+ *  Created on: Apr 30, 2017
+ *      Author: warlo
+ */
+
+#ifndef OS_KTIMER_HPP_
+#define OS_KTIMER_HPP_
+
+namespace os {
+
+class ktimer {
+};
+
+} /* namespace os */
+
+#endif /* OS_KTIMER_HPP_ */

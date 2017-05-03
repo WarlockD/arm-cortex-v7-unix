@@ -13,9 +13,14 @@
 #include <cstddef>
 #include <functional>
 #include <type_traits>
-
+#include <array>
+#include <algorithm>
+#include <cassert>
+#define ASSERT(A) assert((A))
+#include "conf.hpp"
 // types
 namespace os {
+	extern void panic(const char* message, ...);
 	typedef uintptr_t memptr_t;
 	using ptr_t = uint32_t;
 	using memptr_t = uintptr_t;
@@ -25,6 +30,23 @@ namespace os {
 	template<typename ALIGNT, typename SIZET>
 	static constexpr inline ALIGNT ALIGNED(SIZET size,ALIGNT align) {
 		return (size / align) + ((size & (align - 1)) != 0);
+	}
+	/* Macros for counting and rounding. */
+	template<typename X, typename Y>
+	static constexpr inline X howmany(X x, Y y){ return (((x)+((y)-1))/(y)); }
+	template<typename T>
+	static constexpr inline T roundup(T x, T y) { return  ((((x)+((y)-1))/(y))*(y)); }
+	template<typename T>
+	static constexpr inline T rounddown(T x, T y) { return  ((((x)-((y)-1))/(y))*(y)); }
+	template<typename T>
+	static constexpr inline T powerof2(T x) { return  ((((x)-1)&(x))==0); }
+
+	// Returns the number of decimal digits in n. Leading zeros are not counted
+	// except for n == 0 in which case count_digits returns 1.
+	template <typename Int>
+	inline typename std::make_unsigned<Int> to_unsigned(Int value) {
+	  assert(value >= 0); //  "negative value"
+	  return static_cast<typename std::make_unsigned<Int>::type>(value);
 	}
 
 	namespace l4 {
@@ -82,38 +104,38 @@ namespace os {
 		/*
 		 * NOTE: kip_mem_desc_t differs from L4 X.2 standard
 		 */
-		 struct kip_mem_desc{
+		 struct kip_mem_desc_t{
 			uint32_t 	base;	/* Last 6 bits contains poolid */
 			uint32_t	size;	/* Last 6 bits contains tag */
 		};
 
-		 union kip_apiversion{
+		 typedef union {
 			struct {
 				uint8_t  version;
 				uint8_t  subversion;
 				uint8_t  reserved;
 			} s;
 			uint32_t raw;
-		} ;
+		} kip_apiversion_t;
 
-		 union kip_apiflags {
+		typedef union  {
 			struct {
 				uint32_t  reserved : 28;
 				uint32_t  ww : 2;
 				uint32_t  ee : 2;
 			} s;
 			uint32_t raw;
-		} ;
+		} kip_apiflags_t;
 
-		 union  kip_memory_info{
+		 typedef union  {
 			struct {
 				uint16_t memory_desc_ptr;
 				uint16_t n;
 			} s;
 			uint32_t raw;
-		};
+		}kip_memory_info_t;
 
-		 union kip_threadinfo {
+		 union kip_threadinfo_t {
 			struct {
 				uint32_t user_base;
 				uint32_t system_base;
@@ -121,18 +143,18 @@ namespace os {
 			uint32_t raw;
 		} ;
 
-		struct kip_t {
+		typedef struct  {
 			/* First 256 bytes of KIP are compliant with L4 reference
 			 * manual version X.2 and built in into flash (lower kip)
 			 */
 			uint32_t kernel_id;
-			kip_apiversion api_version;
-			kip_apiflags api_flags;
+			kip_apiversion_t api_version;
+			kip_apiflags_t api_flags;
 			uint32_t kern_desc_ptr;
 
 			uint32_t reserved1[17];
 
-			kip_memory_info memory_info;
+			kip_memory_info_t memory_info;
 
 			uint32_t reserved2[20];
 
@@ -144,14 +166,14 @@ namespace os {
 			uint32_t boot_info;		/* Unimplemented */
 			uint32_t proc_desc_ptr;		/* Unimplemented */
 			uint32_t clock_info;		/* Unimplemented */
-			kip_threadinfo thread_info;
+			kip_threadinfo_t thread_info;
 			uint32_t processor_info;	/* Unimplemented */
 
 			/* Syscalls are ignored because we use SVC/PendSV instead of
 			 * mapping SC into thread's address space
 			 */
 			uint32_t syscalls[12];
-		};
+		}kip_t;
 		static constexpr size_t UTCB_SIZE	=	128;
 
 		struct utcb_t {

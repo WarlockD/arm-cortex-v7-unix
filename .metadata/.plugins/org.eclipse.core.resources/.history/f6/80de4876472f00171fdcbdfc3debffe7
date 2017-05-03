@@ -1,0 +1,195 @@
+/*
+ * buf.hpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#ifndef OS_BUF_HPP_
+#define OS_BUF_HPP_
+
+#include "types.h"
+
+namespace os {
+// buffer interface
+	struct buf {
+	protected:
+		size_t _count;
+		size_t _first;
+		size_t _last;
+		buf() : _count(0), _first(0), _last(0) {}
+	public:
+		virtual uint8_t* data() = 0;
+		virtual size_t size() = 0;
+		void clear() override final { _count = 0; _last = _first; };
+		size_t count() const override final { return  _count; }
+		size_t free_size() const override final { return size() - count; }
+		int write(const uint8_t* data, const size_t count) override final {
+			for(int i=0;i < count; i++){
+				if(_count >= SIZE) return i;
+				put(data[i]);
+			}
+			return (int)count;
+		}
+		int read(const uint8_t* data, const size_t count) override final {
+			for(int i=0;i < count; i++){
+				if(_count == 0) return i;
+				data[i] = get();
+			}
+			return (int)count;
+		}
+		int get() override final {
+			if(_count==0) return -1;
+		    uint8_t c = buf[_first++];
+		    if(_first == SIZE) _first = 0;
+		    --count;
+		    return r;
+		}
+		int put(int c) override final {
+			if(_count==SIZE) return -1;
+		    buf[_last++] = c;
+		    if(_last == SIZE)  _last = 0;
+		    ++count;
+		    return c;
+		}
+
+
+		virtual int write(const uint8_t* data, const size_t count)=0;
+		virtual int read(const uint8_t* data, const size_t count)=0;
+		virtual int get() = 0;
+		virtual int put(int v)=0;
+		virtual size_t count() const = 0;
+		virtual size_t free_size() const = 0;
+		virtual void clear() =0; //{ count = 0; last = first; }
+		virtual ~buf() {}
+	};
+
+
+	template<size_t _SIZE>
+	struct fixed_buf : public buf {
+		constexpr static size_t SIZE = _SIZE;
+		uint8_t _buffer[SIZE];
+		size_t _count;
+		size_t _first;
+		size_t _last;
+	public:
+		void clear() override final { _count = 0; _last = _first; };
+		size_t count() const override final { return    _count; }
+		size_t free_size() const override final { return SIZE - count; }
+		fixed_buf() :_count(0), _first(0), _last(0) {}
+		int write(const uint8_t* data, const size_t count) override final {
+			for(int i=0;i < count; i++){
+				if(_count >= SIZE) return i;
+				put(data[i]);
+			}
+			return (int)count;
+		}
+		int read(const uint8_t* data, const size_t count) override final {
+			for(int i=0;i < count; i++){
+				if(_count == 0) return i;
+				data[i] = get();
+			}
+			return (int)count;
+		}
+		int get() override final {
+			if(_count==0) return -1;
+		    uint8_t c = buf[_first++];
+		    if(_first == SIZE) _first = 0;
+		    --count;
+		    return r;
+		}
+		int put(int c) override final {
+			if(_count==SIZE) return -1;
+		    buf[_last++] = c;
+		    if(_last == SIZE)  _last = 0;
+		    ++count;
+		    return c;
+		}
+	};
+
+
+
+	//------------------------------------------------------------------------------
+	bool TCbuf::put(const uint8_t item)
+	{
+	    if(count == size)
+	        return false;
+
+	    push(item);
+	    return true;
+	}
+	//------------------------------------------------------------------------------
+	uint8_t TCbuf::get()
+	{
+	    if(count)
+	        return pop();
+	    else
+	        return 0;
+	}
+	//------------------------------------------------------------------------------
+	//
+	/// \note
+	/// For internal purposes.
+	/// Use this function with care - it doesn't perform free size check.
+	//
+	void TCbuf::push(const uint8_t item)
+	{
+	    buf[last] = item;
+	    last++;
+	    count++;
+
+	    if(last == size)
+	        last = 0;
+	}
+	//------------------------------------------------------------------------------
+	//
+	/// \note
+	/// For internal purposes.
+	/// Use this function with care - it doesn't perform free size check.
+	//
+	uint8_t TCbuf::pop()
+	{
+	    uint8_t item = buf[first];
+
+	    count--;
+	    first++;
+	    if(first == size)
+	        first = 0;
+
+	    return item;
+	}
+   class TCbuf
+   {
+   public:
+       TCbuf(uint8_t* const Address, const uint8_t Size);
+       bool write(const uint8_t* data, const uint8_t Count);
+       void read(uint8_t* const data, const uint8_t Count);
+       uint8_t get_count() const { return count; }
+       uint8_t get_free_size() const { return size - count; }
+       uint8_t get_byte(const uint8_t index) const;
+       void clear() { count = 0; last = first; }
+       bool put(const uint8_t item);
+       uint8_t get();
+
+   private:
+      //------------------------------------------------------------------------------
+      //
+      //  DESCRIPTON: For internal purposes
+      //
+       void push(const uint8_t item); ///< Use this function with care - it doesn't perform free size check
+       uint8_t pop();                 ///< Use this function with care - it doesn't perform count check
+      //------------------------------------------------------------------------------
+
+   private:
+       uint8_t* buf;
+       uint8_t  size;
+       volatile uint8_t count;
+       uint8_t  first;
+       uint8_t  last;
+   };
+class buf {
+};
+
+} /* namespace os */
+
+#endif /* OS_BUF_HPP_ */

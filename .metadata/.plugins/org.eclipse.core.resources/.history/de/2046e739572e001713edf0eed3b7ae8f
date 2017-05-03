@@ -1,0 +1,26 @@
+/*
+ * ktimer.cpp
+ *
+ *  Created on: Apr 30, 2017
+ *      Author: warlo
+ */
+
+#include <os/ktimer.hpp>
+
+namespace os {
+DECLARE_KTABLE(ktimer_event_t, ktimer_event_table, CONFIG_MAX_KT_EVENTS);
+
+/* Next chain of events which will be executed */
+ktimer_event_t *event_queue = NULL;
+
+/*
+ * Simple ktimer implementation
+ */
+
+static uint64_t ktimer_now;
+static uint32_t ktimer_enabled = 0;
+static uint32_t ktimer_delta = 0;
+static long long ktimer_time = 0;
+
+extern uint32_t SystemCoreClock;
+} /* namespace os */

@@ -90,7 +90,7 @@ namespace bitops {
 		inline bool isset(mask_type n) { return (_bits[n/NFDBITS] & (1 << (n % NFDBITS))) != 0; }
 		inline void zero() { std::fill_n(_bits, sizeof(_bits), 0); }
 	};
-
+#if 0
 	/*
 	 * ARMv6 UP and SMP safe atomic ops.  We use load exclusive and
 	 * store exclusive to ensure that these are atomic.  We may loop
@@ -190,7 +190,7 @@ namespace bitops {
 		: "r" (addr), "Ir" (mask)
 		: "cc");
 	}
-
+#endif
 
 	class simple_lock {
 		uint32_t _lock;
@@ -343,6 +343,7 @@ namespace bitops {
 		constexpr uint32_t size() const { return BITCOUNT; }
 		bitmap_t() {} //
 		void clear() { memset(_bitmap,0,sizeof(_bitmap)); }
+		void set() { memset(_bitmap,0xFFFFFFFF,sizeof(_bitmap)); }
 	};
 	// an object of this class dosn't
 
@@ -443,21 +444,23 @@ namespace bitops {
 			return nullptr;
 		}
 		// allocator interface
+		template<typename F>
 		pointer allocate(size_t size) {
+		//	static_assert(F == T || F == void*, "Incorrect pointers");
 			if(size<=ELEMENT_SIZE) {
-				return alloc();
+				return reinterpret_cast<pointer>(alloc());
 			} else {
+				printk("watch this allocate!\r\n");
 				size_t block_count = size / ELEMENT_SIZE;
 				if(size % ELEMENT_SIZE) block_count++;
 				uint32_t s = 0;
-					uint32_t c =0;
 					uint32_t b =0;
 					for(uint32_t c =0; c < ELEMENT_COUNT;c++,b++) {
 						if(_bitmap[c].test_and_set()) {
 							if(b == block_count) {
 								uint8_t* ptr = _data + (s * ELEMENT_SIZE);
 								printk("allocate(%d): %d blocks allocated [%p]\n", size, block_count, ptr);
-								return ptr;
+								return reinterpret_cast<pointer>(ptr);
 							}
 						}
 						else {
@@ -547,7 +550,7 @@ namespace bitops {
 				return true;
 			} else return false;
 		}
-		bitmap_table_t() : _cursor_begin(bitmap_cursor_t(&_bitmap,0)),  _cursor_end(bitmap_cursor_t(&_bitmap,ELEMENT_COUNT)) {}
+		bitmap_table_t() : _cursor_begin(bitmap_cursor_t(_bitmap[0])),  _cursor_end(bitmap_cursor_t(_bitmap[ELEMENT_COUNT])) {}
 	protected:
 
 		bitmap_t<ELEMENT_COUNT> _bitmap;

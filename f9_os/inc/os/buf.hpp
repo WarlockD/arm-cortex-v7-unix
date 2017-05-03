@@ -8,10 +8,191 @@
 #ifndef OS_BUF_HPP_
 #define OS_BUF_HPP_
 
-namespace os {
+#include "types.hpp"
 
-class buf {
-};
+namespace os {
+// buffer interface
+	// container for data
+
+	class uio {
+	protected:
+		uint8_t    *_data;  /* Base address. */
+		size_t   _size;   /* Length. */
+	public:
+		uio(void * data, size_t size) : _data(data), _size(size) {}
+		uint8_t* data() const { return data; }
+		size_t size() const { return _size; }
+		template<typename T=uint8_t>
+		T& operator[](size_t i) {
+			assert(i < (sizeof(T) * _size));
+			return *(reinterpret_cast<T*>(_data) + i);
+		}
+		template<typename T=uint8_t>
+		const T& operator[](size_t i) const {
+			assert(i < (sizeof(T) * _size));
+			return *(reinterpret_cast<const T*>(_data) + i);
+		}
+		bool operator==(const uio& r) const { return _data == r._data; }
+		bool operator!=(const uio& r) const { return _data != r._data; }
+	};
+	enum class seekdir {
+		begin,
+		end,
+		current
+	};
+	class file_uio : public uio {
+		size_t _offset;
+	public:
+		file_uio(uint8_t* data, size_t size) : uio(data,size), _offset(0) {}
+		file_uio(const uio& u) : uio(u), _offset(0) {}
+		virtual int write(const uint8_t* data, const size_t count){
+			int ret = count+_offset > _size ? _size- count : count;
+			uint8_t* ptr = data<uint8_t>()+_offset;
+			std::copy(ptr, ptr+ ret,data);
+			_offset+=ret;
+			return ret;
+		}
+		virtual int read(const uint8_t* data, const size_t count) {
+			int ret = count+_offset > _size ? _size - count : count;
+			uint8_t* ptr = data<uint8_t>()+_offset;
+			std::copy(data,data+ ret,ptr);
+			_offset+=ret;
+			return ret;
+		}
+		virtual size_t seek(int offset, seekdir dir = seekdir::begin){
+			switch(dir) {
+			case seekdir::begin:
+				_offset = std::min(static_cast<size_t>(to_unsigned(offset)),_size);
+				break;
+			case seekdir::current:
+				_offset = std::min(static_cast<size_t>(_offset + offset),_size);
+				break;
+			case seekdir::end:
+				_offset = std::min(static_cast<size_t>(_size + offset),_size);
+				break;
+			};
+			return _offset;
+		}
+		virtual int putstr(const char* data)=0;
+		virtual int get();
+		virtual int put(int c);
+		virtual ~uio() {}
+	};
+
+	class uio_fifo : public uio {
+	protected:
+		size_t _count;
+		size_t _first;
+		size_t _last;
+	public:
+		uio_fifo(uint8_t* data, size_t size) : uio(data,size), _count(0), _first(0), _last(0) {}
+		void clear() override final { _count = 0; _last = _first; };
+		size_t used() const { return  _count; }
+		size_t free_size() const  { return _size - _count; }
+		int putstr(const char* data) {
+			int i=0;
+			while(data[i]) {
+				if(_count >= _size) return i;
+				put(data[i++]);
+			}
+			return i;
+		}
+		int write(const uint8_t* data, const size_t count) override final {
+			for(int i=0;i < count; i++){
+				if(_count >= size()) return i;
+				put(data[i]);
+			}
+			return (int)count;
+		}
+		int read(const uint8_t* data, const size_t count) override final {
+			for(int i=0;i < count; i++){
+				if(_count == 0) return i;
+				data[i] = get();
+			}
+			return (int)count;
+		}
+		int get() override final {
+			if(_count==0) return -1;
+		    uint8_t c = buf[_first++];
+		    if(_first == _size) _first = 0;
+		    --_count;
+		    return c;
+		}
+		int put(int c) override final {
+			if(_count==size()) return -1;
+		    buf[_last++] = c;
+		    if(_last == _size)  _last = 0;
+		    ++_count;
+		    return c;
+		}
+	};
+
+	template<size_t _SIZE>
+	struct fixed_buf : public buf {
+		constexpr static size_t SIZE = _SIZE;
+		uint8_t _buffer[SIZE];
+	public:
+		fixed_buf() : buf() {}
+		uint8_t* data() { return _buffer; }
+		size_t size() { return SIZE; }
+	};
+
+	// https://github.com/fmtlib/fmt/blob/master/fmt/format.h
+	// partialy yanked from there
+	class ostream {
+
+		buf& _stream;
+	public:
+		ostream(buf& s) : _stream(s) {}
+		ostream& operator<<(int value);
+		ostream& operator<<(int value);
+		void putch(char ch);
+			void puts(const char * s);
+			void put_hex(uint8_t b);
+			void put_hex(uint16_t w) __attribute__((__noinline__))
+			{
+				put_hex((uint8_t)(w >> 8));
+				put_hex((uint8_t)w);
+			}
+			void put_hex(uint32_t w) __attribute__((__noinline__))
+			{
+				put_hex((uint16_t)(w >> 16));
+				put_hex((uint16_t)w);
+			}
+			void put_hex(int i) { put_hex((uint32_t)i); }
+			dbg_uart_t& operator<< (char value) { putch(value); return *this; }
+			dbg_uart_t& operator<< (const char* value)  { puts(value); return *this; }
+		//	dbg_uart_t& operator<< (int value)  { put_hex(value); return *this; }
+		//	dbg_uart_t& operator<< (uint16_t value)  { put_hex(value); return *this; }
+		//	dbg_uart_t& operator<< (uint32_t value)  { put_hex(value); return *this; }
+			dbg_uart_t& operator<< (int value)
+			{
+				char buf[20];
+				puts(ftoa(value, buf, 0));
+				return *this;
+			}
+			dbg_uart_t& operator<< (uint16_t value)
+			{
+				char buf[20];
+				puts(ftoa(value, buf, 0));
+				return *this;
+			}
+			dbg_uart_t& operator<< (uint32_t value)
+			{
+				char buf[20];
+				puts(ftoa(value, buf, 0));
+				return *this;
+			}
+			dbg_uart_t& operator<< (double value)
+			{
+				char buf[20];
+				puts(ftoa(value, buf, 1));
+				return *this;
+			}
+			dbg_uart_t& operator<< (size_t value) { return operator<< ((uint32_t)value); }
+	};
+
+
 
 } /* namespace os */
 

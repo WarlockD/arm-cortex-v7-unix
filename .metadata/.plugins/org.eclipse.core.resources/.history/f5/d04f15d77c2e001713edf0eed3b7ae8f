@@ -1,0 +1,51 @@
+/*
+ * ktimer.cpp
+ *
+ *  Created on: Apr 30, 2017
+ *      Author: warlo
+ */
+
+#include <os/ktimer.hpp>
+#include "bitmap.hpp"
+namespace os {
+#define CONFIG_MAX_KT_EVENTS 30
+	bitops::bitmap_table_t<ktimer_event_t,CONFIG_MAX_KT_EVENTS> ktimer_event_table;
+//DECLARE_KTABLE(ktimer_event_t, ktimer_event_table, CONFIG_MAX_KT_EVENTS);
+
+/* Next chain of events which will be executed */
+ktimer_event_t *event_queue = NULL;
+
+/*
+ * Simple ktimer implementation
+ */
+
+static uint64_t ktimer_now=0;
+static uint32_t ktimer_enabled = 0;
+static uint32_t ktimer_delta = 0;
+static long long ktimer_time = 0;
+
+//extern uint32_t SystemCoreClock;
+} /* namespace os */
+
+extern "C" void SysTick_Handler(void)
+{
+	++os::ktimer_now;
+#if 0
+	if (ktimer_enabled && ktimer_delta > 0) {
+		++ktimer_time;
+		--ktimer_delta;
+
+		if (ktimer_delta == 0) {
+			ktimer_enabled = 0;
+			ktimer_time = ktimer_delta = 0;
+
+#if defined(CONFIG_KDB) && \
+    defined(CONFIG_KTIMER_TICKLESS) && defined(CONFIG_KTIMER_TICKLESS_VERIFY)
+			tickless_verify_stop(ktimer_now);
+#endif	/* CONFIG_KDB */
+
+			softirq_schedule(KTE_SOFTIRQ);
+		}
+	}
+#endif
+}

@@ -1,0 +1,39 @@
+/*
+ * memory.cpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#include <os/memory.hpp>
+#include "bitmap.hpp"
+#include <cstdint>
+#include <cstddef>
+#include <cassert>
+// memory.c stuff
+namespace os{
+const char    *m_name;            /* name of resource, for messages */
+struct  mapent *m_limit;    /* address of last slot in map */
+		resource_map::resource_map(size_t size, void* addr, const char* name, size_t nelm) :
+			: name(name), _limit(static_cast<>)
+			assert(!(nelem < 2 || addr <= 0 || size < 0))
+		}
+
+	    struct mapent *ep;
+
+	    /* mapsize had better be at least 2 */
+	    if (nelem < 2 || addr <= 0 || size < 0)
+	        panic("rminit %s",name);
+	    mp->m_name = name;
+	    mp->m_limit = (struct mapent *)mp + nelem;
+
+	    /* initially the first entry describes all free space */
+	    ep = (struct mapent *)mp + 1;
+	    ep->m_size = size;
+	    ep->m_addr = addr;
+	    /* the remaining slots are unused (indicated by m_addr == 0) */
+	    while (++ep < mp->m_limit)
+	        ep->m_addr = 0;
+	}
+
+};

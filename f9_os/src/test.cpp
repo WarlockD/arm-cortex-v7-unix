@@ -1,15 +1,15 @@
 #include <os/slist.hpp>
+#include <os/stailq.hpp>
 #include <sys\queue.h>
 #include <os\printk.h>
 #include <stm32f7xx.h>
 #include <stm32746g_discovery.h>
-using namespace sys;
 
 struct test_entry {
 	int value;
 	slist_entry<test_entry> list1;
 	slist_entry<test_entry> list2;
-
+	stailq_entry<test_entry> stailq1;
 	constexpr test_entry() : value(0) {}
 	constexpr test_entry(int i) : value(i) {}
 };
@@ -18,37 +18,51 @@ struct test_entry {
 //slist_head<test_entry>  head2(&test_entry::list2);
 slist_head<test_entry,&test_entry::list1> head1;
 slist_head<test_entry,&test_entry::list2>  head2;
+stailq_head<test_entry,&test_entry::stailq1>  head3;
 
 test_entry stuff[5] = { 1,2,3,4,5 };
+template<typename T>
+void print_stuff(const char* message, T&& list) {
+	int pos=0;
+	printk("%s\r\n",message);
+	for(auto& v : list){
+		printk("    %2d = %d\r\n",pos++, v.value);
+	}
+	printk("\r\n");
+}
+void tailq_unittest() {
+	int count = 22;
+	test_entry* e=nullptr;
+	for(auto &a : stuff) {
+		head3.insert_tail(&a);
+		if(a.value == 3) e = &a;
+	//	slist_insert_head(head1,&a,&test_entry::list1);
+	}
+	print_stuff("tailq Start",head3);
+	head3.remove(e);
+	print_stuff("tailq removing 3",head3);
+	head3.remove_head();
+	print_stuff("tailq  remove_head",head3);
+	while(1);
 
+}
 
 extern "C" void try_list() {
-	int count = 22;
+	tailq_unittest();
 
+	int count = 22;
+	test_entry* e=nullptr;
 	for(auto &a : stuff) {
 		head1.insert_head(&a);
+		if(a.value == 3) e = &a;
 	//	slist_insert_head(head1,&a,&test_entry::list1);
 	}
-	test_entry* e=nullptr;
-	for(auto& v : head1){
-		if(v.value == 3) e = &v;
-		printk("List num %d\r\n", v.value);
-	}
+	print_stuff("Start",head1);
 	head1.remove(e);
-	printk("removing 3\r\n");
-	for(auto& v : head1){
-		printk("List num %d\r\n", v.value);
-	}
-	printk("removing head\r\n");
+	print_stuff("removing 3",head1);
 	head1.remove_head();
-	for(auto& v : head1){
-		printk("List num %d\r\n", v.value);
-	}
-	for(auto &a : stuff) {
-		a.value = count++;
-		head1.remove(&a);
-	//	slist_insert_head(head1,&a,&test_entry::list1);
-	}
+	print_stuff("remove_head",head1);
+
 	printk("done!\r\n");
 	while(1){
 	//	printk("tick!\r\n");

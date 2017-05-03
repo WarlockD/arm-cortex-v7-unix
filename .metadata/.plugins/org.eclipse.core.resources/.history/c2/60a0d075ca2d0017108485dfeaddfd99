@@ -1,0 +1,299 @@
+/*
+ * memory.cpp
+ *
+ *  Created on: Apr 27, 2017
+ *      Author: Paul
+ */
+
+#include <os/memory.hpp>
+#include "bitmap.hpp"
+#include <cstdint>
+#include <cstddef>
+
+// memory.c stuff
+namespace os{
+#if 0
+#define __KIP
+	l4::kip_t kip  __KIP = {
+		.kernel_id = 0x00000000,
+
+		.api_version.raw = 0x84 << 24 | 7 << 16,	/* L4 X.2, rev 7 */
+		.api_flags.raw	= 0x00000000,		/* Little endian 32-bit */
+	};
+
+/* Extra information on KIP */
+	char __kip_extra[CONFIG_KIP_EXTRA_SIZE] __KIP = "";
+	char *kip_extra = &__kip_extra[0];
+
+	l4::kip_mem_desc_t *mem_desc = NULL;
+
+#endif
+#define DECLARE_MEMPOOL(name_, start_, end_, flags_, tag_)  mempool_t(name_, start_,end_,flags_,tag_)
+
+#define DECLARE_MEMPOOL_2(name, prefix, flags, tag) \
+	DECLARE_MEMPOOL(name, &(prefix ## _start), &(prefix ## _end), flags, tag)
+
+	extern char __stext __asm("_stext"); // start text
+	extern char __etext __asm("_etext"); // start text
+	extern char __end __asm("end"); // _end
+	/* start address for the initialization values of the .data section.
+	defined in linker script */
+	extern char __sidata __asm("_sidata");
+	/* start address for the .data section. defined in linker script */
+	extern char __sdata __asm("_sdata");
+	/* end address for the .data section. defined in linker script */
+	extern char __edata __asm("_edata");
+	/* start address for the .bss section. defined in linker script */
+	extern char __sbss __asm("_sbss");
+	/* end address for the .bss section. defined in linker script */
+	extern char __ebss __asm("_ebss");
+	extern char __estack __asm("_estack"); // end of stack
+	/// end of sram is 0x20050000 - whatever? 0x20050000
+#define END_OF_SRAM (0x20050000 - (1024*8))
+	// making a simple memory map
+	static mempool_t memmap[] = {
+		DECLARE_MEMPOOL("KTEXT", &__stext,&__etext,MP::KR | MP::KX |MP::NO_FPAGE, MPT::KERNEL_TEXT),
+		DECLARE_MEMPOOL("KDATA", &__sdata,&__edata,MP::KR | MP::KW |MP::NO_FPAGE, MPT::KERNEL_DATA),
+		DECLARE_MEMPOOL("KBSS", &__sbss,&__ebss,MP::KR | MP::KW |MP::NO_FPAGE, MPT::KERNEL_DATA),
+		DECLARE_MEMPOOL("SRAM", &__end,END_OF_SRAM,MP::UR | MP::UW |MP::SRAM, MPT::AVAILABLE),
+		DECLARE_MEMPOOL("DEVICES", 0x40000000, 0xB0007800, MP::UR | MP::UW | MP::DEVICES, MPT::DEVICES),
+	};
+	l4::kip_t kip;
+	l4::kip_mem_desc_t kip_extra[sizeof(memmap) / sizeof(mempool_t)];
+
+
+ 	/* Some helper functions */
+ 	/* size value must be 2^k */
+ 	static memptr_t addr_align(memptr_t addr, size_t size) {return (addr + (size - 1)) & ~(size - 1);}
+
+ 	#define CONFIG_SMALLEST_FPAGE_SIZE	(1 << CONFIG_SMALLEST_FPAGE_SHIFT)
+
+ 	memptr_t mempool_align(int mpid, memptr_t addr)
+ 	{
+ 		if ((memmap[mpid].flags & MP::FPAGE_MASK)!=MP::ZERO)
+ 			return addr_align(addr, CONFIG_SMALLEST_FPAGE_SIZE);
+
+ 		return INVALID_FPAGE_REGION;
+ 	}
+ 	int mempool_search(memptr_t base, size_t size)
+ 	{
+ 		int i = 0;
+ 		for(auto& s : memmap){
+ 			if(s.start <= base && s.end >= (base + size)) return i;
+ 			i++;
+ 		}
+ 		return -1;
+ 	}
+ 	mempool_t *mempool_getbyid(int mpid)
+ 	{
+ 		if (mpid == -1)
+ 			return NULL;
+
+ 		return memmap + mpid;
+ 	}
+ 	void memory_init() {
+ 		int j = 0,i = 0;
+ 		//uint32_t *shcsr = (uint32_t *) 0xE000ED24;
+ 		l4::kip_mem_desc_t*mem_desc  =kip_extra;
+
+		/* Initialize mempool table in KIP */
+		for(auto& map : memmap){
+			switch (map.tag) {
+			case MPT::USER_DATA:
+			case MPT::USER_TEXT:
+			case MPT::DEVICES:
+			case MPT::AVAILABLE:
+				mem_desc[j].base = addr_align(
+						(map.start),
+								CONFIG_SMALLEST_FPAGE_SIZE) | i;
+				mem_desc[j].size = addr_align(
+						(map.end - map.start),
+						CONFIG_SMALLEST_FPAGE_SIZE) | static_cast<uint16_t>(map.tag);
+				j++;
+				break;
+			default:
+				break;
+			}
+			i++;
+		}
+
+
+		kip.memory_info.s.memory_desc_ptr = static_cast<uint16_t>(static_cast<uint8_t*>((void*)mem_desc) - static_cast<uint8_t*>((void*)&kip));
+		kip.memory_info.s.n = j;
+
+		//*shcsr |= 1 << 16;	/* Enable memfault */
+ 	}
+	// allocation system
+	using ktable_as = bitops::bitmap_table_t<as_t,as_t::CONFIG_MAX_ADRESS_SPACES>;
+	using ktable_fpages = bitops::bitmap_table_t<fpage_t,fpage_t::CONFIG_MAX_FPAGES>;
+
+ 	static ktable_as as_table;
+ 	static ktable_fpages fpages_table;
+
+
+	void* fpage_t::operator new(std::size_t size) {
+		assert(size == sizeof(fpage_t));
+		return as_table.alloc();
+	}
+	void fpage_t::operator delete(void* ptr){
+		fpages_table.free(ptr);
+	}
+ 	void* as_t::operator new(size_t size) {
+ 		assert(size == sizeof(as_t));
+ 		return as_table.alloc();
+ 	}
+ 	void as_t::operator delete(void* ptr){
+ 		as_table.free(ptr);;
+ 	}
+ 	// end static allocation system
+ 	fpage_t::fpage_t(memptr_t base, size_t shift, int mpid) {
+			//assert(fpage != NULL);
+
+			//fpage->as_next = NULL;
+			//fpage->map_next = fpage; 	/* That is first fpage in mapping */
+			//fpage->mpu_next = NULL;
+ 		fpage.mpid = mpid;
+ 		fpage.flags = 0;
+ 		fpage.rwx = MP_USER_PERM(mempool_getbyid(mpid)->flags);
+
+ 		fpage.base = base;
+ 		fpage.shift = shift;
+
+			if ((mempool_getbyid(mpid)->flags & MP::MAP_ALWAYS)!= MP::ZERO)
+				fpage.flags |= FPAGE_ALWAYS;
+		}
+
+
+ 	// Helper functions
+ 	template<typename T>
+ 	static inline constexpr T fp_addr_log2(T n)  { return ( (n<2) ? 1 : 1+fp_addr_log2(n/2)); }
+ 	//static inline T fp_addr_log2(T addr) { int shift = 0; while ((addr <<= 1) != 0) ++shift; return 31 - shift; }
+ 	/**
+ 	 * Insert chain of fpages into address space
+ 	 * @param first, last - fpage chain
+ 	 * @param as address space
+ 	 *
+ 	 * NOTE: Not checks if as and this chain overlapping
+ 	 */
+ 	void as_t::insert_fpage_chain_to_as(fpage_t *first, fpage_t *last){
+ 		as_head.insert_sorted_chain(first,last);
+ 	}
+ 	/**
+ 	 * Insert single fpage into address space
+ 	 * @param fpage fpage
+ 	 * @param as address space
+ 	 *
+ 	 * NOTE: Not checks if as and this chain overlapping
+ 	 */
+	void as_t::insert_fpage_to_as(fpage_t *fpage){ as_head.insert_sorted_chain(fpage,fpage); }
+	/**
+ 	 * Remove fpage from address space
+ 	 * @param fp fpage
+ 	 * @param as address space
+ 	 *
+ 	 * If fpage is not exist in as fpages list, does nothing
+ 	 */
+	void as_t::remove_fpage_from_as(fpage_t *fp){
+		as_head.remove(fp);
+		mpu_head.remove(fp);
+	}
+	void as_t::setup_mpu(memptr_t sp, memptr_t pc, memptr_t stack_base, size_t stack_size)
+	{
+		fpage_t *mpu[8] = { NULL };
+		//fpage_t *fp;
+		int mpu_first_i;
+		int i, j;
+		mpu_head.remove_all();
+
+		memptr_t start = stack_base;
+		memptr_t end = stack_base + stack_size;
+
+		/* Find stack fpages */
+	//	fp = as_head.first();
+		i = 0;
+		for(auto& fp : as_head){
+			if(i>=8 || start>=end) break;
+			if(fp.addr_in(start,0)) {
+				if (mpu_head.empty()) mpu_head.insert_head(&fp);
+				mpu[i++] = &fp;
+				start = fp.end();
+			}
+		}
+		mpu_first_i = i;
+
+		/*
+		 * We walk through fpage list
+		 * mpu_fp[0] are pc
+		 * mpu_fp[1] are always-mapped fpages
+		 * mpu_fp[2] are others
+		 */
+		if(mpu_head.empty()){
+			// I get it, its a sorting routine
+			fpage_t* mpu_first[3] = { nullptr, nullptr, nullptr };
+			decltype(mpu_head) mpu_fp[3];
+			for(auto& fp : as_head){
+				int priv = 2;
+				if (fp.addr_in(pc, 0)) priv = 0;
+				else if (fp.flags() & fpage_t::FPAGE_ALWAYS)
+					priv = 1;
+				if (mpu_first[priv] == nullptr) {
+					mpu_first[priv]= &fp;
+					mpu_fp[priv].insert_head(&fp);
+				} else {
+					mpu_fp[priv].insert_head(&fp);
+				}
+			}
+			mpu_head.insert_head(mpu_first[0]);
+			mpu_head.insert_after(mpu_first[0],mpu_first[1]);
+			mpu_head.insert_after(mpu_first[1],mpu_first[2]);
+		}
+
+
+		/* Prevent link to stack pages */
+		for(auto& fp : mpu_head){
+			if(i>=8) break;
+			for (j = 0; j < mpu_first_i; j++)
+				if (&fp == mpu[j]) break;
+			if (j == mpu_first_i) mpu[i++] = &fp;
+		}
+		mpu_head.first()= mpu[mpu_first_i];
+
+		/* Setup MPU stack regions */
+		for (j = 0; j < mpu_first_i; ++j) {
+			decltype(mpu_head)::container c=mpu[j];
+
+			mpu_setup_region(j, mpu[j]);
+			if (j < mpu_first_i - 1)
+				mpu[j]->mpu_next = mpu[j + 1];
+			else
+				mpu[j]->mpu_next = NULL;
+		}
+
+		/* Setup MPU fifo regions */
+		for (; j < i; ++j) {
+			mpu_setup_region(j, mpu[j]);
+
+			if (j < i - 1)
+				mpu[j]->mpu_next = mpu[j + 1];
+		}
+
+		/* Clean unused MPU regions */
+		for (; j < 8; ++j) {
+			mpu_setup_region(j, NULL);
+		}
+	}
+
+	void as_map_user(as_t *as)
+	{
+		for (int i = 0; i < sizeof(memmap) / sizeof(mempool_t); ++i) {
+			switch (memmap[i].tag) {
+			case MPT_USER_DATA:
+			case MPT_USER_TEXT:
+			case MPT_DEVICES:
+				/* Map user text, data and hardware device memory */
+				assign_fpages(as, memmap[i].start,
+				              (memmap[i].end - memmap[i].start));
+			}
+		}
+	}
+};

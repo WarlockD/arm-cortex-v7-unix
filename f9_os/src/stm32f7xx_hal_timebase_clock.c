@@ -73,9 +73,13 @@ void TIM2_IRQHandler() { HAL_TIM_IRQHandler(&TimHandle); }
   * @param  htim : TIM handle
   * @retval None
   */
+
+__attribute__((weak)) void TimerSecondCallback() {}
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	TimerOverflow++;
+	TimerSecondCallback();
 }
 
 

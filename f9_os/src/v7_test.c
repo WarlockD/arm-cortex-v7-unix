@@ -75,25 +75,7 @@ int _isatty(int fp){
 }
 typedef char* caddr_t;
 
-caddr_t _sbrk(int incr)
-{
-	extern char end __asm("end");
-	static char* heap_end = NULL;
-	char *prev_heap_end;
-	//assert(cpu);
-	if (heap_end== 0) { heap_end = &end; } // } ,sizeof(uint32_t)); }
-	//assert(proc);
-	prev_heap_end = heap_end;
-	if ((prev_heap_end + incr) > (char *)__get_MSP())
-	{
-//		write(1, "Heap and stack collision\n", 25);
-//		abort();
-		errno = ENOMEM;
-		return (caddr_t) -1;
-	}
-	heap_end += incr;
-	return (caddr_t) prev_heap_end;
-}
+
 #if 0
 int ls(int , const char*[]);
 
