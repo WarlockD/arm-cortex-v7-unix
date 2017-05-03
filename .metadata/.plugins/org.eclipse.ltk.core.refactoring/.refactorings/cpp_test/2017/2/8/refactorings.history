@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Rename resource &apos;cpp_test/inc/usart_io_init.h&apos; to &apos;usart_io.h&apos;" description="Rename resource &apos;usart_io_init.h&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="inc/usart_io_init.h" name="usart_io.h" stamp="1488037493016" updateReferences="true"/>
-</session>

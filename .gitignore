@@ -33,3 +33,4 @@
 *.su
 *.d
 */Debug
+.metadata
