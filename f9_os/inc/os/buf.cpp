@@ -7,7 +7,7 @@
 
 #include <os/buf.hpp>
 
-
+namespace os {
 namespace internal {
 // Static data is placed in this class template to allow header-only
 	// configuration.
@@ -57,11 +57,7 @@ namespace internal {
 	};
 	// Returns the number of decimal digits in n. Leading zeros are not counted
 	// except for n == 0 in which case count_digits returns 1.
-	template <typename Int>
-	inline typename std::make_unsigned<Int> to_unsigned(Int value) {
-	  assert(value >= 0); //  "negative value"
-	  return static_cast<typename std::make_unsigned<Int>::type>(value);
-	}
+
 
 	inline uint32_t count_digits(uint64_t n) {
 	  // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
@@ -77,7 +73,7 @@ namespace internal {
 	// A functor that doesn't add a thousands separator.
 	struct NoThousandsSep {
 	  template <typename Char>
-	  void operator()(os::buf &) {}
+	  void operator()(char*) {}
 	};
 
 	// A functor that adds a thousands separator.
@@ -92,9 +88,10 @@ namespace internal {
 	  explicit ThousandsSep(const char* sep) : sep_(sep), digit_index_(0) {}
 
 	  template <typename Char>
-	  void operator()(os::buf &buffer) {
+	  void operator()(char* buffer) {
 		if (++digit_index_ % 3 != 0) return;
-		buffer.putstr(sep_);
+		const char* sep = sep_;
+		while(*sep) *buffer++ = *sep++;
 	  }
 	};
 
@@ -102,9 +99,10 @@ namespace internal {
 	// thousands_sep is a functor that is called after writing each char to
 	// add a thousands separator if necessary.
 	template <typename UInt, typename ThousandsSep>
-	inline void format_decimal(os::buf &buffer, UInt value, size_t num_digits,
-	                           ThousandsSep thousands_sep) {
-	  buffer += num_digits;
+	inline void format_decimal(file_operations &u, UInt value, size_t num_digits, ThousandsSep thousands_sep) {
+		char _buffer[23]; // resonable size?
+		char* buffer = _buffer;
+		buffer += num_digits;
 	  while (value >= 100) {
 	    // Integer division is slow so do it for a group of two digits instead
 	    // of for every digit. The idea comes from the talk by Alexandrescu
@@ -124,11 +122,12 @@ namespace internal {
 	  *--buffer = Data::DIGITS[index + 1];
 	  thousands_sep(buffer);
 	  *--buffer = Data::DIGITS[index];
+	  u.write(static_cast<uint8_t*>(buffer), num_digits);
 	}
 
 	template <typename UInt>
-	inline void format_decimal(os::buf &buffer, UInt value, size_t num_digits) {
-	  format_decimal(buffer, value, num_digits, NoThousandsSep());
+	inline void format_decimal(file_operations &u, UInt value, size_t num_digits) {
+	  format_decimal(u, value, num_digits, NoThousandsSep());
 	  return;
 	}
 };
@@ -136,6 +135,6 @@ namespace internal {
 
 
 
-namespace os {
+
 
 } /* namespace os */

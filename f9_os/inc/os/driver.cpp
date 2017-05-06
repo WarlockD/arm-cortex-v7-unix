@@ -9,4 +9,4 @@
 
 namespace os {
 
-} /* namespace os */
+}; /* namespace os */

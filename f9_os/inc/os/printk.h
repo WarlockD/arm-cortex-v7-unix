@@ -23,7 +23,7 @@ typedef enum printk_options_s {
 	PRINTK_FLUSHONNEWLINE		= 0x10,
 } printk_options_t;
 
-#define SERIAL_OPTIONS  (PRINTK_IGNORERETURN | PRINTK_NEWLINEAFTERRETURN | PRINTK_FLUSHONNEWLINE)
+#define SERIAL_OPTIONS  (printk_options_t)(PRINTK_IGNORERETURN | PRINTK_NEWLINEAFTERRETURN | PRINTK_FLUSHONNEWLINE)
 void printk(const char* msg, ...);
 void putck(int c);
 void putsk(const char* str);

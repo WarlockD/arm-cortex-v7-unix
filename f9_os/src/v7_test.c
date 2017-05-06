@@ -74,12 +74,13 @@ int _isatty(int fp){
 	return 0;
 }
 typedef char* caddr_t;
-
+int _write(int fp, char* data, int size){ return -1; }
+int _read(int fp, char* data, int size){ return -1; }
+void _close(int fp) {}
+int _fstat(int fp,void* meh) { return -1;}
+int _lseek(int fp,int offset, int dir) { return -1; }
 
 #if 0
-int ls(int , const char*[]);
-
-
 void callit(const char* args, int(*func)(int argc, const char*[])){
 	const char* temp[12] = { 0 };
 	char buffer[128];

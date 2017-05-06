@@ -131,6 +131,7 @@ int uartputc(int c) {
 	while(__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TC) == 0);
 	return c & 0xFF;
 }
+
 void xv6_init() {
 	printk("Yea! We are running xv6_init!\b");
 	while(1);
@@ -152,9 +153,9 @@ int main(void)
 	 // __set_PSP((old_msp +KPAGEMASK) & (~KPAGEMASK));
 	 // __set_CONTROL(0x03);
 	 // traps_v7m_init();
-	 //  try_list();
+	   try_list();
 	//  v7_test();
-	  scmrtos_test_start();
+	 // scmrtos_test_start();
 	  while(1);
 	  __asm volatile ( "swi #0" ::);
 	//  traps_v7m_init();

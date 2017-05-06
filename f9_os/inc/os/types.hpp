@@ -43,12 +43,11 @@ namespace os {
 
 	// Returns the number of decimal digits in n. Leading zeros are not counted
 	// except for n == 0 in which case count_digits returns 1.
-	template <typename Int>
-	inline typename std::make_unsigned<Int> to_unsigned(Int value) {
-	  assert(value >= 0); //  "negative value"
-	  return static_cast<typename std::make_unsigned<Int>::type>(value);
+	template <typename Int,typename UInt = typename std::conditional<std::is_signed<Int>::value, std::make_unsigned<Int>,Int>::type>
+	constexpr static inline UInt to_unsigned(Int&& value) {
+	 // assert(value >= 0); //  "negative value"
+	  return static_cast<UInt>(value);
 	}
-
 	namespace l4 {
 
 		// ipc

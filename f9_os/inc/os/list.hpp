@@ -16,10 +16,11 @@ template<typename T> using list_member = list_entry<T> T::*;
 //template<typename T, list_member<T> FIELD> struct list_head;
 template<typename T, list_member<T> FIELD,bool _is_const> struct list_iterator;
 
-template<typename T, list_member<T> FIELD> struct list_pointer;
-
+template<typename T, list_member<T> FIELD>  struct list_pointer;
+template<typename T, list_member<T> FIELD>  struct list_head;;
 template<typename T, list_member<T> FIELD=nullptr>
 struct list_traits {
+	friend T;
 	using difference_type = ptrdiff_t;
 	using iterator_category = std::forward_iterator_tag;
 	using value_type = T;
@@ -66,6 +67,7 @@ struct list_traits {
 // container class so we can access the pointer next functions
 template<typename T, list_member<T> FIELD=nullptr>
 struct list_pointer {
+	friend T;
 	using traits = list_traits<T,FIELD>;
 	using type = typename traits::head_type;
 	using difference_type = typename traits::difference_type;
@@ -96,7 +98,8 @@ protected:
 	pointer _current;
 };
 template<typename T>
-struct list_entry  {
+ struct list_entry  {
+	friend T;
 	using traits = list_traits<T>;
 	using type = typename traits::entry_type;
 	using difference_type = typename traits::difference_type;
@@ -110,15 +113,18 @@ struct list_entry  {
 
 
 	constexpr list_entry() : le_next(nullptr),le_prev(&le_next)  {}
-	pointer le_next;	/* next element */			\
-	pointer *le_prev;	/* address of previous next element */	\
+	pointer le_next;	/* next element */
+	pointer *le_prev;	/* address of previous next element */
+
 };
 
 
 //template<typename T>
 template<typename T, list_member<T> FIELD>
-struct list_head  {
+ struct list_head  {
+	friend T;
 	using traits = list_traits<T,FIELD>;
+
 	using type = list_head<T,FIELD>;
 	using difference_type = typename traits::difference_type;
 	using iterator_category = typename traits::iterator_category;
@@ -239,7 +245,7 @@ struct list_iterator  {
 
 	// do I need to test if the field pointers are equal?
 	bool operator==(const iterator& r) const { return _current == r._current; }
-	bool operator!=(const iterator& r) const { return _current != r._current; }
+	bool operator!=(const iterator& r) const { return !(*this == r); }
 protected:
 	friend list_head<T,FIELD>;
 	pointer _current;
