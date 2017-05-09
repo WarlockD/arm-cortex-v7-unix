@@ -30,8 +30,7 @@ void putsk(const char* str);
 void writek(const uint8_t* data, size_t len);
 void vprintk(const char* msg, va_list va);
 void printk_setup(int (*outchar)(int), void(*flush)(),printk_options_t options);
-void kpanic(const char*fmt);
-
+void kpanic(const char*fmt,...);
 
 
 #ifdef __cplusplus

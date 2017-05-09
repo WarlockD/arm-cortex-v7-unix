@@ -49,7 +49,7 @@ OS::TKernel OS::Kernel;
 OS::TProcessMap OS::TBaseProcess::SuspendedProcessMap = (1ul << (PROCESS_COUNT)) - 1; 
 #endif
 
-TBaseProcess * TKernel::ProcessTable[scmRTOS_PROCESS_COUNT + 1];
+//TBaseProcess * TKernel::ProcessTable[scmRTOS_PROCESS_COUNT + 1];
 
 //------------------------------------------------------------------------------
 //
@@ -75,11 +75,10 @@ void TKernel::sched()
 //------------------------------------------------------------------------------
 void TKernel::sched()
 {
-    uint_fast8_t NextPrty = highest_priority(ReadyProcessMap);
-    if(NextPrty != CurProcPriority)
+    auto NextProc = next_highest_priority();
+    if(NextProc != CurProc)
     {
-        SchedProcPriority = NextPrty;
-    
+        SchedProc = NextProc;
         raise_context_switch();
         do
         {
@@ -87,7 +86,7 @@ void TKernel::sched()
             DUMMY_INSTR();
             disable_context_switch();
         } 
-        while(CurProcPriority != SchedProcPriority); // until context switch done
+        while(NextProc != SchedProc); // until context switch done
     }
 }
 //------------------------------------------------------------------------------
@@ -121,6 +120,8 @@ TBaseProcess::TBaseProcess( stack_item_t * StackPoolEnd
                             , StackPool(aStackPool)
                             , StackSize(StackPoolEnd - aStackPool)
                             , Name(name_str)
+							,  Pid(TKernel::new_pid())
+							, State(ProcessStateType::Init)
                       #endif 
                       #if scmRTOS_PROCESS_RESTART_ENABLE == 1
                             , WaitingProcessMap(0)
@@ -178,11 +179,16 @@ TBaseProcess::TBaseProcess( stack_item_t * Stack
 void TBaseProcess::sleep(timeout_t timeout)
 {
     TCritSect cs;
-
-    Kernel.ProcessTable[Kernel.CurProcPriority]->Timeout = timeout;
-    Kernel.set_process_unready(Kernel.CurProcPriority);
+    Kernel.set_process_sleeping(Kernel.CurProc,timeout);
     Kernel.scheduler();
 }
+void TBaseProcess::wait(void* ptr,uint32_t timeout=0)
+{
+    TCritSect cs;
+    Kernel.set_process_waiting(Kernel.CurProc,ptr, timeout);
+    Kernel.scheduler();
+}
+
 //------------------------------------------------------------------------------
 void OS::TBaseProcess::wake_up()
 {
@@ -191,7 +197,7 @@ void OS::TBaseProcess::wake_up()
     if(this->Timeout)
     {
         this->Timeout = 0;
-        Kernel.set_process_ready(this->Priority);
+        Kernel.set_process_ready(this);
         Kernel.scheduler();
     }
 }
@@ -201,6 +207,7 @@ void OS::TBaseProcess::force_wake_up()
     TCritSect cs;
 
     this->Timeout = 0;
+    this->_waiting = 0;
     Kernel.set_process_ready(this->Priority);
     Kernel.scheduler();
 }

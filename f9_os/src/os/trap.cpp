@@ -341,10 +341,9 @@ static const char* find_exception_string(int ipsr) {
 	for(auto& i : irq_string) if(ipsr == i.exception) return i.text;
 	return "UNKONWN";
 }
+
 extern "C" void do_default(int ipsr, trapframe* tf){
-	if(ipsr < 16){
-		printk("\r\n\r\nUNHANDED EXCEPTION (%d)%s\r\n", ipsr,find_exception_string(ipsr));
-	}
+	kpanic("UNHANDED EXCEPTION (%d)%s\r\n", ipsr,find_exception_string(ipsr));
 	dump_trapframe(tf);
 	display_faults();
 	while(ipsr < 16);

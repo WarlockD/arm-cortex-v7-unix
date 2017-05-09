@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <cassert>
 
+
 template<typename T> struct stailq_entry;
 template<typename T> using stailq_member = stailq_entry<T> T::*;
 
@@ -184,6 +185,14 @@ struct stailq_head  {
 			remove_after(curelm);
 		}
 		//TRASHIT(*oldnext);
+	}
+	inline iterator erase(iterator it) {
+		pointer curelm = it._current;
+		if(curelm!= nullptr) {
+			++it;
+			remove(curelm);
+		}
+		return it;
 	}
 	void swap(head_type& r) noexcept {
 		std::swap(stqh_last,r.stqh_last);

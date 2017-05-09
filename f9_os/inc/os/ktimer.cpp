@@ -12,7 +12,7 @@
 
 #define dbg_printf(VAL,...) printk(__VA_ARGS__)
 namespace os {
-using ktimer_head_t = list_head<ktimer_event_t,&ktimer_event_t::link>;
+using ktimer_head_t = list::head<ktimer_event_t,&ktimer_event_t::link>;
 #define CONFIG_MAX_KT_EVENTS 30
 	bitops::bitmap_table_t<ktimer_event_t,CONFIG_MAX_KT_EVENTS> ktimer_event_table;
 static bool ktimer_enabled = false;
@@ -85,7 +85,7 @@ int ktimer_event_schedule(uint32_t ticks, ktimer_event_t *kte)
 
 		kte->delta = ticks;
 
-		event_queue.insert_head(kte);
+		event_queue.push_front(kte);
 		ktimer_enable(ticks);
 	} else {
 		/* etime is total delta for event from now (-ktimer_value())
@@ -110,7 +110,7 @@ int ktimer_event_schedule(uint32_t ticks, ktimer_event_t *kte)
 		auto next_event = event_queue.begin();
 		if (ticks < next_event->delta) {
 			/* Event should be scheduled before earlier event */
-			event_queue.insert_head(kte);
+			event_queue.push_front(kte);
 			delta = ticks;
 			dbg_printf(DL_KTIMER,
 				   "KTE: Scheduled early event %p with T=%d\n",
@@ -202,8 +202,7 @@ void ktimer_event_handler()
 	event =event_queue.begin();
 	/* walk chain */
 	do {
-		next_event = event;
-		event_queue.remove(next_event++);
+		next_event = event_queue.erase(event);
 		uint32_t h_retvalue = event->handler(*event);
 		if (h_retvalue != 0x0) {
 			dbg_printf(DL_KTIMER,
@@ -216,6 +215,7 @@ void ktimer_event_handler()
 			           event, ktimer_now);
 			ktimer_event_table.destroy(&(*event));
 		}
+		event=next_event;
 	} while(event != last_event);
 
 	if (!event_queue.empty()) {

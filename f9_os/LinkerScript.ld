@@ -95,7 +95,7 @@ SECTIONS
     *(.text*)          /* .text* sections (code) */
     *(.glue_7)         /* glue arm to thumb code */
     *(.glue_7t)        /* glue thumb to arm code */
-    *(.eh_frame)
+    *(.eh_frame)		/* exception table, ahhhh */
     KEEP (*(.init))
     KEEP (*(.fini))
     . = ALIGN(4);

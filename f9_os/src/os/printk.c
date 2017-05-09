@@ -488,10 +488,24 @@ number:
         }
     }
 }
-void kpanic(const char*fmt) {
-	printk("PANIC!!!  %s\n",fmt);
-	while(1);
+
+extern int panic_usart(int c);
+
+void kpanic(const char*fmt,...){
+	_printk_putchar = panic_usart;
+	putsk("\r\n\r\n");
+#ifdef LOGTIME
+    struct timeval time_stamp;
+    gettimeofday(&time_stamp, NULL);
+    print_timestamp(&time_stamp);
+#endif
+	putsk("PANIC!\r\n");
+    va_list ap;
+	va_start(ap,fmt);
+	kprintf(fmt,0,NULL,ap);
+	va_end(ap);
 }
+
 void printk(const char* fmt, ...){
 	va_list ap;
 	va_start(ap,fmt);

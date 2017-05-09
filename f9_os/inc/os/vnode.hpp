@@ -9,10 +9,12 @@
 #define OS_VNODE_HPP_
 
 #include "types.hpp"
-#include "hash.hpp"
+#include "list.hpp"
+
 #include "driver.hpp"
 
 namespace os {
+	typedef char* caddr_t;
 	class vnode;
 	enum class vtype  { VNON, VREG, VDIR, VBLK, VCHR, VLNK, VSOCK, VFIFO, VBAD };
 	enum class vtagtype   {
@@ -89,7 +91,7 @@ namespace os {
 		vflags _flags;
 		uint16_t _usecount;
 		uint16_t _writecount;
-		list_entry<vnode> _link;
+		list::entry<vnode> _link;
 		friend class mount_driver;
 	public:
 
@@ -113,9 +115,9 @@ namespace os {
 	};
 
 	class mount_driver {
-		using vnodelist = list_head<vnode, &vnode::_link> ;
+		using vnodelist = list::head<vnode, &vnode::_link> ;
 		friend vnode;
-		friend list_entry<vnode>;
+		friend list::entry<vnode>;
 	  ///  CIRCLEQ_ENTRY(mount) mnt_list;      /* mount list */
 	   // struct vfsops   *mnt_op;            /* operations on fs */
 

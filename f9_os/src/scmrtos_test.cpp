@@ -5,11 +5,16 @@
 #include <pin_macros.h>
 #include <string.h>
 #include <stdio.h>
-#include <scm\scmRTOS.h>
+
 #include <os\printk.h>
 #include <sys\time.h>
+#include <os\thread.hpp>
 
 
+
+
+#if 0
+#include <scm\scmRTOS.h>
 typedef TProfiler<0> TProfilerBase;
 OS::TRecursiveMutex uart_mutex;
 
@@ -125,23 +130,12 @@ TProc2 Proc2;
 //
 OS::TEventFlag event;
 OS::TEventFlag timer_event;
-
-extern "C" void scmrtos_test_start()
-{
-    // configure IO pins
-  //  PE0::Direct(OUTPUT);
-   // PE0::Off();
-  //  PE1::Direct(OUTPUT);
-  //  PE1::Off();
-
-    // run
-    OS::run();
-}
+#endif
 
 /**
  * Waste some time (payload emulation).
  */
-NOINLINE void waste_time()
+ void waste_time()
 {
 	for (volatile int i = 0; i < 0x3FF; i++) ;
 }
@@ -152,7 +146,7 @@ NOINLINE void waste_time()
  * Called by different processes some time after start.
  * Stack usage changes can be observed in debug terminal.
  */
-NOINLINE int waste_stack(int count)
+int waste_stack(int count)
 {
 	volatile int arr[2];
 	arr[0] = TIM2->CNT;	// any volatile register
@@ -160,6 +154,87 @@ NOINLINE int waste_stack(int count)
 	return (arr[0] + arr[1]) / 2;
 }
 
+int simple_mutex;
+void process1() {
+	using os::kernel;
+	timeval_t time;
+
+	int count=0;
+   for(;;)
+   {
+	   simple_mutex++;
+	   kernel::sleep(&simple_mutex,kernel::PUSER);
+	   simple_mutex--;
+	   // waste some time (simulate payload)
+	   waste_time();
+	   gettimeofday(&time,nullptr);
+	   // waste some stack (increasing with time)
+	   uint32_t t = (time.tv_usec % 40000) / 5000;
+	   waste_stack(t);
+	   printk("\x1B[10;1H TProc0 = %d",count++);
+   }
+}
+void process2() {
+	using os::kernel;
+	timeval_t time;
+
+	int count=0;
+   for(;;)
+   {
+	   if(simple_mutex)
+		   kernel::wakeup(&simple_mutex);
+
+       waste_time();
+       waste_time();
+	   gettimeofday(&time,nullptr);
+	   // waste some stack (increasing with time)
+	  // uint32_t t = (time.tv_usec % 40000) / 5000;
+	  // waste_stack(t);
+	   printk("\x1B[11;1H TProc0 = %d",count++);
+   }
+}
+void process3() {
+	using os::kernel;
+	timeval_t time;
+
+	int count=0;
+   for(;;)
+   {
+	   simple_mutex++;
+	   kernel::sleep(&simple_mutex,kernel::PUSER);
+	   simple_mutex--;
+	   // waste some time (simulate payload)
+	   waste_time();
+	   gettimeofday(&time,nullptr);
+	   // waste some stack (increasing with time)
+	   uint32_t t = (time.tv_usec % 40000) / 5000;
+	   waste_stack(t);
+	   printk("\x1B[12;1H TProc0 = %d",count++);
+   }
+}
+uint32_t proc1_stack[1024];
+uint32_t proc2_stack[1024];
+uint32_t proc3_stack[1024];
+os::proc proc1(proc1_stack, process1);
+os::proc proc2(proc2_stack, process2);
+os::proc proc3(proc3_stack, process3);
+
+
+extern "C" void scmrtos_test_start()
+{
+	printk("starting os!\n");
+	os::kernel::start_os();
+	while(1);
+    // configure IO pins
+  //  PE0::Direct(OUTPUT);
+   // PE0::Off();
+  //  PE1::Direct(OUTPUT);
+  //  PE1::Off();
+
+}
+
+
+#if 0
 namespace OS
 {
     template <>
@@ -244,4 +319,5 @@ void OS::idle_process_user_hook()
 {
 	__WFI();
 }
+#endif
 #endif

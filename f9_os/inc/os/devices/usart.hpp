@@ -3,10 +3,10 @@
 
 
 #include "../types.hpp"
-#include "../hash.hpp"
-#include "../driver.hpp"
-#include <scm\scmRTOS.h>
 
+#include "../driver.hpp"
+#include "../thread.hpp"
+#include <scm/usrlib.h>
 namespace os {
 	namespace device {
 	// wrapper between uart and the driver
@@ -49,9 +49,8 @@ namespace os {
 
 			uart_trasfer_type _type;
 			uart_state _state;
-
-			OS::TEventFlag _incomming_lock;
-			OS::TEventFlag _outgoing_lock;
+			bool _incomming_wait;
+					bool _outgoing_wait;
 			// commands from uart_device
 			// return
 			void recive_data(int c){  // called from the isr when we get a byte
@@ -60,7 +59,10 @@ namespace os {
 				if(_incomming.get_count() == OUTGOING_BUFFER_SIZE) {
 					isr_trasmit_stop();
 				}
-				_incomming_lock.signal_isr();
+				if(_incomming_wait) {
+					_incomming_wait = false;
+					kernel::wakeup(&_incomming_wait);
+				}
 			}
 			int isr_trasmiter_next_byte(){
 				if(_outgoing.get_count() > 0) {
@@ -73,7 +75,10 @@ namespace os {
 			void isr_trasmit_complete(){ // complete trasmition from isr
 				// trasmit should be stopped here
 			  if(_outgoing.get_count() > 0) isr_recive_start(); // restart if we have data
-			  _outgoing_lock.signal_isr();
+			  if(_outgoing_wait){
+				  _outgoing_wait = false;
+					kernel::wakeup(&_outgoing_wait);
+			  }
 			}
 			void isr_error(int error) {
 				assert(error==0); // just freeze for right now
@@ -91,7 +96,7 @@ namespace os {
 			virtual int blocking_read()  = 0;
 		public:
 			uart(uart_trasfer_type type = uart_trasfer_type::blocking) : _incomming(_incomming_buffer, sizeof(_incomming_buffer)) ,
-					_outgoing(_outgoing_buffer, sizeof(_outgoing_buffer)),_type(type) , _state(uart_async_stopped) {}
+					_outgoing(_outgoing_buffer, sizeof(_outgoing_buffer)),_type(type) , _state(uart_async_stopped) ,_incomming_wait(false), _outgoing_wait(false) {}
 			uart_trasfer_type trasfer_type() const { return _type; }
 
 			void start() {
@@ -102,8 +107,6 @@ namespace os {
 						isr_recive_start();
 
 				}
-				 _outgoing_lock.clear();
-				 _incomming_lock.clear();
 			}
 			void stop() {
 				if(_type != uart_trasfer_type::blocking){
@@ -125,7 +128,10 @@ namespace os {
 					while(bytes--) blocking_write(*data++);
 				} else {
 					while(bytes--){
-						while(_outgoing.put(*data) == false) _outgoing_lock.wait();
+						while(_outgoing.put(*data) == false) {
+							_outgoing_wait = true;
+							kernel::sleep(&_outgoing_wait, kernel::PWAIT);
+						}
 						data++;
 					}
 					start();
@@ -138,7 +144,10 @@ namespace os {
 					while(bytes--) *data++ = static_cast<uint8_t>(blocking_read());
 				} else {
 					while(bytes--){
-						while(_incomming.get_count() == 0) _incomming_lock.wait();
+						while(_incomming.get_count() == 0) {
+							_incomming_wait = true;
+							kernel::sleep(&_incomming_wait, kernel::PWAIT);
+						}
 						*data++ = _incomming.get();
 					}
 				}
@@ -147,27 +156,6 @@ namespace os {
 			bool close() override { return true; }
 			size_t ioctrl(int flags, int mode, void* args) override { return 0; }
 		};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 	};

@@ -1,20 +1,41 @@
+#ifndef LIST_DEBUG
+#define LIST_DEBUG(...) do { kpanic(__VA_ARGS__); assert(0); } while(0);
+#endif
+
 #include <os/slist.hpp>
-#include <os/hash.hpp>
+
 #include <os/stailq.hpp>
+#include <os/tailq.hpp>
 #include <sys\queue.h>
 #include <os\printk.h>
+#include <os\thread.hpp>
 #include <stm32f7xx.h>
 #include <stm32746g_discovery.h>
-#include <os/devices/stm32f7_uart.hpp>
 
+#if 0
+#include <os/devices/stm32f7_uart.hpp>
+#include <string.h>
 os::device::stm32f7xx::stm32f7_uart<1> dbg_uart(os::device::uart_trasfer_type::isr);
+
+extern "C" int pk_uartputc(int c) {
+	uint8_t data = c;
+	dbg_uart.write(&data, 1);
+	return c & 0xFF;
+}
+void test_term(const char* str) {
+	dbg_uart.write(str,strlen(str));
+
+}
 
 extern "C" void USART1_IRQHandler(){
 	dbg_uart.isr_handler();
 }
+#endif
+
 struct test_entry {
 	int value;
-	list_entry<test_entry> link;
+	list::entry<test_entry> link;
+	tailq::entry<test_entry> tlink;
 	slist_entry<test_entry> list1;
 	slist_entry<test_entry> list2;
 	stailq_entry<test_entry> stailq1;
@@ -27,7 +48,7 @@ struct test_entry {
 slist_head<test_entry,&test_entry::list1> head1;
 slist_head<test_entry,&test_entry::list2>  head2;
 stailq_head<test_entry,&test_entry::stailq1>  head3;
-
+tailq::head<test_entry,&test_entry::tlink>  head4;
 
 struct test_entry_equals {
 	constexpr bool operator()(const test_entry&l, const test_entry&r) const {
@@ -52,7 +73,7 @@ struct test_entry_hasher {
 };
 
 
-hash_list<test_entry,&test_entry::link,16, test_entry_hasher,test_entry_equals> hlist;
+list::hash<test_entry,&test_entry::link,16, test_entry_hasher,test_entry_equals> hlist;
 #include <cstdlib>
 test_entry stuff[50];
 void setup_stuff(bool random=false){
@@ -73,22 +94,38 @@ void print_stuff(const char* message, T&& list) {
 }
 template<typename T>
 void print_buckets(const char* message, T& hash) {
-	test_entry_hasher hasher;
+	//typename T::hasher hasher;
 	printk("%s\r\n",message);
-	int pos = 0;
+//	int pos = 0;
 	for(size_t i=0; i < T::BUCKET_COUNT;i++) {
 		auto bucket = hash.dbg_bucket(i);
 		if(bucket == nullptr || bucket->empty()) continue;
-		pos=0;
+//		pos=0;
 		printk("[%3d]: ", i);
 		for(auto& v : *bucket) printk("%d\t", v.value);
 		printk("\r\n");
 	}
 
 }
+void tailq_uinttest() {
+	test_entry* e=nullptr;
+	setup_stuff();
+	for(auto &a : stuff) {
+	//	a.value = rand();
+		head4.push_front(&a);
+		if(a.value == 3) e = &a;
+	//	slist_insert_head(head1,&a,&test_entry::list1);
+	}
+	print_stuff("tailq Start",head4);
+	head4.remove(e);
+	print_stuff("removing 3",head4);
+	head4.pop_front();
+	print_stuff("remove_head",head4);
+	while(1);
+}
 
 void hash_uinttest() {
-	test_entry* e=nullptr;
+	typename decltype(hlist)::pointer e=nullptr;
 	setup_stuff();
 	for(auto &a : stuff) {
 	//	a.value = rand();
@@ -117,22 +154,16 @@ void tailq_unittest() {
 	while(1);
 
 }
-#include <string.h>
-extern "C" int pk_uartputc(int c) {
-	uint8_t data = c;
-	dbg_uart.write(&data, 1);
-	return c & 0xFF;
-}
-void test_term(const char* str) {
-	dbg_uart.write(str,strlen(str));
 
-}
 extern "C" void scmrtos_test_start();
 extern "C" void try_list() {
+	//printk_setup(pk_uartputc, NULL, SERIAL_OPTIONS);
 	//dbg_uart.open(os::open_mode::write,nullptr);
-	dbg_uart.debug_enable();
-	test_term("TERM TEST!\r\n");
-	printk_setup(pk_uartputc, NULL, SERIAL_OPTIONS);
+	//dbg_uart.debug_enable();
+//	test_term("TERM TEST!\r\n");
+	tailq_uinttest();
+
+
 	scmrtos_test_start();
 	//hash_uinttest();
 	//tailq_unittest();
@@ -151,8 +182,7 @@ extern "C" void try_list() {
 	print_stuff("remove_head",head1);
 
 	printk("done!\r\n");
-	while(1){
+	while(1);
 	//	printk("tick!\r\n");
-	}
 }
 

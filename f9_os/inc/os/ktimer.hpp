@@ -28,7 +28,7 @@ typedef uint32_t (*ktimer_event_handler_t)(ktimer_event_t& data);
 
 
 struct ktimer_event_t {
-	list_entry<ktimer_event_t> link;
+	list::entry<ktimer_event_t> link;
 	ktimer_event_handler_t handler;
 	uint32_t delta;
 	void *data;

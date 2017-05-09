@@ -219,5 +219,4 @@ __STATIC_INLINE void *atomic_decr_ptr(void **valuePtr, ptrdiff_t delta) {
 
 
 
-
 #endif

@@ -1,12 +1,10 @@
 
-#ifndef OS_VNODE_HPP_
-#define OS_VNODE_HPP_
+#ifndef _OS_STM32F7_UART_HPP_
+#define _OS_STM32F7_UART_HPP_
 
 #include "../types.hpp"
-#include "../hash.hpp"
 #include "../driver.hpp"
 #include "usart.hpp"
-#include <scm\scmRTOS.h>
 #include <stm32f7xx.h>
 #include <stm32746g_discovery.h>
 
@@ -525,8 +523,6 @@ namespace os {
 	};
 
 };
-
-
 
 
 

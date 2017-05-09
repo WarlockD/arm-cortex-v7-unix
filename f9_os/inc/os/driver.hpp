@@ -9,8 +9,7 @@
 #define OS_DRIVER_HPP_
 
 #include "types.hpp"
-#include "hash.hpp"
-#include <scm\scmRTOS.h>
+
 
 namespace os {
 	enum class open_mode {
