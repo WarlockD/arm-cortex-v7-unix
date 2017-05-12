@@ -43,7 +43,7 @@ extern "C" void kmemory_init(){
 	// and just ot make sure the math works up right
 	//ASSERT((memory_page_count*PAGE_SIZE)==memory_size);
 	printk("kmemory start=%p end=%p size=%d pages=%d\r\n",memory_start,memory_end, memory_end-memory_start,memory_page_count);
-	uint32_t i;
+//	uint32_t i;
 	//for(i=0;i<memory_page_count&&i < page_bitmap.size();i++)
 	//	page_bitmap[i].clear();
 	//for(;i < page_bitmap.size(); i++)
@@ -55,7 +55,7 @@ namespace os{
 		// so kalloc reserves stuff by page so we need to be sure size == page
 	void* kalloc(size_t size){
 		ASSERT((size % PAGE_SIZE)==0);
-
+		return nullptr;
 	}
 	void kfree(void*ptr, size_t size){
 

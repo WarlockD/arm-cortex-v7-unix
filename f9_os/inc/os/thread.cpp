@@ -8,7 +8,7 @@
 #include <os/thread.hpp>
 
 
-#endif
+
 extern "C" os::stack_item_t* os_context_switch_hook(os::stack_item_t* sp) {
 	return os::kernel::context_switch_hook(sp);
 }
@@ -26,6 +26,7 @@ extern "C" os::stack_item_t* os_context_switch_hook(os::stack_item_t* sp) {
  */
 extern "C" void os_start(os::stack_item_t *sp)
 {
+#if 0
     // Set PendSV lowest priority value
 #if (defined SHP3_WORD_ACCESS)
     SHPR3 |= (0xFF << 16);
@@ -55,6 +56,7 @@ extern "C" void os_start(os::stack_item_t *sp)
         "    BX      R4                        \n" // Jump to process exec() function
         : [stack]"+r" (sp)  // output
     );
+#endif
     __builtin_unreachable(); // suppress compiler warning "'noreturn' func does return"
    while(1);
 }
@@ -147,30 +149,7 @@ namespace os {
    }
 
        void  proc::init_stack_frame(stack_item_t * Stack , void (*exec)()){
-    	   // cortext target
-    	    /*
-    	     * ARM Architecture Procedure Call Standard [AAPCS] requires 8-byte stack alignment.
-    	     * This means that we must get top of stack aligned _after_ context "pushing", at
-    	     * interrupt entry.
-    	     */
-    	    uintptr_t sptr = (((uintptr_t)Stack - CONTEXT_SIZE) & 0xFFFFFFF8UL) + CONTEXT_SIZE;
-    	    _stack = (stack_item_t*)sptr;
-
-    	    *(--_stack)  = 0x01000000UL;      // xPSR
-    	    *(--_stack)  = reinterpret_cast<stack_item_t>(exec); // Entry Point
-    	#if (defined __SOFTFP__)    // core without FPU
-    	    _stack -= 14;                     // emulate "push LR,R12,R3,R2,R1,R0,R11-R4"
-    	#else                       // core with FPU
-    	    _stack -= 6;                      // emulate "push LR,R12,R3,R2,R1,R0"
-    	    *(--_stack)  = 0xFFFFFFFDUL;      // exc_return: Return to Thread mode, floating-point context inactive, execution uses PSP after return.
-    	    _stack -= 8;                      // emulate "push R4-R11"
-    	#endif
-    	#if scmRTOS_DEBUG_ENABLE == 1
-    	    *(_stack)  = reinterpret_cast<stack_item_t>(&DebugInfo); // dummy load to keep 'DebugInfo' in output binary
-
-    	    for (stack_item_t *pDst = StackBegin; pDst < StackPointer; pDst++)
-    	        *pDst = STACK_DEFAULT_PATTERN;
-    	#endif // scmRTOS_DEBUG_ENABLE
+    	   irq::init_stack_frame(Stack,exec);
        }
 
 	   stack_item_t* kernel::context_switch_hook(stack_item_t* sp) {

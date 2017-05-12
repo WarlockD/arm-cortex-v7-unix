@@ -114,6 +114,7 @@ namespace v6_mini {
 	* same process.
 	*/
 	struct proc;
+	typedef struct ::sigaction sigaction_t;
 	struct user
 	{
 		std::jmp_buf	u_rsav;		/* save r5,r6 when exchanging stacks */
@@ -149,7 +150,7 @@ namespace v6_mini {
 		int	u_ssize;		/* stack size (*64) */
 		int	u_sep;			/* flag for I and D separation */
 
-		sigaction		u_signal[NSIG];		/* disposition of signals */
+		sigaction_t u_signal[NSIG];		/* disposition of signals */
 		time_t	u_utime;		/* this process user time */
 		time_t	u_stime;		/* this process system time */
 		time_t	u_cutime;		/* sum of childs' utimes */
@@ -227,8 +228,9 @@ namespace v6_mini {
 	// sig.c
 	void signal(int apgrp, int sig);
 	void psignal(proc* p, int sig);
-	bool issig();
+	int issig();
 	void psig();
+	void sendsig(void* p,int signo); // sends a signal using the current process stack
 	//bool core();
 };
 

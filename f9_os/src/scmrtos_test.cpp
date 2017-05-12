@@ -219,12 +219,33 @@ os::proc proc1(proc1_stack, process1);
 os::proc proc2(proc2_stack, process2);
 os::proc proc3(proc3_stack, process3);
 
-
+void test_clock(clock_t& start) {
+	clock_t current = clock();
+	if((current-start) < 100) return;
+	printk("CLOCK %d!\r\n",current);
+	start = current;
+}
+void test_time(timeval_t& start) {
+	constexpr static timeval_t sec = {1,0 };
+	timeval_t current;
+	gettimeofday(&current,NULL);
+	if((current-start) < sec) return;
+	printk("TIMEOFDAY!\r\n");
+	start = current;
+}
 extern "C" void scmrtos_test_start()
 {
 	printk("starting os!\n");
-	os::kernel::start_os();
-	while(1);
+	//os::kernel::start_os();
+
+	clock_t start = clock();
+	timeval_t start_tv;
+	gettimeofday(&start_tv,NULL);
+
+	while(1) {
+		test_clock(start);
+		test_time(start_tv);
+	}
     // configure IO pins
   //  PE0::Direct(OUTPUT);
    // PE0::Off();

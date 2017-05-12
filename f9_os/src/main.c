@@ -144,6 +144,11 @@ void xv6_init() {
 }
 void try_list();
 void scmrtos_test_start();
+void register_console(void (*proc)(const char *));
+
+void console_print(const char* str) {
+	while(*str) uartputc(*str++);
+}
 int main(void)
 {
 	 /* Configure the system clock @ 200 Mhz */
@@ -153,6 +158,8 @@ int main(void)
 	  MX_GPIO_Init();
 	  MX_USART1_UART_Init();
 	  printk_setup(uartputc, NULL, SERIAL_OPTIONS);
+	//  register_console(console_print);
+
 	  printk("Booting %s\r\n", __TIME__);
 
 	 // uint32_t old_msp = __get_MSP();

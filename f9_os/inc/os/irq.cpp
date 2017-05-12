@@ -1,5 +1,7 @@
 #include "irq.hpp"
 #include <stm32f7xx.h>
+#include <os\printk.h>
+#include <memory>
 #if 0
 
 // notes for svc handler
@@ -53,6 +55,8 @@ sv_call_handler_c(unsigned int * hardfault_args)
 
 static uint32_t* do_no_switch(uint32_t* stack) { return stack; } // so pendsv can be called and nothing happens
 irq::switch_callback irq_context_switch_hook=do_no_switch;
+
+
 /*
  * PendSV is used to perform a context switch. This is a recommended method for Cortex-M.
  * This is because the Cortex-M automatically saves half of the processor context
@@ -252,9 +256,9 @@ extern "C" void SysTick_Handler()
 	_ticks++;
 	systick_callback();
 }
-
+#if 0
 extern "C" __attribute__((naked))
-static void exec_call(void* arg, void(*exec)(void*)){
+ void exec_call(void* arg, void(*exec)(void*)){
     asm volatile (
     		"push { "
     		"blx r1\n"		// call the exec function
@@ -263,8 +267,9 @@ static void exec_call(void* arg, void(*exec)(void*)){
     :::);
     __builtin_unreachable(); // suppress compiler warning "'noreturn' func does return"
 }
+#endif
  extern "C"
- static void no_exit() {
+  void no_exit() {
 	printk("process existed without exit function\r\n!");
 	while(1);
 }
@@ -273,12 +278,10 @@ namespace irq {
 	void init_system_timer(timer_callback callback, size_t hz){
 		NVIC_SetPriority(SysTick_IRQn, 1);// one higher than 0
 		NVIC_SetPriority(PendSV_IRQn, 0xFF);// highest it can ever go
-		  SysTick->LOAD  = (uint32_t)(ticks - 1UL);                         /* set reload register */
-		  NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
-		                                             /* Load the SysTick Counter Value */
-		  SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk |
-		                   SysTick_CTRL_TICKINT_Msk   |
-		                   SysTick_CTRL_ENABLE_Msk;
+		//  SysTick->LOAD  = (uint32_t)(ticks - 1UL);                         /* set reload register */
+		//  NVIC_SetPriority (SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); /* set Priority for Systick Interrupt */
+		 //                                            /* Load the SysTick Counter Value */
+		//  SysTick->CTRL  = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk   | SysTick_CTRL_ENABLE_Msk;
 
 		SysTick->LOAD = SYSTICKFREQ/hz-1;
 		SysTick->VAL   = 0UL;
@@ -287,34 +290,19 @@ namespace irq {
 
 	void lock_system_timer()   { SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk; }
 	void unlock_system_timer() { SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk; }
+	static inline switch_callback swap_switch_callback(switch_callback callback) {
+		disable_interrupts();
+		switch_callback old = irq_context_switch_hook;
+		irq_context_switch_hook = callback;
+		enable_interrupts();
+		return old;
+	}
 	void init_context_switch(switch_callback func){
 		NVIC_SetPriority(SysTick_IRQn, 1);// one higher than 0
 		NVIC_SetPriority(PendSV_IRQn, 0xFF);// highest it can ever go
-		irq_context_switch_hook = func;
+		swap_switch_callback(func);
 	}
-	uint32_t* init_stack_frame( uint32_t * stack, void (*exec)(), void (*exit_func)()){
-	    /*
-	     * ARM Architecture Procedure Call Standard [AAPCS] requires 8-byte stack alignment.
-	     * This means that we must get top of stack aligned _after_ context "pushing", at
-	     * interrupt entry.
-	     */
-	    uintptr_t sptr = (((uintptr_t)stack - CONTEXT_SIZE) & 0xFFFFFFF8UL) + CONTEXT_SIZE;
-	    uint32_t* stackp = (uint32_t*)sptr;
-	    if(exit_func == nullptr)  exit_func=no_exit; // in case we are an idiot
 
-	    *(--stackp)  = 0x01000000UL;      // xPSR
-	    *(--stackp)  = reinterpret_cast<uint32_t>(exec); // Entry Point, pc
-	    *(--stackp)  = reinterpret_cast<uint32_t>(exit_func); // exit Point, lr
-	#if (defined __SOFTFP__)    // core without FPU
-	    stackp -= 13;
-	    //stackp -= 14;                     // emulate "push LR,R12,R3,R2,R1,R0,R11-R4"
-	#else                       // core with FPU
-	    stackp -= 6;                      // emulate "push LR,R12,R3,R2,R1,R0"
-	    *(--stackp)  = 0xFFFFFFFDUL;      // exc_return: Return to Thread mode, floating-point context inactive, execution uses PSP after return.
-	    stackp -= 8;                      // emulate "push R4-R11"
-	#endif
-	    return stackp;
-	}
 	struct sw_regs {
 		uint32_t R4;
 		uint32_t R5;
@@ -334,30 +322,62 @@ namespace irq {
 		uint32_t LR;
 		uint32_t PC;
 		uint32_t PSR;
-	}__attribute__((alinged(8)));
+	}__attribute__((aligned(8)));
 	struct regs {
 		sw_regs sw;
 		hw_regs hw;
 	};
+	static constexpr size_t CONTEXT_SIZE = sizeof(regs);
+	static constexpr size_t CONTEXT_REG_COUNT = CONTEXT_SIZE/sizeof(uint32_t);
 
+	uint32_t* init_stack_frame( uint32_t * stack, void (*exec)(), void (*exit_func)()){
+	    /*
+	     * ARM Architecture Procedure Call Standard [AAPCS] requires 8-byte stack alignment.
+	     * This means that we must get top of stack aligned _after_ context "pushing", at
+	     * interrupt entry.
+	     */
+	    uintptr_t sptr = (((uintptr_t)stack - CONTEXT_SIZE) & 0xFFFFFFF8UL) + CONTEXT_SIZE;
 
+	    uint32_t* stackp = (uint32_t*)sptr;
+	    if(exit_func == nullptr)  exit_func=no_exit; // in case we are an idiot
 
-	uint32_t* push_exec(uint32_t* stack, void(*exec)(void*), void* arg) {
-		// now you could use stack frame, but that emulates an entire
-		stack -= (sizeof(regs)/sizeof(uint32_t)); // expand the stack to hold state data
-		memcpy(stack, stack+8,sizeof(regs)); // move the context to make room for the function
-		volatile regs* ctx =  reinterpret_cast<volatile regs*>(stack);
-		volatile hw_regs* exe_ctx =  reinterpret_cast<volatile regs*>(ctx+1);
-		exe_ctx = ctx->hw; // copy the regs
-		exe_ctx->R0 = reinterpret_cast<uint32_t>(arg);
-		exe_ctx->R1 = reinterpret_cast<uint32_t>(exec);
-
-		exe_ctx->LR = ctx->hw.LR;
-		exe_ctx->PC = ctx->hw.PC;
-
-
-		stack[CTX_SIZE+REG::LR]
-		uint32_t old_lr = stack[REG::LR];
-		uint32_t old_pc = stack[REG:PC];
+	    *(--stackp)  = 0x01000000UL;      // xPSR
+	    *(--stackp)  = reinterpret_cast<uint32_t>(exec); // Entry Point, pc
+	    *(--stackp)  = reinterpret_cast<uint32_t>(exit_func); // exit Point, lr
+	#if (defined __SOFTFP__)    // core without FPU
+	    stackp -= 13;
+	    //stackp -= 14;                     // emulate "push LR,R12,R3,R2,R1,R0,R11-R4"
+	#else                       // core with FPU
+	    stackp -= 6;                      // emulate "push LR,R12,R3,R2,R1,R0"
+	    *(--stackp)  = 0xFFFFFFFDUL;      // exc_return: Return to Thread mode, floating-point context inactive, execution uses PSP after return.
+	    stackp -= 8;                      // emulate "push R4-R11"
+	#endif
+	    return stackp;
 	}
+
+
+	static
+	__attribute((naked)) void signal_return(){
+		assert(0); // fuckit
+	}
+
+
+	static uint32_t* _setup_exec(uint32_t* stack, uint32_t enter_exec, uint32_t arg,uint32_t exit_exec) {
+		stack -= (sizeof(regs)/sizeof(uint32_t)); // expand the stack to hold state data
+		std::fill_n(stack +CONTEXT_REG_COUNT,CONTEXT_REG_COUNT, 0);
+		volatile regs* ctx =  reinterpret_cast<volatile regs*>(stack); // new context
+		ctx->hw.PSR  = 0x01000000UL;      // xPSR
+		ctx->hw.R0 = arg;
+		ctx->hw.PC = enter_exec;
+		ctx->hw.LR = exit_exec;
+		return stack;
+	}
+	uint32_t* setup_exec(uint32_t* stack, void(*enter_exec)(void*), void* arg,void(*exit_exec)()){
+	    if(exit_exec == nullptr)  exit_exec=no_exit; // in case we are an idiot
+	    return _setup_exec(stack, reinterpret_cast<uint32_t>(enter_exec), reinterpret_cast<uint32_t>(arg), reinterpret_cast<uint32_t>(exit_exec));
+	}
+	uint32_t* sendsig(uint32_t* stack, signal_callback callback,int signo){
+		return _setup_exec(stack, reinterpret_cast<uint32_t>(callback), static_cast<uint32_t>(signo), reinterpret_cast<uint32_t>(signal_return));
+	}
+
 };

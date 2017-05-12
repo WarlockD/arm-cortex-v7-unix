@@ -1,6 +1,7 @@
 #include "proc.hpp"
 #include <os\irq.hpp>
 
+#define IGNORE_SIGNALS
 namespace {
 	static time_t 	lbolt=0;		/* time of day in 60th not in time */
 	static time_t 	current_time=0;	/* time in sec from 1970 */
@@ -44,28 +45,21 @@ namespace v6_mini {
 		rp->p_wchan = chan;
 		rp->p_pri = pri;
 		irq::spl0();
+#ifdef IGNORE_SIGNALS
 		if(pri > 0) {
-			if(issig())
-				goto psig;
+			if(issig()){
+				rp->p_stat = SRUN;
+				std::longjmp(u.u_qsav,1);
+			}
 			swtch();
-			if(issig())
-				goto psig;
+			if(issig()){
+				rp->p_stat = SRUN;
+				std::longjmp(u.u_qsav,1);
+			}
 		} else
+#endif
 			swtch();
 		irq::splx(s);
-		return;
-
-		/*
-		 * If priority was low (>0) and
-		 * there has been a signal,
-		 * execute non-local goto to
-		 * the qsav location.
-		 * (see trap1/trap.c)
-		 */
-	psig:
-		rp->p_stat = SRUN;
-		//std::longjmp(u.u_qsav,1);
-		std::longjmp(rp->u_qsav,1);
 	}
 
 	/*
@@ -289,12 +283,12 @@ namespace v6_mini {
 	 * a flag that asks the process to
 	 * do something to itself.
 	 */
-	bool issig()
+	int issig()
 	{
 		proc * p = u.u_procp;
 		int n;
 		if((n = p->p_sig)!=0) {
-			if(u.u_signal.sa_handler != nullptr)
+			if(u.u_signal[n].sa_handler != nullptr)
 				return(n);
 		}
 		return(0);
@@ -308,22 +302,20 @@ namespace v6_mini {
 	 *	if(issig())
 	 *		psig();
 	 */
+
 	void psig()
 	{
+#ifdef IGNORE_SIGNALS
 		proc* p = u.u_procp;
-		int n = rp->p_sig;
+		int n = p->p_sig;
 		p->p_sig = 0;
-		if((p=u.u_signal[n].sa_handler) != 0) {
+		if((u.u_signal[n].sa_handler) != nullptr) {
 			u.u_error = 0;
 			if(n != SIGILL)
 				u.u_signal[n].sa_handler = 0;
-			n = u.u_ar0[R6] - 4;
-			suword(n+2, u.u_ar0[RPS]);
-			suword(n, u.u_ar0[R7]);
-			u.u_ar0[R6] = n;
-			u.u_ar0[R7] = p;
 			return;
 		}
+#if 0
 		switch(n) {
 
 		case SIGQIT:
@@ -340,6 +332,10 @@ namespace v6_mini {
 				n =+ 0200;
 		}
 		u.u_arg[0] = (u.u_ar0[R0]<<8) | n;
-		exit();
+#endif
+		assert(0);
+		// we exit out on these other signals
+	//exit();
+#endif
 	}
 };

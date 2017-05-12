@@ -64,9 +64,11 @@ static constexpr inline bool operator>=(const timeval_t& l, const timeval_t& r){
 static constexpr inline bool operator<=(const timeval_t& l, const timeval_t& r){
 	return l == r || l < r;
 }
+extern "C" 	void panic(const char*,...);
+extern "C" 	void printk(const char*,...);
 
 namespace os {
-	extern void panic(const char* message, ...);
+
 	typedef uintptr_t memptr_t;
 	using ptr_t = uint32_t;
 	using memptr_t = uintptr_t;

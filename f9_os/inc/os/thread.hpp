@@ -306,11 +306,6 @@ namespace os {
 		static proc* _schedproc;	// static?
 		static int cold; // humm
 		static const char* panicstr ;
-		static void panic(const char* msg){
-			panicstr = msg;
-			kpanic(msg);
-			while(1);
-		}
 
 		static constexpr size_t SQSIZE = 0100;	/* Must be power of 2 */
 

@@ -488,11 +488,12 @@ number:
         }
     }
 }
-
+void  MX_USART1_UART_Init();
 extern int panic_usart(int c);
 
-void kpanic(const char*fmt,...){
-	_printk_putchar = panic_usart;
+void panic(const char*fmt,...){
+	printk_setup(panic_usart,NULL,0);
+	//_printk_putchar = panic_usart;
 	putsk("\r\n\r\n");
 #ifdef LOGTIME
     struct timeval time_stamp;

@@ -54,13 +54,23 @@
 #include <sys\time.h>
 #include <sys\times.h>
 
-#define OVERFLOW_ON_SECOND
+uint64_t sys_usec();
+#define USEC 1000000U
+#define OC_INCRMENT (USEC/(CLOCKS_PER_SEC))-1
+volatile uint32_t jiffies = 0; // based off HZ
+
+clock_t clock() { return jiffies; }
+
+
+
+//#define OVERFLOW_ON_SECOND
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static TIM_HandleTypeDef        TimHandle;
-static uint32_t 				TimerOverflow = 0;
+static volatile uint32_t 				TimerOverflow = 0;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 void TIM2_IRQHandler() { HAL_TIM_IRQHandler(&TimHandle); }
@@ -75,13 +85,23 @@ void TIM2_IRQHandler() { HAL_TIM_IRQHandler(&TimHandle); }
   */
 
 __attribute__((weak)) void TimerSecondCallback() {}
-
+__attribute__((weak)) void JiffiesCallback() {}
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	TimerOverflow++;
 	TimerSecondCallback();
 }
-
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
+	switch(htim->Channel){
+	case HAL_TIM_ACTIVE_CHANNEL_1:
+		++jiffies;
+		htim->Instance->CCR1 +=OC_INCRMENT;
+		JiffiesCallback();
+		break;
+	default:
+		break;
+	}
+}
 
 uint64_t sys_usec() {
 	uint32_t cnt= TIM2->CNT;
@@ -90,13 +110,29 @@ uint64_t sys_usec() {
 		cnt= TIM2->CNT;ret++;
 	}
 #ifdef OVERFLOW_ON_SECOND
-	ret += TimerOverflow * 1000000U;
+	ret = cnt +  (TimerOverflow * USEC);
 #else
-	ret += TimerOverflow<<32;
+	ret = cnt + (TimerOverflow<<32);
 #endif
 	return ret;
 }
-
+clock_t _times (struct tms *buf)
+{
+	if(buf) {
+		buf->tms_utime  = TimerOverflow;
+		buf->tms_stime   = TimerOverflow;
+		buf->tms_cutime   = TimerOverflow;
+		buf->tms_cstime   = TimerOverflow;
+	}
+ // errno = EINVAL;
+  return jiffies;
+}
+clock_t old_clock() {
+	uint64_t stamp = sys_usec();
+	stamp*= _CLOCKS_PER_SEC_;
+	stamp /= USEC;
+	return stamp;
+}
 int _gettimeofday(struct timeval *__p, void *__tz){
 	if(__p) {
 #ifdef OVERFLOW_ON_SECOND
@@ -108,19 +144,14 @@ int _gettimeofday(struct timeval *__p, void *__tz){
 		}
 #else
 		uint64_t stamp = sys_usec();
-		__p->tv_sec = stamp / 1000000U;
-		__p->tv_usec = stamp % 1000000U;
+		__p->tv_sec = stamp / USEC;
+		__p->tv_usec = stamp  %USEC;
 #endif
 	}
 	return 1;
 }
 
-clock_t clock() {
-	uint64_t stamp = sys_usec();
-	stamp*= _CLOCKS_PER_SEC_;
-	stamp /= 1000000U;
-	return stamp;
-}
+
 uint32_t HAL_GetTick(void)
 {
 #ifdef OVERFLOW_ON_SECOND
@@ -180,7 +211,7 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
   }
   
   /* Compute the prescaler value to have TIM2 counter clock equal to 1MHz */
-  uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000U) - 1U);
+  uwPrescalerValue = (uint32_t) ((uwTimclock / USEC) - 1U);
   
   /* Initialize TIM6 */
   TimHandle.Instance = TIM2;
@@ -192,20 +223,41 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
   + Counter direction = Up
   */
  // TimHandle.Init.Period = (1000000U / 1000U) - 1U;
+#ifdef OVERFLOW_ON_SECOND
   TimHandle.Init.Period = (1000000U) - 1U; // resets evey secound
- // TimHandle.Init.Period = UINT32_MAX ;// useconds
+#else
+  TimHandle.Init.Period = UINT32_MAX ;// useconds
+#endif
   TimHandle.Init.Prescaler = uwPrescalerValue;
   TimHandle.Init.ClockDivision = 0;
   TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
   TimHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if(HAL_TIM_Base_Init(&TimHandle) == HAL_OK)
-  {
-    /* Start the TIM time Base generation in interrupt mode */
-    if(HAL_TIM_Base_Start_IT(&TimHandle)== HAL_OK) return HAL_OK;
-  }
-  assert(0);
+  TIM_OC_InitTypeDef jiffysetup;
+  jiffysetup.OCMode = TIM_OCMODE_TIMING;
+  jiffysetup.Pulse = OC_INCRMENT;
+  jiffysetup.OCPolarity = TIM_OCPOLARITY_HIGH;
+
+  assert(HAL_TIM_Base_Init(&TimHandle) == HAL_OK);
+  assert(HAL_TIM_OC_ConfigChannel(&TimHandle, &jiffysetup,TIM_CHANNEL_1)==HAL_OK);
+
+ assert(HAL_TIM_OC_Init(&TimHandle) == HAL_OK);
+
+  assert(HAL_TIM_OC_Start(&TimHandle,TIM_CHANNEL_1) == HAL_OK);
+  assert(HAL_TIM_OC_Start_IT(&TimHandle,TIM_CHANNEL_1) == HAL_OK);
+
+  //TimHandle.Instance->CCR1 =OC_INCRMENT;
+  /* Enable the TIM Update interrupt */
+ // __HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_UPDATE);
+ // __HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_CC1);
+  //TIM_CCxChannelCmd(TimHandle.Instance, TIM_CHANNEL_1, TIM_CCx_ENABLE);
+  /* Enable the Peripheral */
+  //__HAL_TIM_ENABLE(&TimHandle);
+  //
+
+ // assert(HAL_TIM_Base_Start_IT(&TimHandle) == HAL_OK);
+
   /* Return function status */
-  return HAL_ERROR;
+  return HAL_OK;
 }
 
 /**
