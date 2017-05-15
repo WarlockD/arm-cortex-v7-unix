@@ -239,12 +239,13 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
 
   assert(HAL_TIM_Base_Init(&TimHandle) == HAL_OK);
   assert(HAL_TIM_OC_ConfigChannel(&TimHandle, &jiffysetup,TIM_CHANNEL_1)==HAL_OK);
-
+  //enable clock
+#if 0
  assert(HAL_TIM_OC_Init(&TimHandle) == HAL_OK);
 
   assert(HAL_TIM_OC_Start(&TimHandle,TIM_CHANNEL_1) == HAL_OK);
   assert(HAL_TIM_OC_Start_IT(&TimHandle,TIM_CHANNEL_1) == HAL_OK);
-
+#endif
   //TimHandle.Instance->CCR1 =OC_INCRMENT;
   /* Enable the TIM Update interrupt */
  // __HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_UPDATE);

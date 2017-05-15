@@ -10,7 +10,7 @@
 
 #include "types.hpp"
 #include <os\list.hpp>
-
+#include <os\tailq.hpp>
 #include <signal.h>
 
 namespace mimx {
@@ -162,15 +162,37 @@ namespace mimx {
 		struct sw_regs sw;
 		struct hw_regs hw;
 	};
+	enum class proc_state {
+		init,
+		embryeo,
+		running,
+		waiting,
+		zombie
+	};
+	using fixpt_t = uint32_t;
+	/*
+	 * Scheduling policies
+	 */
+
+	/* Add 'rp' to the end of one of the queues of runnable processes. Three
+	 * queues are maintained:
+	 *   TASK_Q   - (highest priority) for runnable tasks
+	 *   SERVER_Q - (middle priority) for MM and FS only
+	 *   USER_Q   - (lowest priority) for user processes
+	 */
+	enum class sched_priority {
+		task =0,
+		server,
+		user
+	};
 
 class proc {
-
-
-
+	//	static constexpr int P_SLOT_FREE      =001;	/* set when slot is not in use */
+	//	static constexpr int NO_MAP           =002;	/* keeps unmapped forked child from running */
+	//	static constexpr int SENDING          =004;	/* set when process blocked trying to send */
+	//	static constexpr int RECEIVING        =010;	/* set when process blocked trying to recv */
 	static proc procs[NR_TASKS + NR_PROCS];	/* process table */
 	static proc * pproc_addr[NR_TASKS + NR_PROCS];
-	static proc *rdy_head[NR_SCHED_QUEUES]; /* ptrs to ready list headers */
-	static proc *rdy_tail[NR_SCHED_QUEUES]; /* ptrs to ready list tails */
 	static inline proc * BEG_PROC_ADDR() { return &procs[0]; }
 	static inline proc * BEG_USER_ADDR() { return &procs[NR_TASKS]; }
 	static inline proc * END_PROC_ADDR() { return &procs[NR_TASKS + NR_PROCS]; }
@@ -200,32 +222,45 @@ class proc {
 		NO_MAP		=0x02,	/* keeps unmapped forked child from running */
 		SENDING		=0x04,	/* process blocked trying to SEND */
 		RECEIVING	=0x08,	/* process blocked trying to RECEIVE */
+		BOTH		=SENDING|RECEIVING,
 		SIGNALED	=0x10,	/* set when new kernel signal arrives */
 		SIG_PENDING	=0x20,	/* unready while signal being processed */
 		P_STOP		=0x40,	/* set when process is being traced */
 		NO_PRIV		=0x80,	/* keep forked system process from running */
 	};
 	stackframe* _regs;
-
+	tailq::entry<proc> _link; // main link on the queue
+	//sched_policy _policy;
+	sched_priority _qprio;
+	proc_state _state;
 	pid_t _nr;		/* number of this process (for fast access) */
 	struct priv *p_priv;		/* system privileges structure */
 	char _rts_flags;		/* SENDING, RECEIVING, etc. */
 
 	char _priority;		/* current scheduling priority */
+	int priority() const { return _priority; }
 	char _max_priority;		/* maximum scheduling priority */
 	char _ticks_left;		/* number of scheduling ticks left */
 	char _quantum_size;		/* quantum size in ticks */
 
 	clock_t _user_time;		/* user time in ticks */
 	clock_t _sys_time;		/* sys time in ticks */
+	//  struct proc *p_callerq;	/* head of list of procs wishing to send */
+	//  struct proc *p_sendlink;	/* link to next proc wishing to send */
+//	  message *p_messbuf;		/* pointer to message buffer */
+	//  int p_getfrom;		/* from whom does process want to receive? */
+//
+	//  struct proc *p_nextready;	/* pointer to next ready process */
+	//  int p_pending;		/* bit map for pending signals 1-16 */
 
-	proc *_nextready;	/* pointer to next ready process */
-	proc *_caller_q;	/* head of list of procs wishing to send */
-	proc *_q_link;	/* link to next proc wishing to send */
-	message *p_messbuf;		/* pointer to passed message buffer */
+//	proc *_nextready;	/* pointer to next ready process */
+	list::entry<proc> _send_link; /* link to next proc wishing to send */
+	list::head<proc,&proc::_send_link> _callerq; /* head of list of procs wishing to send */
+	list::entry<proc> _hash_link; // hash lookup of all the procs
+	message *_messbuf;		/* pointer to passed message buffer */
 	pid_t _getfrom;		/* from whom does process want to receive? */
 	pid_t _sendto;		/* to whom does process want to send? */
-
+	 int _flags;			/* P_SLOT_FREE, SENDING, RECEIVING, etc. */
 	::sigset_t p_pending;		/* bit map for pending kernel signals */
 
 	char p_name[8];	/* name of the process, including \0 */
@@ -239,14 +274,53 @@ class proc {
 	constexpr static inline bool iskernel(proc* p)   { return iskernel(p->_nr); }
 	constexpr static inline bool isuser(int n)   { return  n >= 0 ; }
 	constexpr static inline bool isuser(proc* p)   { return isuser(p->_nr); }
-	int mini_send(int dst,message* m_ptr, uint32_t flags);
-	int mini_receive(int src, message *m_ptr, uint32_t flags);
+
 	int mini_notify(int dst);
-	void enqueue();
-	void dequeue();
-	void sched(int *queue, int *front) ;
-	void pick_proc(void);
+	void ready();
+	void unready();
+	using proc_queue_t = tailq::head<proc,&proc::_link>;
+	static proc_queue_t _waiting;
+	static proc_queue_t  _freeprocs;
+	static proc*   prev_proc;
+	static proc* 	cur_proc;
+	static proc* 	bill_ptr;
+	struct proc_hasher {
+		list::int_hasher<pid_t> hasher;
+		size_t operator()(const proc& p) { return hasher(p._nr); }
+		size_t operator()(const pid_t pid){ return hasher(pid); }
+	};
+	struct proc_equals {
+		list::int_hasher<pid_t> hasher;
+		size_t operator()(const proc& p,const pid_t pid) { return p._nr == pid; }
+		size_t operator()(const proc& l,const proc& r){ return l._nr == r._nr; }
+	};
+	using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equals >;
+	static hash_list_t   _hash; // hash list by pids
+	static proc_queue_t  _tasks; // highest prioirty
+	static proc_queue_t  _server; // secound highest prioirty
+	static proc_queue_t  _user; // all user process highest prioirty
+	static proc_queue_t& next_proc();
+	static proc* lookup(pid_t pid) {
+		return _hash.search(pid);
+	}
+	proc_queue_t& get_attached_queue() const {
+		switch(_qprio){
+		case sched_priority::task : return _tasks;
+		case sched_priority::server: return _server;
+		case sched_priority::user : return _user;
+		};
+		return _user; // compiler thingy, never gets here
+	}
+	static void sched();
+	static int mini_send(proc* caller, proc*  dst,message* m_ptr);
+	static int mini_receive(proc* caller, proc* src, message *m_ptr);
 public:
+	static void pick_proc();
+	void interrupt(message* m_ptr);
+	static int sys_call(int function,			/* SEND, RECEIVE, or BOTH */
+	int caller,			/* who is making this call */
+	int src_dest,			/* source to receive from or dest to send to */
+	message *m_ptr			/* pointer to message */);
 	proc();
 	virtual ~proc();
 	inline bool isempty() const { return _rts_flags == SLOT_FREE; }

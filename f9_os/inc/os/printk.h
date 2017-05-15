@@ -31,7 +31,7 @@ void writek(const uint8_t* data, size_t len);
 void vprintk(const char* msg, va_list va);
 void printk_setup(int (*outchar)(int), void(*flush)(),printk_options_t options);
 void kpanic(const char*fmt,...);
-
+void panic_mode(); // sets the serial port to do blocking write, disable irq on evey printk
 
 #ifdef __cplusplus
 };

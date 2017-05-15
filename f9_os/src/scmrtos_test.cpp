@@ -233,9 +233,13 @@ void test_time(timeval_t& start) {
 	printk("TIMEOFDAY!\r\n");
 	start = current;
 }
+#include "mimix_cpp/fs.hpp"
+
 extern "C" void scmrtos_test_start()
 {
 	printk("starting os!\n");
+
+
 	//os::kernel::start_os();
 
 	clock_t start = clock();

@@ -301,7 +301,10 @@ namespace list {
 	template<typename T, field<T> FIELD>
 	 class head  : public head_impl<T,FIELD> {
 	 public:
+
 	 		using traits = head_impl<T,FIELD>;
+	 		//using begin = traits::begin;
+	 		//using end = traits::end;
 	 		using type = head<T,FIELD>;
 	 		using difference_type = typename traits::difference_type;
 	 		using iterator_category = typename traits::iterator_category;
@@ -424,6 +427,25 @@ namespace list {
 					exists,		// already exists on insert
 					dup,		// already inside by another pointer
 		};
+		template<typename T>
+		struct int_hasher {
+			constexpr size_t operator()(uintptr_t x) const {
+			    x = ((x >> 16) ^ x) * 0x45d9f3b;
+			    x = ((x >> 16) ^ x) * 0x45d9f3b;
+			    x = (x >> 16) ^ x;
+			    return x;
+			}
+			constexpr size_t operator()(const void* x) const {
+				return operator()(reinterpret_cast<uintptr_t>(x));
+			}
+			constexpr size_t operator()(const T x) const {
+				return operator()(static_cast<uintptr_t>(x));
+			}
+			constexpr size_t operator()(const T* x) const {
+				return operator()(reinterpret_cast<uintptr_t>(x));
+			}
+		};
+
 		template<typename T, list::field<T> FIELD, size_t _BUCKET_COUNT, typename HASHER, typename EQUALS>
 		class hash {
 		public:

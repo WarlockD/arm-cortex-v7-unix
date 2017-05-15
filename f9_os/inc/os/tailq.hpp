@@ -415,7 +415,7 @@ namespace tailq {
 			std::swap(*this, move);
 			return *this;
 		}
-
+		bool empty() const { return traits::empty(*this); }
 		iterator begin() { return iterator(tqh_first); }
 		iterator end() { return iterator(nullptr); }
 		const_iterator begin() const { return const_iterator(tqh_first); }
@@ -465,7 +465,6 @@ namespace tailq {
 		const_reference front() const { return *first_entry(); }
 		const_reference back() const { return *last_entry(); }
 		inline void swap(type& head){ traits::swap(*this,head); }
-		bool empty() const { return traits::empty(*this); }
 
 
 		inline void insert_after(pointer listelm, pointer elm){ traits::_insert_after(listelm,elm); }

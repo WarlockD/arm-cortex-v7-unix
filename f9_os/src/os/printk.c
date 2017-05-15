@@ -133,6 +133,20 @@ typedef struct params_s {
     int left_flag;
 } params_t;
 
+void  MX_USART1_UART_Init();
+extern int panic_usart(int c);
+static int g_panic_mode = 0;
+void panic_mode() {
+	if(g_panic_mode) return;
+
+	MX_USART1_UART_Init(); // force start the serial port in case its not started
+	uint8_t ch;
+	while(queue_pop(&kqueue,&ch)== QUEUE_OK) panic_usart(ch); // empty the que using panic mode
+	_printk_putchar = panic_usart;
+	_printk_flush = empty_flush;
+	g_panic_mode = 1;
+}
+
 void printk_setup(int (*outchar)(int), void(*flush)(),printk_options_t options){
 	if(empty_putchar == _printk_putchar && !queue_is_empty(&kqueue)){
 		uint8_t ch;
@@ -373,13 +387,13 @@ void kprintf(const char *fmt, int flags, struct tty *tp, va_list ap)
     for (;;) {
         padc = ' ';
         width = 0;
-        while ((ch = *(uint8_t *)fmt++) != '%') {
+        do {
+        	ch = *(uint8_t *)fmt++;
         	if(ch == '\0') return;
-        	if(ch == '\n') {
-            	printk_putchar('\n');
-            	print_timestamp(&time_stamp);
-        	} else printk_putchar(ch);
-        }
+        	if(ch == '%') break;
+        	printk_putchar(ch);
+        	if(ch == '\n') print_timestamp(&time_stamp);
+        } while(1);
         lflag = 0;
 reswitch:
 	switch (ch = *(uint8_t *)fmt++) {
@@ -399,7 +413,13 @@ reswitch:
             lflag = 1;
             goto reswitch;
         case 'b':
-            ul = va_arg(ap, int);
+            ul = va_arg(ap, unsigned int);
+            printk_putchar('0');
+            printk_putchar('b');
+            for(tmp=31;tmp>=0; tmp--) {
+            	 printk_putchar((ul & (1<<tmp)) !=0? '1': '0');
+            }
+#if 0
             p = va_arg(ap, char *);
             q = ksprintn(ul, *p++, NULL);
             while ((ch = *q--))
@@ -420,6 +440,7 @@ reswitch:
             }
             if (tmp)
             	printk_putchar('>');
+#endif
             break;
         case 'c':
         	printk_putchar(va_arg(ap, int));
@@ -488,11 +509,11 @@ number:
         }
     }
 }
-void  MX_USART1_UART_Init();
-extern int panic_usart(int c);
+
+
 
 void panic(const char*fmt,...){
-	printk_setup(panic_usart,NULL,0);
+	panic_mode();
 	//_printk_putchar = panic_usart;
 	putsk("\r\n\r\n");
 #ifdef LOGTIME
@@ -508,11 +529,14 @@ void panic(const char*fmt,...){
 }
 
 void printk(const char* fmt, ...){
+	uint32_t irq_status = __get_PRIMASK();
+	if(g_panic_mode) __set_PRIMASK(1);
 	va_list ap;
 	va_start(ap,fmt);
 	kprintf(fmt,0,NULL,ap);
 	//vprintk(fmt,ap);
 	va_end(ap);
+	if(g_panic_mode) __set_PRIMASK(irq_status);
 }
 
 /*

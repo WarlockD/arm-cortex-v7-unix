@@ -32,7 +32,7 @@ static void MX_USB_OTG_HS_HCD_Init(void);
 static void MX_GPIO_Init(void);
 static void SystemClock_Config(void);
 static void CPU_CACHE_Enable(void);
-static void MX_USART1_UART_Init(void);
+void MX_USART1_UART_Init(void);
 
 void usart_sync_write(const uint8_t* data, size_t length) {
 	while(HAL_BUSY!=HAL_UART_Transmit(&huart1, (uint8_t*)data, length,500));
@@ -344,7 +344,7 @@ static void MX_RTC_Init(void)
 }
 
 /* USART1 init function */
-static void MX_USART1_UART_Init(void)
+void MX_USART1_UART_Init(void)
 {
 
   huart1.Instance = USART1;

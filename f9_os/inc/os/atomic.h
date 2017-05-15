@@ -47,7 +47,8 @@ namespace ARM {
 			asm volatile(
 			"1:	ldrexb	%0, [%3]\n"
 			"	strexb	%1, %2, [%3]\n"
-			"	cbz	%1, 1b\n"
+					" cmp     %1, #0\n"
+					" beq     1b\n"
 				: "=&r" (ret), "=&r" (tmp)
 				: "r" (nvalue), "r" (ptr)
 				: "memory", "cc");
@@ -60,7 +61,8 @@ namespace ARM {
 						"1:	ldrexb	%0, [%2]\n"
 						"	add	%0, %0, %3\n"
 						"	strexb	%1, %0, [%2]\n"
-				"	cbz	%1, 1b\n"
+						" cmp     %1, #0\n"
+						" beq     1b\n"
 				: "=&r" (result), "=&r" (tmp)
 				: "r" (ptr), "Ir" (value)
 				: "cc");
@@ -73,7 +75,8 @@ namespace ARM {
 						"1:	ldrexb	%0, [%2]\n"
 						"	sub	%0, %0, %3\n"
 						"	strexb	%1, %0, [%2]\n"
-				"	cbz	%1, 1b\n"
+						" cmp     %1, #0\n"
+						" beq     1b\n"
 				: "=&r" (result), "=&r" (tmp)
 				: "r" (ptr), "Ir" (value)
 				: "cc");
@@ -118,33 +121,36 @@ namespace ARM {
 			asm volatile(
 			"1:	ldrexh	%0, [%3]\n"
 			"	strexh	%1, %2, [%3]\n"
-			"	cbz	%1, 1b\n"
+					" cmp     %1, #0\n"
+					" beq     1b\n"
 				: "=&r" (ret), "=&r" (tmp)
 				: "r" (nvalue), "r" (ptr)
 				: "memory", "cc");
 			return static_cast<T>(ret);
 		}
-		__attribute__((always_inline)) static inline T ADD(T value, T *ptr) {
+		__attribute__((always_inline)) static inline T ADD(T value, volatile T *ptr) {
 			T tmp;
 			int result;
 			__asm__ __volatile__(
 					"1:	ldrexh	%0, [%2]\n"
 					"	add	%0, %0, %3\n"
 					"	strexh	%1, %0, [%2]\n"
-			"	cbz	%1, 1b\n"
+					" cmp     %1, #0\n"
+					" beq     1b\n"
 			: "=&r" (result), "=&r" (tmp)
 			: "r" (ptr), "Ir" (value)
 			: "cc");
 			return result;
 		}
-		__attribute__((always_inline)) static inline T SUB(T value, T *ptr) {
+		__attribute__((always_inline)) static inline T SUB(T value, volatile T *ptr) {
 			T tmp;
 			int result;
 			__asm__ __volatile__(
 					"1:	ldrexh	%0, [%2]\n"
 					"	sub	%0, %0, %3\n"
 					"	strexh	%1, %0, [%2]\n"
-			"	cbz	%1, 1b\n"
+					" cmp     %1, #0\n"
+					" beq     1b\n"
 			: "=&r" (result), "=&r" (tmp)
 			: "r" (ptr), "Ir" (value)
 			: "cc");
@@ -195,6 +201,22 @@ namespace ARM {
 				: "memory", "cc");
 			return static_cast<T>(ret);
 		}
+		__attribute__((always_inline))
+		static inline T CMPXCHG(T oval, T nval, volatile T *ptr) {
+			T oldval, res;
+			__builtin_prefetch((const void*)ptr,1);
+			do {
+				__asm__ __volatile__("@ atomic_cmpxchg\n"
+				"ldrex	%1, [%2]\n"
+				"mov	%0, #0\n"
+				"teq	%1, %3\n"
+				"strexeq %0, %4, [%2]\n"
+				    : "=&r" (res), "=&r" (oldval)
+				    : "r" (ptr), "Ir" (oval), "r" (nval)
+				    : "cc");
+			} while (res);
+			return static_cast<T>(oldval);
+		}
 		__attribute__((always_inline)) static inline T ADD(T value, T *ptr) {
 			T tmp;
 			int result;
@@ -202,7 +224,8 @@ namespace ARM {
 					"1:	ldrex	%0, [%2]\n"
 					"	add	%0, %0, %3\n"
 					"	strex	%1, %0, [%2]\n"
-			"	cbz	%1, 1b\n"
+					" cmp     %1, #0\n"
+					" beq     1b\n"
 			: "=&r" (result), "=&r" (tmp)
 			: "r" (ptr), "Ir" (value)
 			: "cc");
@@ -215,7 +238,8 @@ namespace ARM {
 					"1:	ldrex	%0, [%2]\n"
 					"	sub	%0, %0, %3\n"
 					"	strex	%1, %0, [%2]\n"
-			"	cbz	%1, 1b\n"
+					" cmp     %1, #0\n"
+					" beq     1b\n"
 			: "=&r" (result), "=&r" (tmp)
 			: "r" (ptr), "Ir" (value)
 			: "cc");
@@ -293,6 +317,7 @@ using FAULTMASK = PRIV::REG<PRIV::FAULTMASK>;
 using BASEPRI = PRIV::REG<PRIV::BASEPRI>;
 using BASEPRI_MAX = PRIV::REG<PRIV::BASEPRI_MAX>;
 using FPSCR = PRIV::REG<PRIV::FPSCR>;
+using PRIMASK = PRIV::REG<PRIV::PRIMASK>;
 
 struct IRQ_HARDWARE_STACK {
 	uint32_t R0;
@@ -310,6 +335,7 @@ static inline bool atomic_test_and_set(T *ptr)
 {
 	return EX::XCHG(1,ptr) == 1;
 }
+
 template<typename T, typename U, typename EX = PRIV::EXCLUSIVE<T,sizeof(T)>>
 static inline T atomic_xchg(volatile T *ptr, U v) {
 	return EX::XCHG(static_cast<T>(v),ptr);
@@ -331,6 +357,15 @@ static inline T atomic_add(volatile T *ptr, U v) {
 	return EX::ADD(static_cast<T>(v),ptr);
 }
 template<typename T, typename U, typename EX = PRIV::EXCLUSIVE<T,sizeof(T)>>
+static inline T atomic_add_return(volatile T *ptr, U v) {
+	return EX::ADDRET(static_cast<T>(v),ptr);
+}
+template<typename T, typename U, typename V, typename EX = PRIV::EXCLUSIVE<T,sizeof(T)>>
+static inline T atomic_cmpxchg(volatile T *ptr, U old_value, V new_value) {
+	return EX::CMPXCHG(static_cast<T>(old_value),static_cast<T>(new_value), ptr);
+}
+
+template<typename T, typename U, typename EX = PRIV::EXCLUSIVE<T,sizeof(T)>>
 static inline T atomic_sub(volatile T *ptr, U v) {
 	return EX::SUB(static_cast<T>(v),ptr);
 }
@@ -343,6 +378,12 @@ public:
 	bool try_lock() { return !atomic_test_and_set(&_lock); }
 	void lock() { while(atomic_test_and_set(&_lock)) ; }
 	void unlock() { _lock = 0; }
+};
+class simple_irq_lock {
+	uint32_t _mask;
+public:
+	simple_irq_lock() : _mask(PRIMASK::get()) {PRIMASK::set(1); }
+	~simple_irq_lock() { PRIMASK::set(_mask); }
 };
 
 template<typename T>

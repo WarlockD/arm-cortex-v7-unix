@@ -216,6 +216,18 @@ void dump_trapframe (trapframe *tf)
 	buf[4] = '\0';
 	printk(" xpsr: %s\r\n", buf);
 }
+void dump_debug_trapframe (struct hw_trap *tf)
+{
+	printk(" r0: 0x%08x  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x\r\n", tf->r0,tf->r1, tf->r2,tf->r3);
+	printk(" ip: 0x%08x  lr: 0x%08x  pc: 0x%08x ", tf->ip,tf->lr,tf->pc);
+	char buf[5];
+	buf[0] = tf->xpsr & PSR_N_BIT ? 'N' : 'n';
+	buf[1] = tf->xpsr & PSR_Z_BIT ? 'Z' : 'z';
+	buf[2] = tf->xpsr & PSR_C_BIT ? 'C' : 'c';
+	buf[3] = tf->xpsr & PSR_V_BIT ? 'V' : 'v';
+	buf[4] = '\0';
+	printk(" xpsr: %s\r\n", buf);
+}
 void DebugMon_Handler() {
 	while(1); // forever hack
 }
@@ -342,13 +354,42 @@ static const char* find_exception_string(int ipsr) {
 	return "UNKONWN";
 }
 extern "C" void panic(const char*,...);
-extern "C" void do_default(int ipsr, trapframe* tf){
 
+extern "C" void do_debug_default(int ipsr, struct hw_trap* tf) {
+	printk("\r\n\r\n");
+	printk("UNHANDED EXCEPTION (%d)%s\r\n", ipsr,find_exception_string(ipsr));
+	dump_debug_trapframe(tf);
+	display_faults();
+	while(ipsr < 16);
+
+	while(1);
+}
+extern "C" void do_default(int ipsr, trapframe* tf){
+	panic_mode();
 	dump_trapframe(tf);
 	display_faults();
 	panic("UNHANDED EXCEPTION (%d)%s\r\n", ipsr,find_exception_string(ipsr));
-	while(ipsr < 16);
+
+	while(1);
 }
+#if 0
+extern "C"  __attribute__((naked)) void HardFault_Handler() {
+	__asm volatile(
+		    "tst lr, #4\n"
+		    "ite eq\n"
+		    "mrseq r1, msp\n"
+		   	"mrsne r1, psp\n"
+			"mrs r0, ipsr\n"
+			"push {lr}\n"
+			"bl =do_debug_default\n"
+			"pop {lr}\n"
+			"blx lr\n"
+	);
+	///volatile uint32_t* stack __asm("sp");
+
+	//do_debug_default(3, (struct hw_trap*)(stack-1));
+}
+#endif
 #if 0
 __attribute__((naked)) void HardFault_Handler() {
 

@@ -7,71 +7,32 @@
 
 #include "config.hpp"
 
-
+#include <os\bitmap.hpp>
 #include <sys\time.h>
 
-typedef struct ::timeval timeval_t;
-
-static  inline timeval_t operator+(const timeval_t& l, const timeval_t& r){
-	timeval_t tv = { l.tv_sec + r.tv_sec, l.tv_usec + r.tv_usec };
-	if (tv.tv_usec >= 1000000) { tv.tv_sec++; tv.tv_usec -= 1000000; }
-	return tv;
-}
-static inline timeval_t operator-(const timeval_t& l, const timeval_t& r){
-	timeval_t tv = { l.tv_sec - r.tv_sec, l.tv_usec - r.tv_usec };
-	if (tv.tv_usec < 0) { tv.tv_sec--; tv.tv_usec += 1000000; }
-	return tv;
-}
-static inline timeval_t& operator+=(timeval_t& l, const timeval_t& r){
-	l.tv_sec += r.tv_sec;
-	l.tv_usec += r.tv_usec;
-	if (l.tv_usec >= 1000000) { l.tv_sec++; l.tv_usec -= 1000000; }
-	return l;
-}
-static inline timeval_t& operator-=(timeval_t& l, const timeval_t& r){
-	l.tv_sec -= r.tv_sec;
-	l.tv_usec -= r.tv_usec;
-	if (l.tv_usec < 0) { l.tv_sec--; l.tv_usec += 1000000; }
-	return l;
-}
-static constexpr inline bool operator<(const timeval_t& l, const timeval_t& r){
-	return l.tv_sec == r.tv_sec ? l.tv_usec < r.tv_usec : l.tv_sec < r.tv_sec;
-}
-static constexpr inline bool operator>(const timeval_t& l, const timeval_t& r){
-	return l.tv_sec == r.tv_sec ? l.tv_usec > r.tv_usec : l.tv_sec > r.tv_sec;
-}
-static constexpr inline bool operator==(const timeval_t& l, const timeval_t& r){
-	return l.tv_usec == r.tv_usec && l.tv_sec == r.tv_sec;
-}
-static constexpr inline bool operator!=(const timeval_t& l, const timeval_t& r){
-	return l.tv_usec != r.tv_usec || l.tv_sec != r.tv_sec;
-}
-static constexpr inline bool operator>=(const timeval_t& l, const timeval_t& r){
-	return l == r || l > r;
-}
-static constexpr inline bool operator<=(const timeval_t& l, const timeval_t& r){
-	return l == r || l < r;
-}
 extern "C" 	void panic(const char*,...);
 extern "C" 	void printk(const char*,...);
 
 namespace mimx {
-	typedef uint32_t bitchunk_t; /* collection of bits in a bitmap */
+
 	typedef uint32_t reg_t;
 	typedef int irq_id_t;
+
+#if 0
+	typedef uint32_t bitchunk_t; /* collection of bits in a bitmap */
 	/* Constants and macros for bit map manipulation. */
 	constexpr static size_t BITCHUNK_BITS  =  (sizeof(bitchunk_t) * 8);
-	constexpr static inline size_t BITMAP_CHUNKS(size_t nr_bits) { return ((nr_bits+BITCHUNK_BITS-1)/BITCHUNK_BITS); }
+
 
 	constexpr static inline bitchunk_t& MAP_CHUNK(bitchunk_t *map, size_t bit) { return map[bit/BITCHUNK_BITS]; }
 	constexpr static inline size_t CHUNK_OFFSET(size_t bit) { return bit % BITCHUNK_BITS; }
-
+	constexpr static size_t BITMAP_CHUNKS(size_t bits) { return  ((bits+BITCHUNK_BITS-1)/BITCHUNK_BITS); }
 	constexpr static inline bool GET_BIT(bitchunk_t * map, size_t bit) { return (MAP_CHUNK(map,bit) & (1 << CHUNK_OFFSET(bit))) != 0;  }
 	static inline void SET_BIT(bitchunk_t * map, size_t bit) { MAP_CHUNK(map,bit) |= (1 << CHUNK_OFFSET(bit)); }
 	static inline void UNSET_BIT(bitchunk_t * map, size_t bit) { MAP_CHUNK(map,bit) &= ~(1 << CHUNK_OFFSET(bit)); }
+#endif
 
-
-	constexpr static size_t  NR_SYS_CHUNKS	= BITMAP_CHUNKS(mimx::NR_SYS_PROCS);
+	constexpr static size_t  NR_SYS_CHUNKS	= bitops::bitmap_t<mimx::NR_SYS_PROCS>::WORDCOUNT;
 	// constants
 
 	constexpr static char IDLE_Q		 = 15;    /* lowest, only IDLE process goes here */
@@ -88,13 +49,7 @@ namespace mimx {
 	/* Process table and system property related types. */
 	typedef int proc_nr_t;			/* process table entry number */
 	typedef short sys_id_t;			/* system process index */
-	typedef struct {			/* bitmap for system indexes */
-	  bitchunk_t chunk[BITMAP_CHUNKS(NR_SYS_PROCS)];
-	  inline bool get_bit(size_t bit) { return GET_BIT(chunk,bit); }
-	  inline void set_bit(size_t bit) { SET_BIT(chunk,bit); }
-	  inline void  unset_bit(size_t bit) { UNSET_BIT(chunk,bit); }
-	} sys_map_t;
-
+	struct sys_map_t : public bitops::bitmap_t<NR_SYS_PROCS> {};
 	struct boot_image {
 	  proc_nr_t proc_nr;			/* process number to use */
 	 // task_t *initial_pc;			/* start function for tasks */
@@ -103,7 +58,7 @@ namespace mimx {
 	  int priority;				/* scheduling priority */
 	  int stksize;				/* stack size for tasks */
 	  short trap_mask;			/* allowed system call traps */
-	  bitchunk_t ipc_to;			/* send mask protection */
+	 // bitchunk_t ipc_to;			/* send mask protection */
 	  long call_mask;			/* system call protection */
 	  char proc_name[P_NAME_LEN];		/* name in process table */
 	};
