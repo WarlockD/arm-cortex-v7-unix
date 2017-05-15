@@ -14,320 +14,179 @@
 #include <signal.h>
 
 namespace mimx {
-	typedef void (*simple_callback)(void* data);
+	static constexpr size_t HZ	          =60;	/* clock freq (software settable on IBM-PC) */
+	static constexpr size_t BLOCK_SIZE     = 1024;	/* # bytes in a disk block */
+	static constexpr pid_t SUPER_USER  =0;	/* uid of superuser */
 
-	struct tq_struct {
-		list::entry<tq_struct> entry; /* linked list of active bh's */
-		bool sync;			/* must be initialized to zero */
-		void (*routine)(void *);	/* function to call */
-		void *data;			/* argument to function */
-		tq_struct() : sync(false),routine(nullptr),data(nullptr) {}
-		tq_struct(simple_callback func, void* arg=nullptr) : sync(false),routine(func),data(arg) {}
-		inline void run() {
-			auto func = routine;
-			auto a = data;
-			sync = false;
-			func(a);
-		}
-	};
+	static constexpr dev_t MAJOR	           =8;	/* major device = (dev>>MAJOR) & 0377 */
+	static constexpr dev_t MINOR	           =0;	/* minor device = (dev>>MINOR) & 0377 */
 
-	class tq_list {
-		list::head<tq_struct,&tq_struct::entry> _head;
-	public:
-		tq_list() {}
-		void queue_task(tq_struct& nh){
-			if(!nh.sync) {
-				irq_simple_lock lock;
-				_head.push_front(&nh);
-			}
-		}
-		/*
-		 * queue_task_irq_off: put the bottom half handler "bh_pointer" on the list
-		 * "bh_list".  You may call this function only when interrupts are off.
-		 */
-		void queue_task_irq_off(tq_struct& nh){
-			if(!nh.sync) {
-				nh.sync = true;
-				_head.push_front(&nh);
-			}
-		}
-		/*
-		 * queue_task_irq: put the bottom half handler "bh_pointer" on the list
-		 * "bh_list".  You may call this function only from an interrupt
-		 * handler or a bottom half handler.
-		 */
-		void queue_task_irq(tq_struct& nh){
-			if(!test_and_set(nh.sync))
-				_head.push_front(&nh);
-		}
-		void run() {
-			tq_struct*p;
-			while((p = _head.first_entry())!=nullptr) {
-				_head.remove(p);
-				p->run();
-			}
-		}
-		static void run_task_queue(void * f);
-		static tq_list tq_immediate;
-		static tq_list tq_scheduler;
-		static tq_list tq_disk;
-	};
+	static constexpr size_t NR_REGS			   =18; // 16 regs?  enough for now
+//	static constexpr size_t NR_TASKS           =8;	/* number of tasks in the transfer vector */
+//	static constexpr size_t NR_PROCS          =16;	/* number of slots in proc table */
+	static constexpr size_t NR_SEGS            =3;	/* # segments per process */
+	static constexpr size_t T                  =0;	/* proc[i].mem_map[T] is for text */
+	static constexpr size_t D                  =1;	/* proc[i].mem_map[D] is for data */
+	static constexpr size_t S                  =2;	/* proc[i].mem_map[S] is for stack */
+	/* Process numbers of some important processes */
+	static constexpr pid_t MM_PROC_NR         =0;	/* process number of memory manager */
+	static constexpr pid_t FS_PROC_NR         =1;	/* process number of file system */
+	static constexpr pid_t INIT_PROC_NR       =2;	/* init -- the process that goes multiuser */
+	static constexpr pid_t LOW_USER           =2;	/* first user not part of operating system */
 
-
-	struct timer_list {
-		list::entry<timer_list> _entry;
-		clock_t expires;
-		simple_callback func;
-		void* arg;
-		int slack;
-		timer_list() : expires(0),func(nullptr),arg(nullptr),slack(0) {}
-		timer_list(clock_t expires, simple_callback func, void* arg=nullptr) :
-			expires(expires),func(func),arg(arg),slack(0) {}
-	};
-
-	struct rpc_timer {
-		timer_list timer;
-		list::head<timer_list,&timer_list::_entry> list;
-		clock_t expires;
-	};
-	extern clock_t get_uptime();
-/* Masks and flags for system calls. */
-#define SYSCALL_FUNC	0x0F	/* mask for system call function */
-#define SYSCALL_FLAGS   0xF0    /* mask for system call flags */
-#define NON_BLOCKING    0x10	/* prevent blocking, return error */
-
-/* System call numbers that are passed when trapping to the kernel. The
- * numbers are carefully defined so that it can easily be seen (based on
- * the bits that are on) which checks should be done in sys_call().
- */
-	enum SYSCALL {
-		SEND		  = 1,	/* 0 0 0 1 : blocking send */
-		RECEIVE		  = 2,	/* 0 0 1 0 : blocking receive */
-		SENDREC	 	  = 3,  	/* 0 0 1 1 : SEND + RECEIVE */
-		NOTIFY		  = 4,	/* 0 1 0 0 : nonblocking notify */
-		ECHO		  = 8,	/* 1 0 0 0 : echo a message */
-	};
-/* The following bit masks determine what checks that should be done. */
-#define CHECK_PTR       0x0B	/* 1 0 1 1 : validate message buffer */
-#define CHECK_DST       0x05	/* 0 1 0 1 : validate message destination */
-#define CHECK_SRC       0x02	/* 0 0 1 0 : validate message source */
-
-/*==========================================================================*
- * Types relating to messages. 						    *
- *==========================================================================*/
-
-#define M1                 1
-#define M3                 3
-#define M4                 4
-#define M3_STRING         14
-
-	class message {
-		int _source;
-		int _type;
-		bool _irq_pending;
-		clock_t _timestamp;
-
-	public:
-		message(int source, int type, bool irq_pending=false) :
-			_source(source), _type(type),_irq_pending(irq_pending), _timestamp(clock()) {}
-		message(int source, int type,clock_t stamp, bool irq_pending=false) :
-				_source(source), _type(type) ,_irq_pending(irq_pending), _timestamp(stamp){}
-		int source() const { return _source; }
-		int type() const { return _type; }
-		const clock_t& timestamp() const { return _timestamp; }
-		bool irq_pending() const { return _irq_pending; }
-	};
-	struct sw_regs {
-		uint32_t R4;
-		uint32_t R5;
-		uint32_t R6;
-		uint32_t R7;
-		uint32_t R8;
-		uint32_t R9;
-		uint32_t R10;
-		uint32_t R11;
-	};
-	struct hw_regs {
-		uint32_t R0;
-		uint32_t R1;
-		uint32_t R2;
-		uint32_t R3;
-		uint32_t R12;
-		uint32_t LR;
-		uint32_t PC;
-		uint32_t PSR;
-	}__attribute__((aligned(8)));
-
-	struct stackframe {
-		struct sw_regs sw;
-		struct hw_regs hw;
-	};
-	enum class proc_state {
-		init,
-		embryeo,
-		running,
-		waiting,
-		zombie
-	};
-	using fixpt_t = uint32_t;
-	/*
-	 * Scheduling policies
-	 */
-
-	/* Add 'rp' to the end of one of the queues of runnable processes. Three
-	 * queues are maintained:
-	 *   TASK_Q   - (highest priority) for runnable tasks
-	 *   SERVER_Q - (middle priority) for MM and FS only
-	 *   USER_Q   - (lowest priority) for user processes
-	 */
-	enum class sched_priority {
-		task =0,
-		server,
-		user
-	};
-
-class proc {
-	//	static constexpr int P_SLOT_FREE      =001;	/* set when slot is not in use */
-	//	static constexpr int NO_MAP           =002;	/* keeps unmapped forked child from running */
-	//	static constexpr int SENDING          =004;	/* set when process blocked trying to send */
-	//	static constexpr int RECEIVING        =010;	/* set when process blocked trying to recv */
-	static proc procs[NR_TASKS + NR_PROCS];	/* process table */
-	static proc * pproc_addr[NR_TASKS + NR_PROCS];
-	static inline proc * BEG_PROC_ADDR() { return &procs[0]; }
-	static inline proc * BEG_USER_ADDR() { return &procs[NR_TASKS]; }
-	static inline proc * END_PROC_ADDR() { return &procs[NR_TASKS + NR_PROCS]; }
-
-	constexpr static  pid_t ANY		=0x7ace;	/* used to indicate 'any process' */
-	constexpr static  pid_t NONE 	=0x6ace;  	/* used to indicate 'no process at all' */
-	constexpr static  pid_t SELF	=0x8ace; 	/* used to indicate 'own process' */
-
-	/* Kernel tasks. These all run in the same address space. */
-	constexpr static  pid_t  IDLE      =       -4;	/* runs when no one else can run */
-	constexpr static  pid_t  CLOCK  	=	 -3;	/* alarms and other clock functions */
-	constexpr static  pid_t  SYSTEM     =      -2;	/* request system functionality */
-	constexpr static  pid_t  KERNEL     =      -1;	/* pseudo-process for IPC and scheduling */
-	constexpr static  pid_t  HARDWARE   =  KERNEL;		/* for hardware interrupt handlers */
-
-	constexpr static proc *  NIL_PROC      =    ((struct proc *) 0)	;
-	constexpr static proc *  NIL_SYS_PROC      =    ((struct proc *) 1)	;
-	constexpr static proc * cproc_addr(int n)   { return &(procs + NR_TASKS)[(n)]; }
-	constexpr static proc * proc_addr(int n)   { return (pproc_addr + NR_TASKS)[(n)]; }
-
-
-	enum runtime_flags {
-		RUNNABLE = 0,
-
-		/* Bits for the runtime flags. A process is runnable iff p_rts_flags == 0. */
-		SLOT_FREE	=0x01,	/* process slot is free */
-		NO_MAP		=0x02,	/* keeps unmapped forked child from running */
-		SENDING		=0x04,	/* process blocked trying to SEND */
-		RECEIVING	=0x08,	/* process blocked trying to RECEIVE */
-		BOTH		=SENDING|RECEIVING,
-		SIGNALED	=0x10,	/* set when new kernel signal arrives */
-		SIG_PENDING	=0x20,	/* unready while signal being processed */
-		P_STOP		=0x40,	/* set when process is being traced */
-		NO_PRIV		=0x80,	/* keep forked system process from running */
-	};
-	stackframe* _regs;
-	tailq::entry<proc> _link; // main link on the queue
-	//sched_policy _policy;
-	sched_priority _qprio;
-	proc_state _state;
-	pid_t _nr;		/* number of this process (for fast access) */
-	struct priv *p_priv;		/* system privileges structure */
-	char _rts_flags;		/* SENDING, RECEIVING, etc. */
-
-	char _priority;		/* current scheduling priority */
-	int priority() const { return _priority; }
-	char _max_priority;		/* maximum scheduling priority */
-	char _ticks_left;		/* number of scheduling ticks left */
-	char _quantum_size;		/* quantum size in ticks */
-
-	clock_t _user_time;		/* user time in ticks */
-	clock_t _sys_time;		/* sys time in ticks */
-	//  struct proc *p_callerq;	/* head of list of procs wishing to send */
-	//  struct proc *p_sendlink;	/* link to next proc wishing to send */
-//	  message *p_messbuf;		/* pointer to message buffer */
-	//  int p_getfrom;		/* from whom does process want to receive? */
-//
-	//  struct proc *p_nextready;	/* pointer to next ready process */
-	//  int p_pending;		/* bit map for pending signals 1-16 */
-
-//	proc *_nextready;	/* pointer to next ready process */
-	list::entry<proc> _send_link; /* link to next proc wishing to send */
-	list::head<proc,&proc::_send_link> _callerq; /* head of list of procs wishing to send */
-	list::entry<proc> _hash_link; // hash lookup of all the procs
-	message *_messbuf;		/* pointer to passed message buffer */
-	pid_t _getfrom;		/* from whom does process want to receive? */
-	pid_t _sendto;		/* to whom does process want to send? */
-	 int _flags;			/* P_SLOT_FREE, SENDING, RECEIVING, etc. */
-	::sigset_t p_pending;		/* bit map for pending kernel signals */
-
-	char p_name[8];	/* name of the process, including \0 */
-
-	inline pid_t nr() const { return _nr; }
-	inline pid_t proc_nr(proc* p)  { return p->_nr; }
-	constexpr static inline bool isokproc(int n)   { return (n + NR_TASKS) < (NR_PROCS + NR_TASKS); }
-	constexpr static inline bool isempty(proc* p)   { return  p->_rts_flags == SLOT_FREE ; }
-	constexpr static inline bool isempty(int n)   { return  isempty(proc_addr(n)) ; }
-	constexpr static inline bool iskernel(int n)   { return  n < 0 ; }
-	constexpr static inline bool iskernel(proc* p)   { return iskernel(p->_nr); }
-	constexpr static inline bool isuser(int n)   { return  n >= 0 ; }
-	constexpr static inline bool isuser(proc* p)   { return isuser(p->_nr); }
-
-	int mini_notify(int dst);
-	void ready();
-	void unready();
-	using proc_queue_t = tailq::head<proc,&proc::_link>;
-	static proc_queue_t _waiting;
-	static proc_queue_t  _freeprocs;
-	static proc*   prev_proc;
-	static proc* 	cur_proc;
-	static proc* 	bill_ptr;
-	struct proc_hasher {
-		list::int_hasher<pid_t> hasher;
-		size_t operator()(const proc& p) { return hasher(p._nr); }
-		size_t operator()(const pid_t pid){ return hasher(pid); }
-	};
-	struct proc_equals {
-		list::int_hasher<pid_t> hasher;
-		size_t operator()(const proc& p,const pid_t pid) { return p._nr == pid; }
-		size_t operator()(const proc& l,const proc& r){ return l._nr == r._nr; }
-	};
-	using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equals >;
-	static hash_list_t   _hash; // hash list by pids
-	static proc_queue_t  _tasks; // highest prioirty
-	static proc_queue_t  _server; // secound highest prioirty
-	static proc_queue_t  _user; // all user process highest prioirty
-	static proc_queue_t& next_proc();
-	static proc* lookup(pid_t pid) {
-		return _hash.search(pid);
-	}
-	proc_queue_t& get_attached_queue() const {
-		switch(_qprio){
-		case sched_priority::task : return _tasks;
-		case sched_priority::server: return _server;
-		case sched_priority::user : return _user;
-		};
-		return _user; // compiler thingy, never gets here
-	}
-	static void sched();
-	static int mini_send(proc* caller, proc*  dst,message* m_ptr);
-	static int mini_receive(proc* caller, proc* src, message *m_ptr);
-public:
-	static void pick_proc();
-	void interrupt(message* m_ptr);
-	static int sys_call(int function,			/* SEND, RECEIVE, or BOTH */
-	int caller,			/* who is making this call */
-	int src_dest,			/* source to receive from or dest to send to */
-	message *m_ptr			/* pointer to message */);
-	proc();
-	virtual ~proc();
-	inline bool isempty() const { return _rts_flags == SLOT_FREE; }
-	inline bool iskernel() const { return _nr < 0; }
-	inline bool isuser() const { return _nr >= 0; }
-
+#if 0
+struct proc_hasher {
+	list::int_hasher<pid_t> hasher;
+	size_t operator()(const proc& p) { return hasher(p._nr); }
+	size_t operator()(const pid_t pid){ return hasher(pid); }
 };
+struct proc_equals {
+	list::int_hasher<pid_t> hasher;
+	size_t operator()(const proc& p,const pid_t pid) { return p._nr == pid; }
+	size_t operator()(const proc& l,const proc& r){ return l._nr == r._nr; }
+};
+using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equals >;
+#endif
+
+	typedef void (*simple_callback)(void* data);
+	using vir_bytes = uintptr_t;
+	using vir_clicks = uintptr_t;
+	using phys_clicks = uintptr_t;
+	struct pc_psw {
+		int (*pc)();			// storage for program counter
+		phys_clicks cs;			// code segment register address?
+		unsigned psw;			// program status word */
+	};
+	struct mem_map {
+		vir_clicks mem_vir;		/* virtual address */
+		phys_clicks mem_phys;		/* physical address */
+		vir_clicks mem_len;		/* length */
+	};
+	/* This struct is used to build data structure pushed by kernel upon signal. */
+	struct sig_info {
+	  int signo;			/* sig number at end of stack */
+	  struct pc_psw sigpcpsw;
+	};
+	// message, humm need to change this somehow
+
+
+	/* Types relating to messages. */
+	#define M1                 1
+	#define M3                 3
+	#define M4                 4
+	#define M3_STRING         14
+
+	struct mess_1 {int m1i1, m1i2, m1i3; char *m1p1, *m1p2, *m1p3;} ;
+	struct mess_2 {int m2i1, m2i2, m2i3; long m2l1, m2l2; char *m2p1;} ;
+	struct mess_3 {int m3i1, m3i2; char *m3p1; char m3ca1[M3_STRING];} ;
+	struct mess_4 {long m4l1, m4l2, m4l3, m4l4;} ;
+	struct mess_5 {char m5c1, m5c2; int m5i1, m5i2; long m5l1, m5l2, m5l3;} ;
+	struct mess_6 {int m6i1, m6i2, m6i3; long m6l1; int (*m6f1)();} ;
+
+	struct message {
+	  int m_source;			/* who sent the message */
+	  int m_type;			/* what kind of message is it */
+	  union {
+		mess_1 m_m1;
+		mess_2 m_m2;
+		mess_3 m_m3;
+		mess_4 m_m4;
+		mess_5 m_m5;
+		mess_6 m_m6;
+	  } m_u;
+	  message&& copy(int source) {
+		  message m = *this;
+		  m.m_source = source;
+		  return std::move(m);
+	  }
+	} __attribute__((aligned(4))) ;
+
+	/* Here is the declaration of the process table.  Three assembly code routines
+	 * reference fields in it.  They are restart(), save(), and csv().  When
+	 * changing 'proc', be sure to change the field offsets built into the code.
+	 * It contains the process' registers, memory map, accounting, and message
+	 * send/receive information.
+	 */
+	struct proc {
+		/* The following items pertain to the 3 scheduling queues. */
+		enum PROC_STATUS {
+			RUNNING			 =0,
+			/* Bits for p_flags in proc[].  A process is runnable iff p_flags == 0 */
+			P_SLOT_FREE      =001,	/* set when slot is not in use */
+			NO_MAP           =002,	/* keeps unmapped forked child from running */
+			SENDING          =004,	/* set when process blocked trying to send */
+			RECEIVING        =010,	/* set when process blocked trying to recv */
+		};
+		enum QINDEX {
+			TASK_Q = 0,	/* ready tasks are scheduled via queue 0 */
+			SERVER_Q,           	/* ready servers are scheduled via queue 1 */
+			USER_Q,             	/* ready users are scheduled via queue 2 */
+			NQ                 	/* # of scheduling queues */
+		};
+		uint32_t p_reg[NR_REGS];	/* process' registers */
+		volatile uint32_t *p_sp;			/* stack pointer */
+		struct pc_psw p_pcpsw;		/* pc and psw as pushed by interrupt */
+		PROC_STATUS p_flags;			/* P_SLOT_FREE, SENDING, RECEIVING, etc. */
+		struct mem_map p_map[NR_SEGS];/* memory map */
+		int *p_splimit;		/* lowest legal stack value */
+		int p_pid;			/* process id passed in from MM */
+
+		time_t user_time;		/* user time in ticks */
+		time_t sys_time;		/* sys time in ticks */
+		time_t child_utime;	/* cumulative user time of children */
+		time_t child_stime;	/* cumulative sys time of children */
+		time_t p_alarm;		/* time of next alarm in ticks, or 0 */
+
+		proc *p_callerq;	/* head of list of procs wishing to send */
+		proc *p_sendlink;	/* link to next proc wishing to send */
+		message p_mess;	// why use the datasegment when we can put this in the proc structure?
+		message *p_messbuf;   /* pointer to message buffer */
+		int p_getfrom;		/* from whom does process want to receive? */
+
+		proc *p_nextready;	/* pointer to next ready process */
+		int p_pending;		/* bit map for pending signals 1-16 */
+
+		// static part, more ore less the kernel
+		static proc procs[NR_TASKS+NR_PROCS];
+
+
+	  	static proc *proc_ptr;	/* &proc[cur_proc] */
+	  	static proc *bill_ptr;	/* ptr to process to bill for clock ticks */
+	  	static proc *rdy_head[NQ];	/* pointers to ready list headers */
+	  	static proc *rdy_tail[NQ];	/* pointers to ready list tails */
+	  	static bitops::bitmap_t<NR_TASKS+1> busy_map;		/* bit map of busy tasks */
+	  	static message *task_mess[NR_TASKS+1];	/* ptrs to messages for busy tasks */
+
+	  	constexpr static inline proc* proc_addr(pid_t n) { return &procs[NR_TASKS + n]; }
+	    constexpr static proc* NIL_PROC = (struct proc *)nullptr;
+	private:
+	    static int mini_send(pid_t caller, pid_t dest, message* m_ptr);
+		static int mini_rec(pid_t caller, pid_t src, message* m_ptr);
+		static void inform(pid_t proc_nr);
+		static void ready(proc* p);
+		static void unready(proc *p);
+		static void interrupt(pid_t task, message* m_ptr);
+		static void sched();
+		static void pick_proc();
+	} ;
+
+
+	/* System calls. */
+
+	enum sys_function {
+		SEND		   =1,	/* function code for sending messages */
+		RECEIVE		   =2,	/* function code for receiving messages */
+		BOTH		   =3,	/* function code for SEND + RECEIVE */
+		ANY   =(NR_PROCS+100),	/* receive(ANY, buf) accepts from any source */
+	};
+	/* Task numbers, function codes and reply codes. */
+	constexpr static pid_t HARDWARE     =     -1;	/* used as source on interrupt generated msgs */
+	int sys_call(sys_function function, pid_t caller, pid_t src_dest, message* m_ptr);
+
+
+
+
+
 
 } /* namespace mimx */
 
