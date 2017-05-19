@@ -10,7 +10,8 @@
 #include <sys\time.h>
 #include <os\thread.hpp>
 
-
+#include "mimix_cpp\main.hpp"
+#include "f9\thread.hpp"
 
 
 #if 0
@@ -235,10 +236,15 @@ void test_time(timeval_t& start) {
 }
 #include "mimix_cpp/fs.hpp"
 
+
+DECLARE_THREAD(root_thread, __root_thread);
+
 extern "C" void scmrtos_test_start()
 {
 	printk("starting os!\n");
+	f9::tcb_t::startup();
 
+	//mimx::startup();
 
 	//os::kernel::start_os();
 

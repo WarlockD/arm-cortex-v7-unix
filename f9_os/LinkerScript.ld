@@ -103,7 +103,10 @@ SECTIONS
 	KEEP(*(.init_hook))
 	init_hook_end = .;
 	kernel_text_end = .;
-    . = ALIGN(4);
+	  . = ALIGN(4);
+	user_text_start = .;
+	KEEP(*(.user_text))
+  	user_text_end = .;
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
 
@@ -171,6 +174,7 @@ SECTIONS
     /* This is used by the startup in order to initialize the .bss secion */
     _sbss = .;         /* define a global symbol at bss start */
     __bss_start__ = _sbss;
+    kernel_bss_start = .;
     *(.bss)
     *(.bss*)
     *(COMMON)
@@ -180,6 +184,11 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
+    kernel_bss_end = .;
+    user_bss_start = .;
+    *(.user_bss)
+    user_bss_end = .;
+    
   } >RAM
   
   	.kernel_stack :
@@ -219,6 +228,7 @@ SECTIONS
   ._user_heap_stack :
   {
     . = ALIGN(8);
+    mem0_start = .;
     PROVIDE ( end = . );
     PROVIDE ( _end = . );
     . = . + _Min_Heap_Size;

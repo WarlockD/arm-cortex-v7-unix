@@ -44,7 +44,7 @@ namespace mimx {
 	/* Process table and system property related types. */
 	typedef int proc_nr_t;			/* process table entry number */
 	typedef short sys_id_t;			/* system process index */
-
+	typedef uintptr_t phys_bytes;
 
 	/* Process table and system property related types. */
 	typedef int proc_nr_t;			/* process table entry number */
@@ -67,7 +67,100 @@ namespace mimx {
 	  size_t base;			/* start address of chunk */
 	  size_t size;			/* size of memory chunk */
 	};
+	// special case cause eveything is fucked
+	struct hw_trap {
+		reg_t r0;
+		reg_t r1;
+		reg_t r2;
+		reg_t r3;
+		reg_t ip;
+		reg_t lr;
+		reg_t pc;
+		reg_t xpsr;
+#ifdef CONFIG_LAZY_FLOAT
+		uint32_t fp[16];
+#endif
 
+	} __attribute__((aligned(8))) ;
+	static constexpr size_t HW_TRAP_SIZE = sizeof(hw_trap);
+	static constexpr size_t HW_TRAP_COUNT = HW_TRAP_SIZE/sizeof(reg_t);
+	struct sw_trap {
+		//uint32_t sp;
+		//uint32_t basepri;
+		reg_t r4;
+		reg_t r5;
+		reg_t r6;
+		reg_t r7;
+		reg_t r8;
+		reg_t r9;
+		reg_t r10;
+		reg_t r11;
+		uint32_t ret; // ex lr
+	};
+	static constexpr size_t  SW_TRAP_SIZE = sizeof(sw_trap);
+	static constexpr size_t  SW_TRAP_COUNT = SW_TRAP_SIZE/sizeof(reg_t);
+	static constexpr size_t  TRAP_SIZE = SW_TRAP_SIZE + HW_TRAP_SIZE;
+	static constexpr size_t  TRAP_COUNT = HW_TRAP_COUNT+SW_TRAP_COUNT;
+
+
+	struct stackframe_s {
+		union {
+			struct {
+				sw_trap sw;
+				hw_trap hw;
+			} r;
+			uint32_t regs[TRAP_COUNT];
+		};
+		stackframe_s() {}
+#define GETSETREG(FROM, NAME) \
+		inline uint32_t& NAME() { return FROM.NAME; }\
+		inline const uint32_t& NAME() const { return FROM.NAME; } \
+		template<typename T> inline const void set_##NAME(const T v) { FROM.NAME = static_cast<reg_t>(v); } \
+		template<typename T> inline const void set_##NAME(const T* v) { FROM.NAME = reinterpret_cast<reg_t>(v); }
+
+#define GETSETREGA(NAME,ALLIAS) \
+		inline uint32_t& ALLIAS() { return NAME; }\
+		inline const uint32_t& ALLIAS() const { return NAME; }
+		GETSETREG(r.hw,r0)
+		GETSETREG(r.hw,r1)
+		GETSETREG(r.hw,r2)
+		GETSETREG(r.hw,r3)
+		GETSETREG(r.hw,ip)
+		GETSETREG(r.hw,lr)
+		GETSETREG(r.hw,pc)
+		GETSETREG(r.hw,xpsr)
+		GETSETREG(r.sw,r4);
+		GETSETREG(r.sw,r5);
+		GETSETREG(r.sw,r6);
+		GETSETREG(r.sw,r7);
+		GETSETREG(r.sw,r8);
+		GETSETREG(r.sw,r9);
+		GETSETREG(r.sw,r10);
+		GETSETREG(r.sw,r11);
+		GETSETREG(r.sw,ret);
+#undef GETSETREG
+#undef GETSETREGA
+
+		static constexpr reg_t PSR_V_BIT	=0x10000000;
+		static constexpr reg_t PSR_C_BIT	=0x20000000;
+		static constexpr reg_t PSR_Z_BIT	=0x40000000;
+		static constexpr reg_t PSR_N_BIT	=0x80000000;
+
+		void dump()
+		{
+			printk(" r0: %p  r1: %p  r2: %p  r3: %p  r4: %p\r\n", r0(),r1(), r2(),r3(),r4());
+			printk(" r5: %p  r6: %p  r7: %p  r8: %p  r9: %p\r\n", r5(),r6(), r7(),r8(),r9());
+			printk("r10: %p r11: %p  ip: %p  pc: %p  lr: %p\r\n", r10(),r11(), ip(),pc(),lr());
+			printk(" sp: %p ret: %p\r\n",reinterpret_cast<uint32_t>(this), ret());
+			char buf[5];
+			buf[0] = xpsr() & PSR_N_BIT ? 'N' : 'n';
+			buf[1] = xpsr() & PSR_Z_BIT ? 'Z' : 'z';
+			buf[2] = xpsr() & PSR_C_BIT ? 'C' : 'c';
+			buf[3] = xpsr() & PSR_V_BIT ? 'V' : 'v';
+			buf[4] = '\0';
+			printk(" xpsr: %s\r\n", buf);
+		}
+	} ;//__attribute__((aligned(8)));
 
 	/* The kernel outputs diagnostic messages in a circular buffer. */
 	struct kmessages {

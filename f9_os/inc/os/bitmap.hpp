@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <limits>
+#include<type_traits>
 #include <functional>
 #include <cassert>
 #include <memory>
@@ -21,12 +22,139 @@
 #include <os\atomic.h>
 
 
+
+// from https://www.justsoftwaresolutions.co.uk/files/bitmask_operators.hpp
+#if 0
+// example
+enum class A{
+    x=1,y=2
+       };
+
+enum class B:unsigned long {
+    x=0x80000000,y=0x40000000
+        };
+
+template<>
+struct enable_bitmask_operators<A>{
+    static const bool enable=true;
+};
+
+template<>
+struct enable_bitmask_operators<B>{
+    static const bool enable=true;
+};
+
+enum class C{x,y};
+
+#endif
+template<typename E>
+struct enable_bitmask_operators{
+    static const bool enable=false;
+};
+
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,E>::type
+operator|(E lhs,E rhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    return static_cast<E>(
+        static_cast<underlying>(lhs) | static_cast<underlying>(rhs));
+}
+
+// we use the % operator for checking if the flag is set
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,bool>::type
+operator%(E lhs,E rhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    return (static_cast<underlying>(lhs) & static_cast<underlying>(rhs)) != 0;
+}
+
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,E>::type
+operator&(E lhs,E rhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    return static_cast<E>(
+        static_cast<underlying>(lhs) & static_cast<underlying>(rhs));
+}
+
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,E>::type
+operator^(E lhs,E rhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    return static_cast<E>(
+        static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs));
+}
+
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,E>::type
+operator~(E lhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    return static_cast<E>(
+        ~static_cast<underlying>(lhs));
+}
+
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,E&>::type
+operator|=(E& lhs,E rhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    lhs=static_cast<E>(
+        static_cast<underlying>(lhs) | static_cast<underlying>(rhs));
+    return lhs;
+}
+
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,E&>::type
+operator&=(E& lhs,E rhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    lhs=static_cast<E>(
+        static_cast<underlying>(lhs) & static_cast<underlying>(rhs));
+    return lhs;
+}
+
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,E&>::type
+operator^=(E& lhs,E rhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    lhs=static_cast<E>(
+        static_cast<underlying>(lhs) ^ static_cast<underlying>(rhs));
+    return lhs;
+}
+
+template<typename E>
+typename std::enable_if<enable_bitmask_operators<E>::enable,typename std::underlying_type<E>::type>::type
+bitmask_cast(E rhs){
+    typedef typename std::underlying_type<E>::type underlying;
+    return static_cast<underlying>(rhs);
+}
+
 // define below to make this nifty
 //#define CONFIG_BITMAP_BITBAND
 // well fuck me.  apperntly bitband is not on the f7
 // caues hard faults that have been pissing me off
 // bit map functions for the cortex m
 namespace bitops {
+template<typename T, size_t _BIT_POS, size_t _BIT_SIZE>
+struct bit_helper {
+	static_assert(_BIT_SIZE > 0, "BITSIZE IS ZERO!");
+	static constexpr size_t BIT_POS = _BIT_POS;
+	static constexpr size_t BIT_SIZE= _BIT_SIZE;
+	static constexpr T BIT_SIZE_MASK = static_cast<T>(-1) >> ((sizeof(T) * 8) - _BIT_SIZE);
+	static constexpr T BIT_MASK = BIT_SIZE_MASK << BIT_POS;
+	template<typename A>
+	static constexpr T mask(const A val) { return ((static_cast<T>(val)&BIT_SIZE_MASK) << BIT_POS); }
+	template<typename A>
+	static void set(T& val, A arg) { val = (val & BIT_SIZE_MASK) | mask(arg); }
+	static T get(const T val) { return (val & BIT_SIZE_MASK)  >> BIT_POS; }
+
+	class type {
+		T& _raw;
+	public:
+		type(T& raw) : _raw(raw) {}
+		operator T() const { return get(_raw); }
+		template<typename A>
+		type& operator=(const A val) { set(_raw,val); return *this; }
+	};
+
+};
 #if 0
 #define BITBAND_SRAM_REF   0x20000000
 #define BITBAND_SRAM_BASE  0x22000000
@@ -58,6 +186,33 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 }
 
 #endif
+	template<typename _ENUM>
+	class enum_flag {
+	public:
+		static_assert(std::is_enum<_ENUM>::value, "NOT AN ENUM!");
+		using enum_type = _ENUM;
+		using type = enum_flag<enum_type>;
+		using underlying = typename std::underlying_type<enum_type>::type;
+		static inline constexpr underlying cast(enum_type e) { return static_cast<underlying>(e); }
+		static inline constexpr enum_type cast(underlying e) { return static_cast<enum_type>(e); }
+
+		type& operator&=(const type e) { _flags = cast(cast(_flags) & cast(e._flags)); return *this; }
+		type& operator|=(const type e) { _flags = cast(cast(_flags) | cast(e._flags)); return *this; }
+		type operator~() const { return type(cast(~cast(_flags)));  }
+
+		bool operator==(const type e) const { return _flags == e._flags; }
+		bool operator!=(const type e) const { return _flags != e._flags; }
+
+
+		operator enum_type() const { return _flags; }
+		explicit enum_flag(const _ENUM e) :_flags(e) {}
+		enum_flag() : _flags{} {}
+	private:
+		enum_type _flags;
+	};
+	template<typename T> static inline enum_flag<T> operator|(enum_flag<T> l, enum_flag<T> r) { enum_flag<T> a(l); a |= r; return a; }
+	template<typename T> static inline enum_flag<T> operator&(enum_flag<T> l, enum_flag<T> r) { enum_flag<T> a(l); a &= r; return a; }
+
 	uint32_t test_and_set_bit(uint32_t *word, int bitmask);
 	uint32_t test_and_set_word(uint32_t *word);
 	// 	/* Bit map related macros. lightbsd
@@ -792,10 +947,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 			uintptr_t ielm = reinterpret_cast<uintptr_t>(element);
 			static const uintptr_t ifirst = reinterpret_cast<uintptr_t>(&_data[0]);
 			static const uintptr_t ilast = reinterpret_cast<uintptr_t>(&_data[TOTAL_SIZE-ELEMENT_SIZE]);
-			if(ielm >= ifirst && ielm <=ilast){
-				return (ielm - ifirst) / sizeof(type);
-			}
-			return ELEMENT_COUNT;
+			return (ielm >= ifirst && ielm <=ilast) ? (ielm - ifirst) / ELEMENT_SIZE : ELEMENT_COUNT;
 		}
 		bool getid(void *element,bitmap_cursor_t& c)
 		{
@@ -828,7 +980,95 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 	using RebindAlloc = typename std::allocator_traits<bitmap_table_t<T,_COUNT,_TYPE_SIZE>>::template bitmap_table_t<T>;
 
 
+	// simple refrence counter
+		template<typename T, size_t _COUNT=64>
+	   class shared_alloc_t {
+	   public:
+			using size_type = size_t;
+			using difference_type = long;
+			static constexpr size_type ELEMENT_COUNT = _COUNT;
+			static constexpr size_type TYPE_SIZE = sizeof(T);
+			using value_type = T;
+			using pointer = value_type*;
+			using const_pointer = const value_type*;
+			using reference = value_type&;
+			using const_reference = const value_type&;
 
+			using type = T;
+			using pointer_type = type*;
+			using const_pointer_type = const pointer_type;
+			using id_t = size_t;
+
+	   private:
+			struct gc_type {
+				__attribute__ ((aligned(4))) uint8_t data[TYPE_SIZE];
+				uint32_t ref;
+			} __attribute__ ((aligned(4)));
+
+		public:
+			static constexpr size_type ELEMENT_SIZE = sizeof(gc_type);
+			// we want to make sure this type is allinged to the 32 bit mark
+			static constexpr size_type TOTAL_SIZE = ELEMENT_SIZE*ELEMENT_COUNT;
+
+			void *alloc(std::size_t sz) {
+				if(sz > ELEMENT_SIZE){
+					BMP_DEBUG("bitmap_alloc_t: %d > %d size wrong! \n", sz,ELEMENT_SIZE);
+					while(1);
+				}
+				while(true) {
+					auto last_free = _last_free;
+					auto it=last_free;
+					do {
+						gc_type* gc = &(*it);
+						if(++gc->ref == 1){
+							++last_free;// this is just a hint so its ok to inc
+							return gc;
+						}
+						--gc->ref;
+						if(++it == _objs.end()) it = _objs.begin();
+					} while(it!=last_free);
+					BMP_DEBUG("bitmap_table: allocated failed, out of space\n");
+					ARM::wfi(); // wait for an interrupt
+				}
+			}
+
+			void aquire(id_t id){
+				assert(id < ELEMENT_COUNT);
+				if(++_objs[id].ref == 1) {
+					printk("tryiing to refrence a deleted object %d!\r\n",id);
+				}
+			}
+			void aquire(void *elm){
+				aquire(getid(elm));
+			}
+			void free(void *elm){
+				release(getid(elm));
+			}
+			void release(id_t id){
+				if(id < ELEMENT_COUNT){
+					if(_objs[id].ref >=  0) --_objs[id].ref;
+					if(_objs[id].ref == 0){
+						printk("freed %d!\n, id");
+						_last_free = _objs.begin() + id;
+					}
+				}
+			}
+			uint32_t refs(id_t id) const { assert(id < ELEMENT_COUNT); return _objs[id].ref; }
+			uint32_t refs(void *elm) const { return refs(getid(elm)); }
+
+			inline constexpr uint32_t getid(void* e) const {
+				return (ielm(e) >= ifirst() && ielm(e) <=ilast()) ?  ((ielm(e) - ifirst()) / ELEMENT_SIZE) : ELEMENT_COUNT;
+			}
+		protected:
+			using array_t = typename std::array<gc_type,ELEMENT_COUNT>;
+			array_t _objs;
+			typename array_t::iterator _last_free; // saves some time
+			inline constexpr uintptr_t ifirst() const { return reinterpret_cast<uintptr_t>(&_objs[0]); }
+			inline constexpr uintptr_t ilast() const { return reinterpret_cast<uintptr_t>(&_objs[TOTAL_SIZE-ELEMENT_SIZE]); }
+			inline constexpr uintptr_t ielm(void* element) const { return reinterpret_cast<uintptr_t>(element); }
+
+
+		};
 
 }; /* namespace xv6 */
 

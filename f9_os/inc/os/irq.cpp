@@ -250,12 +250,13 @@ namespace {
 #endif
 static irq::timer_callback systick_callback = nullptr;
 static size_t _ticks=0;
-
+#if 0
 extern "C" void SysTick_Handler()
 {
 	_ticks++;
 	systick_callback();
 }
+#endif
 #if 0
 extern "C" __attribute__((naked))
  void exec_call(void* arg, void(*exec)(void*)){

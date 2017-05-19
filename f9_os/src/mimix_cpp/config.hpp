@@ -83,6 +83,10 @@ namespace mimx {
 	constexpr static std::size_t NR_RS_LINES	=   0;	/* # rs232 terminals (0 to 4) */
 	constexpr static std::size_t NR_PTYS		=   0;	/* # pseudo terminals (0 to 64) */
 
+	// clicks, not sure if needed
+
+	constexpr static std::size_t CLICK_SIZE      =1024;	/* unit in which memory is allocated */
+	constexpr static std::size_t CLICK_SHIFT     =10;	/* log2 of CLICK_SIZE */
 };
 
 
