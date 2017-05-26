@@ -46,6 +46,14 @@ namespace f9 {
 	constexpr static inline T int_to_ptr(uintptr_t v) { return priv::_ptr_to_int<uintptr_t,T>(v,std::is_pointer<T>()); }
 	//template<typename T>
 	constexpr static inline uintptr_t ptr_to_int(nullptr_t) { return uintptr_t{}; }
+	// helper to convert a pointer to a uintptr_t
+	template<typename T>
+	constexpr static inline typename std::enable_if<std::is_arithmetic<T>::value, void*>::type
+	to_voidp(T v) { return static_cast<void*>(v); }
+	template<typename T>
+	constexpr static inline void*
+	to_voidp(T* v) { return reinterpret_cast<void*>(v); }
+
 #if 0
 	constexpr static inline typename std::enable_if<std::is_arithmetic<T>::value, uintptr_t>::type
 									  ptr_to_int(T v) { return static_cast<uintptr_t>(v); }
@@ -62,13 +70,6 @@ namespace f9 {
 	constexpr static inline uintptr_t ptr_to_int(nullptr_t) { return 0; } // match null pointers
 #endif
 
-	// helper to convert a pointer to a uintptr_t
-	template<typename T>
-	constexpr static inline typename std::enable_if<std::is_arithmetic<T>::value, void*>::type
-	to_voidp(T v) { return static_cast<void*>(v); }
-	template<typename T>
-	constexpr static inline void*
-	to_voidp(T* v) { return reinterpret_cast<void*>(v); }
 
 
 #define KTABLE_NAME(name) kt_## name

@@ -10,6 +10,7 @@
 #include <stm32746g_discovery.h>
 
 namespace mimx {
+#if 0
 	class test_task: public task<1024> {
 		int _waitfor;
 		int _sendto;
@@ -22,11 +23,12 @@ namespace mimx {
 		//	m.m_type = 1; //start up
 			//send(_sendto, &m);
 			//receive(_sendto,&m);
-			if(m.m_type == 0)
+			pid_t src;
+			if(m.type() == 0)
 				printk("Task %d linked to  %d type %d\r\n", _tasknr, _sendto);
 			while(true) {
-				receive(ANY,&m);
-				printk("Task %d recived %d type %d\r\n", _tasknr, m.m_source,m.m_type);
+				src = receive(ANY,&m);
+				printk("Task %d recived %d type %d\r\n", _tasknr, src,m.m_type);
 				m.m_type = 0; // anoloege
 				send(m.m_source, &m);
 			}
@@ -110,11 +112,13 @@ namespace mimx {
 
 	__builtin_unreachable(); // suppress compiler warning "'noreturn' func does return"
 	}
+#endif
+
 	void startup(){
 		printk("mimx::startup\r\n");
-		btask.dump();
+		//btask.dump();
 	//	__builtin_trap();
-		real_startup(btask.startup_stack());
-
+		//real_startup(btask.startup_stack());
+		while(1);
 	}
 } /* namespace mimx */

@@ -8,6 +8,8 @@
 
 
 namespace f9 {
+__attribute__((weak)) void root_thread();
+__attribute__((weak)) void root_thread() { while(1); }
 	DECLARE_KTABLE(tcb_t, thread_table, CONFIG_MAX_THREADS);
 	//volatile tcb_t *current = nullptr; 			/* Currently on CPU */
 	volatile tcb_t *current = nullptr; 			/* Currently on CPU */
@@ -384,7 +386,7 @@ namespace f9 {
 			[REG_R3] = 0
 		};
 
-		root->init_ctx((void *) &root_stack_end, root_thread, regs);
+		root->init_ctx((void *) &root_stack_end, &root_thread, regs);
 
 		root->stack_base = (memptr_t) &root_stack_start;
 		root->stack_size = (uint32_t) &root_stack_end -

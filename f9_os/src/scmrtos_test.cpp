@@ -13,6 +13,7 @@
 #include "mimix_cpp\main.hpp"
 #include "f9\thread.hpp"
 
+#include <os\printk.hpp>
 
 #if 0
 #include <scm\scmRTOS.h>
@@ -235,14 +236,45 @@ void test_time(timeval_t& start) {
 	start = current;
 }
 #include "mimix_cpp/fs.hpp"
+#include "mimix_cpp/proc.hpp"
+extern "C" void __root_thread(void* meh, void* arg) {
+	// we are in root thread!
+	printk("in root thread!");
+	while(1);
 
+}
 
 DECLARE_THREAD(root_thread, __root_thread);
+
+pid_t thread1_pid;
+pid_t thread2_pid;
+void thread1() {
+	printk("thread1\r\n");
+	while(1);
+}
+uint32_t thread1_stack[50];
+
+void thread2() {
+	printk("thread2\r\n");
+	while(1);
+}
+uint32_t thread2_stack[50];
+
+void root_task() {
+	thread1_pid= mimx::create_task(thread1,thread1_stack,50*4);
+	thread2_pid= mimx::create_task(thread2,thread2_stack,50*4);
+	printk("root thread1=%d, thread2=%d%\n",thread1_pid,  thread2_pid);
+	while(1);
+}
+uint32_t  root_stack[50];
 
 extern "C" void scmrtos_test_start()
 {
 	printk("starting os!\n");
-	f9::tcb_t::startup();
+
+	pid_t pid = mimx::create_task(root_task,root_stack,50*4);
+
+//	f9::tcb_t::startup();
 
 	//mimx::startup();
 

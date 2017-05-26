@@ -14,9 +14,11 @@
 #include <signal.h>
 #include <os\bitmap.hpp>
 
+#include <stm32f7xx.h>
 
 
 namespace mimx {
+
 	static constexpr size_t HZ	          =60;	/* clock freq (software settable on IBM-PC) */
 	static constexpr size_t BLOCK_SIZE     = 1024;	/* # bytes in a disk block */
 	static constexpr pid_t SUPER_USER  =0;	/* uid of superuser */
@@ -74,9 +76,9 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 
 
 	/* Types relating to messages. */
-	#define M1                 1
-	#define M3                 3
-	#define M4                 4
+	//#define M1                 1
+	//#define M3                 3
+	//#define M4                 4
 	#define M3_STRING         14
 
 	struct mess_1 {int m1i1, m1i2, m1i3; char *m1p1, *m1p2, *m1p3;} ;
@@ -90,6 +92,21 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		CANCEL      = 0,	/* general req to force a task to cancel */
 		HARD_INT     = 2,	/* fcn code for all hardware interrupts */
 	};
+
+	class message {
+		int _type; // type can be anything, but its used for comparing
+		int _source;
+		friend struct proc;
+	public:
+		message() :_type(0), _source(0) {}
+		message(int type, int source) : _type(0), _source(0) {}
+		virtual ~message() {}
+		int type() const { return _type; }
+		int source() const { return _source; }
+		virtual bool operator==(const message& r) const { return _type == r._type; }
+		bool operator!=(const message& r) const { return !(*this==r); }
+	} __attribute__((aligned(4))) ;
+#if 0
 	struct message {
 	  int m_source;			/* who sent the message */
 	  int m_type;			/* what kind of message is it */
@@ -107,6 +124,9 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		  return std::move(m);
 	  }
 	} __attribute__((aligned(4))) ;
+
+#endif
+
 	static constexpr size_t MESS_SIZE  = sizeof(message);	/* might need usizeof from fs here */
 	static constexpr  message* NIL_MESS = nullptr;
 
@@ -129,15 +149,32 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		USER	=3,	/* User process */
 		IDLE	=4,	/* Idle process */
 	};
+	enum thread_state_t {
+		T_INACTIVE,
+		T_RUNNABLE,
+		T_SVC_BLOCKED,
+		T_RECV_BLOCKED,
+		T_SEND_BLOCKED
+	} ;
+	enum thread_tag_t {
+		THREAD_IDLE,
+		THREAD_KERNEL,
+		THREAD_ROOT,
+		THREAD_INTERRUPT,
+		THREAD_IRQ_REQUEST,
+		THREAD_LOG,
+		THREAD_SYS	= 16,				/* Systembase */
+		THREAD_USER	= 100	/* Userbase */
+	} ;
 	/* System calls. */
 
 	enum sys_function {
 		SEND		   =1,	/* function code for sending messages */
 		RECEIVE		   =2,	/* function code for receiving messages */
 		BOTH		   =3,	/* function code for SEND + RECEIVE */
-		ANY   =		0x7ace,	/* a magic, invalid process number. */
+		CREATE_TASK    =4
 	};
-
+	static constexpr pid_t ANY   =		0x7ace;	/* a magic, invalid process number. */
 
 	struct timer;
 	typedef void (*tmr_func_t)(struct timer *tp);
@@ -153,7 +190,107 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 
 	#define TMR_NEVER LONG_MAX	/* timer not active. */
 
+	// this is basicly a function handler that is run during the kernel thread
+	// then we do the task swap if need
+	class softirq {
 
+		//static softirq* _head;
+		//static softirq* _tail;
+		//softirq* _next; // next in quueue
+		friend struct proc;
+		void execute();
+	protected:
+		softirq();
+		virtual void handler() = 0;
+		virtual ~softirq() {}
+	public:
+		tailq::entry<softirq> _link;
+		void schedule();
+	};
+	typedef enum {
+		SYS_KERNEL_INTERFACE,		/* Not used, KIP is mapped */
+		SYS_EXCHANGE_REGISTERS,
+		SYS_THREAD_CONTROL,
+		SYS_SYSTEM_CLOCK,
+		SYS_THREAD_SWITCH,
+		SYS_SCHEDULE,
+		SYS_IPC,
+		SYS_LIPC,
+		SYS_UNMAP,
+		SYS_SPACE_CONTROL,
+		SYS_PROCESSOR_CONTROL,
+		SYS_MEMORY_CONTROL,
+	} syscall_t;
+
+
+	static inline void request_schedule(){ SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; }
+	class tcb_t {
+		tailq::entry<tcb_t> t_link;
+		using queue_type = list::tailq<tcb_t, &tcb_t::t_link>;
+		static queue_type q_running_queue;
+		static queue_type q_waiting_queue;
+		static tcb_t* _current;
+		tcb_t *thread_select(){
+			tcb_t *thr = t_child;
+			if (thr == nullptr) return nullptr;
+
+			while (1) {
+				if (thr->isrunnable())
+					return thr;
+
+				if (thr->t_child != nullptr) {
+					thr = thr->t_child;
+					continue;
+				}
+
+				if (thr->t_sibling != nullptr) {
+					thr = thr->t_sibling;
+					continue;
+				}
+
+				do {
+					if (thr->t_parent == this)
+						return nullptr;
+					thr = thr->t_parent;
+				} while (thr->t_sibling == nullptr);
+
+				thr = thr->t_sibling;
+			}
+		}
+
+		void thread_switch(){
+			_current = this;
+		}
+	public:
+		bool isrunnable() const { return state == T_RUNNABLE; }
+		pid_t t_globalid=0;
+		pid_t t_localid=0;
+
+		thread_state_t state=thread_state_t::T_INACTIVE;
+
+		uintptr_t stack_base;
+		size_t stack_size;
+
+		f9_context_t ctx;
+
+		//as_t *as;
+	//	struct utcb *utcb;
+
+		pid_t ipc_from=0;
+
+		tcb_t *t_sibling=nullptr;
+		tcb_t *t_parent=nullptr;
+		tcb_t *t_child=nullptr;
+
+		uint32_t timeout_event =0
+
+		virtual void handler() = 0;
+		template<typename PC>
+		tcb_t(PC pc, uint32_t* stack, size_t stack_size) : stack_base(ptr_to_int(stack)), stack_size(stack_size), ctx(pc,stack+(stack_size/4)){
+
+		}
+
+	};
 	/* System calls. */
 	//#define SEND		   1	/* function code for sending messages */
 	//#define RECEIVE		   2	/* function code for receiving messages */
@@ -169,6 +306,7 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 
 
 	struct proc {
+		bool p_not_a_zombie=false;
 		/* Guard word for task stacks. */
 		constexpr static reg_t STACK_GUARD	 = ((reg_t) (sizeof(reg_t) == 2 ? 0xBEEF : 0xDEADBEEF));
 		static constexpr int  IDLE     =       -999;	/* 'cur_proc' = IDLE means nobody is running */
@@ -191,6 +329,9 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 			S,	/* proc[i].mem_map[S] is for stack */
 			NR_SEGS,	/* # segments per process */
 		};
+		f9_context_t ctx;
+		tailq::entry<proc> p_link;
+
 		//stackframe_s p_reg;	/* process' registers saved in stack frame */
 		uint32_t* p_stack_begin; // stack memory begin
 		uint32_t* p_stack_end; // stack memory end
@@ -204,7 +345,6 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		struct proc *p_nextheld;	/* next in chain of held-up int processes */
 
 		PSTATE p_flags;			/* SENDING, RECEIVING, etc. */
-		mem_map p_map[NR_SEGS];/* memory map */
 		pid_t p_pid;			/* process id passed in from MM */
 		PPRI p_priority;		/* task, server, or user process */
 
@@ -218,6 +358,7 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		proc *p_callerq;	/* head of list of procs wishing to send */
 		proc *p_sendlink;	/* link to next proc wishing to send */
 		message *p_messbuf;		/* pointer to message buffer */
+		size_t p_msgsize;
 		int p_getfrom;		/* from whom does process want to receive? */
 		int p_sendto;
 
@@ -230,13 +371,6 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		static proc procs[NR_TASKS+NR_PROCS];
 		static proc *pproc_addr[NR_TASKS + NR_PROCS];
 
-	  	static proc *proc_ptr;	/* &proc[cur_proc] */
-	  	//static proc *prev_proc_ptr; // previous process
-	  	static proc *bill_ptr;	/* ptr to process to bill for clock ticks */
-	  	static proc *rdy_head[NQ];	/* pointers to ready list headers */
-	  	static proc *rdy_tail[NQ];	/* pointers to ready list tails */
-	  	static bitops::bitmap_t<NR_TASKS+1> busy_map;		/* bit map of busy tasks */
-	  	static message *task_mess[NR_TASKS+1];	/* ptrs to messages for busy tasks */
 
 
 	    constexpr static proc* NIL_PROC = (struct proc *)nullptr;
@@ -264,9 +398,7 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		constexpr static inline proc* cproc_addr(pid_t n) { return (&(procs + NR_TASKS)[(n)]); }
 	    constexpr static inline proc* proc_addr(pid_t n) { return (pproc_addr + NR_TASKS)[(n)]; }
 
-	    constexpr static inline  phys_bytes proc_vir2phys(proc* p, vir_bytes vir)  {
-	    	return (p->p_map[D].mem_phys << CLICK_SHIFT) + vir;
-	    }
+
 	    inline void ready() {
 	    	switching = true;
 	    	_ready();
@@ -277,25 +409,21 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 	    	_unready();
 	    	switching = false;
 	    }
-	    int mini_send(int dest, message* m_ptr){
+	    int mini_send(int dest, message* m_ptr,size_t msgsize){
 	    	switching = true;
-	    	int result = _mini_send(dest,m_ptr);
+	    	int result = _mini_send(dest,m_ptr,msgsize);
 	    	switching = false;
 	    	return result;
 	    }
-	    __attribute__((naked))
-	    static void _raw(int func, int src_dst, message* msg){
-	    	__asm volatile("swi #0\n");
+
+		  template <typename T,
+		              typename = typename std::enable_if<std::is_base_of<T, message>::value
+		                                              || std::is_same<T,message>::value>::type>
+	    int mini_send(int dest, typename std::remove_pointer<T>::type & m_ptr){
+			  return mini_send(dest,&m_ptr,sizeof(T));
 	    }
-	    void send(int dst, message* msg){
-	    	_raw(sys_function::SEND,dst,msg);
-	    }
-	    void receive(int src, message* msg){
-	    	_raw(sys_function::RECEIVE,src,msg);
-	    }
-	    void sendrec(int src_dst, message* msg){
-	    	_raw(sys_function::BOTH,src_dst,msg);
-	    }
+
+
 	    int proc_number() const { return p_nr; }
 	//public: // public interface
 	    static void unhold(); // flush unhandled interrupts
@@ -305,24 +433,26 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 	    	_sched();
 	    	switching = false;
 	    }
-	    static int sys_call(int function, int src_dest, message* m_ptr);
+	    static int sys_call(int function, int src_dest, message* m_ptr,size_t msg_size);
+
+
 	    void inform() {} // filler for right now as we don't have signal handling yet
 	//private:
 	    static volatile bool switching;
 	    void _ready();
 	    void _unready();
 	    static void _sched();
-	    int _mini_send(int dest, message* m_ptr);
-	    int _mini_rec(int src, message* m_ptr);
+	    int _mini_send(int dest, message* m_ptr, size_t msg_size);
+	    int _mini_rec(int src, message* m_ptr, size_t msg_size);
 
 
-	    static void cp_mess(int src,proc* src_p,message* src_m, proc* dst_p, message* dst_m);
+	    static void cp_mess(int src,proc* src_p,message* src_m, proc* dst_p, message* dst_m, size_t msg_size);
 	    static void pick_proc();
 		static void interrupt(pid_t task);
 		friend stackframe_s* _syscall(int function, int src_dest, message* m_ptr, stackframe_s* stack);
 
 	} ;
-
+#if 0
 	template<size_t _STACK_SIZE>
 	class task {
 	protected:
@@ -348,10 +478,12 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 			_proc->p_reg->set_pc(cast_to_reg(&task::start));
 			_proc->p_reg->set_lr(cast_to_reg(&task::bad_exit));
 		}
-
-	    void send(int dst, message* msg){ _proc->send(dst,msg);   }
-	    void receive(int src, message* msg){ _proc->receive(src,msg);   }
-	    void sendrec(int src_dst, message* msg) { _proc->sendrec(src_dst,msg);   }
+		  template <typename T,
+		              typename = typename std::enable_if<std::is_base_of<T, message>::value
+		                                              || IsBase<Other>::value>::type>
+	    pid_t send(pid_t dst, message* msg){ return _proc->send(dst,msg);   }
+	    pid_t receive(pid_t src, message* msg){ return _proc->receive(src,msg);   }
+	    pid_t sendrec(pid_t src_dst, message* msg) { return _proc->sendrec(src_dst,msg);   }
 		virtual void run() = 0;
 	public:
 		virtual ~task() {}
@@ -361,13 +493,50 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		}
 	};
 
+#endif
+
+
+	  template <typename T,
+	              typename = typename std::enable_if<std::is_base_of<T, message>::value
+	                                              || std::is_same<T,message>::value>::type>
+	  __attribute__( ( always_inline ) ) static inline pid_t send(pid_t dst, T& msg){
+			__asm__ __volatile__ ("mov r0, %0" : : "r" (dst) : "r0");
+			__asm__ __volatile__ ("mov r1, %0" : : "r" (&msg) : "r1");
+			__asm__ __volatile__ ("mov r2, %0" : : "i" (sizeof(T)) : "r2");
+  	__asm volatile("swi #1\nbx lr\n");
+  }
+	  template <typename T,
+	              typename = typename std::enable_if<std::is_base_of<T, message>::value
+	                                              || std::is_same<T,message>::value>::type>
+	  __attribute__( ( always_inline ) ) static inline pid_t receive(pid_t src, T& msg,size_t msg_size){
+		__asm__ __volatile__ ("mov r0, %0" : : "r" (src) : "r0");
+		__asm__ __volatile__ ("mov r1, %0" : : "r" (&msg) : "r1");
+		__asm__ __volatile__ ("mov r2, %0" : : "i" (sizeof(T)) : "r2");
+		__asm volatile("swi #2\nbx lr\n");
+  }
+	  template <typename T,
+	              typename = typename std::enable_if<std::is_base_of<T, message>::value
+	                                              || std::is_same<T,message>::value>::type>
+	  __attribute__( ( always_inline ) ) static inline pid_t sendrec(pid_t src_dst, T& msg,size_t msg_size){
+		__asm__ __volatile__ ("mov r0, %0" : : "r" (src_dst) : "r0");
+		__asm__ __volatile__ ("mov r1, %0" : : "r" (&msg) : "r1");
+		__asm__ __volatile__ ("mov r2, %0" : : "i" (sizeof(T)) : "r2");
+		__asm volatile("swi #3\nbx lr\n");
+  }
+	  __attribute__( ( always_inline ) ) static inline  pid_t _create_task(uintptr_t pc, uint32_t* stack, size_t stack_size){
+			__asm__ __volatile__ ("mov r0, %0" : : "r" (pc) : "r0");
+			__asm__ __volatile__ ("mov r1, %0" : : "r" (stack) : "r1");
+			__asm__ __volatile__ ("mov r2, %0" : : "r" (stack_size) : "r2");
+			__asm volatile("swi #0\nbx lr\n");
+	  }
+	  template<typename T>
+	  __attribute__( ( always_inline ) ) static inline  pid_t create_task(T pc, uint32_t* stack, size_t stack_size) {
+		  return  _create_task(ptr_to_int(pc),stack,stack_size);
+	  }
 
 
 
-
-
-
-} /* namespace mimx */
+};
 
 template<>
 struct enable_bitmask_operators<mimx::PSTATE>{

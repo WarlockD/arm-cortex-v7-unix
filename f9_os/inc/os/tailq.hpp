@@ -75,6 +75,7 @@ namespace tailq {
 	template<typename T, field<T> FIELD> class head_impl;
 	template<typename T, field<T> FIELD,bool _is_const> struct iterator;
 	template<typename T, field<T> FIELD> struct pcontainer;
+	constexpr static uintptr_t TAILQ_MAGIC = 0x123456789;// needs to be odd, most pinters arn't
 #ifdef TRACK_LIST_OWNER
 	// better than using a void pointer
 	strict container {};
@@ -90,6 +91,7 @@ namespace tailq {
 		using reference = T&;
 		using const_pointer = const_value_type*;
 		using const_reference = const_value_type&;
+		constexpr static pointer NOENTRY = reinterpret_cast<pointer>(TAILQ_MAGIC);
 	};
 
 	template<typename T, field<T> FIELD>
@@ -103,6 +105,7 @@ namespace tailq {
 		using const_pointer = typename btraits::const_pointer;
 		using const_reference = typename btraits::const_reference;
 		using iterator_category = std::bidirectional_iterator_tag;
+		constexpr static pointer NOENTRY = btraits::NOENTRY;
 		using entry_type = entry<T>;
 		using field_type = field<T>;
 		using head_type = head_impl<T,FIELD>;
@@ -273,6 +276,9 @@ namespace tailq {
 #endif
 			QMD_TRACE_ELEM(&(elm)->field);
 		}
+		// hack for now
+		//template<typename A, typename B>
+		//static inline void swap(A& head1, B& head2){
 		static inline void swap(head_type& head1, head_type& head2){
 			auto swap_first = head1.tqh_first;
 			auto swap_last = head1.tqh_last;
@@ -290,6 +296,14 @@ namespace tailq {
 				head2.tqh_last = &head2.tqh_first;
 
 		}
+		static inline  void splice(pointer pos, head_type& target, head_type& other, pointer other_first, pointer other_last) {
+			// fuck it, make it a loop till I figure out tis pointer math
+			for(auto c = other_first; c != other_last; c = next(c)) {
+				remove(other,c);
+				insert_after(target, pos,c);
+				pos = c;
+			}
+		}
 	};
 	template<typename T>
 	class entry  {
@@ -304,12 +318,15 @@ namespace tailq {
 		using reference = typename traits::reference;;
 		using const_pointer = typename traits::const_pointer;
 		using const_reference = typename traits::const_reference;
+		constexpr static pointer NOENTRY = traits::NOENTRY;
 		friend T;
-		constexpr entry() : tqe_next(nullptr),tqe_prev(&tqe_next)  {}
-		bool unlinked() const { return &tqe_next == tqe_prev && tqe_next == nullptr; }
+		constexpr entry() : tqe_next(NOENTRY),tqe_prev(&tqe_next)  {}
+	//	bool unlinked() const { return &tqe_next == tqe_prev && tqe_next == nullptr; }
+		bool unlinked() const { return tqe_next == NOENTRY; }
 	//protected:
 		// must be a way to make this protected
-		void unlink() { tqe_next = nullptr; tqe_prev= &tqe_next; }
+	//	void unlink() { tqe_next = NOENTRY; tqe_prev= &tqe_next; }
+		void unlink() { tqe_next = NOENTRY; }
 		pointer tqe_next;	/* next element */
 		pointer *tqe_prev;	/* address of previous next element */
 	};
@@ -406,7 +423,10 @@ namespace tailq {
 		static inline pointer next_entry(pointer p) { return traits::next(p); }
 		static inline pointer prev_entry(pointer p) { return traits::prev(p); }
 
-		inline void swap(head_type& head2){ traits::swap(*this,head2); }
+		inline void swap(head_type& head2){
+
+			traits::swap(*this,head2);
+		}
 		constexpr head_impl() noexcept : tqh_first(nullptr),tqh_last(&tqh_first) { QMD_TRACE_HEAD(*this);	}
 		constexpr head_impl(const head_impl& copy ) = delete;
 		constexpr head_impl& operator=(const head_impl& copy ) = delete; // obviously  cannot be copyied
@@ -426,7 +446,9 @@ namespace tailq {
 		inline void _insert_head(pointer elm) { traits::insert_head(*this,elm); }
 		inline void _insert_tail(pointer elm) { traits::insert_tail(*this,elm); }
 		inline void _remove(pointer elm){ traits::remove(*this,elm); }
-
+		inline  void _splice(pointer pos, head_type& other, pointer other_first, pointer other_last) {
+			traits::splice(pos,*this,other,other_first,other_last);
+		}
 		constexpr inline pointer _first() { return  tqh_first; }
 		constexpr inline pointer _last() { return  *tqh_last; }
 		constexpr inline const pointer _first() const { return  tqh_first; }
@@ -454,6 +476,13 @@ namespace tailq {
 		using const_iterator =  typename traits::const_iterator;
 
 		constexpr head() : traits::head_impl() {}
+		head(const head& copy) = delete;
+		head& operator==(const head& copy) = delete;
+		head(head&& move) { traits::swap(move); }
+		head& operator==(head&& move) {
+			traits::swap(move);
+			return *this;
+		}
 
 		inline pointer first_entry()  { return traits::_first(); }
 		inline pointer last_entry()  { return traits::_last(); }
@@ -464,7 +493,7 @@ namespace tailq {
 		reference back() { return *last_entry(); }
 		const_reference front() const { return *first_entry(); }
 		const_reference back() const { return *last_entry(); }
-		inline void swap(type& head){ traits::swap(*this,head); }
+		inline void swap(head_type& head){ traits::swap(head); }
 
 
 		inline void insert_after(pointer listelm, pointer elm){ traits::_insert_after(listelm,elm); }
@@ -476,14 +505,14 @@ namespace tailq {
 
 		// some list interface stuff, nothing to serious
 		iterator insert_after(iterator position, pointer elm){
-			insert_after(position._current,elm);
+			insert_after(&(*position),elm);
 			return iterator(elm);
 		}
 		iterator insert_before(iterator position, pointer elm){
 			insert_before(position._current,elm);
 			return iterator(elm);
 		}
-		iterator insert(iterator position, pointer elm){ return insert_after(position); }
+		iterator insert(iterator position, pointer elm){ return insert_after(position,elm); }
 
 		inline pointer pop_front() {
 			pointer head = first_entry();
@@ -503,7 +532,25 @@ namespace tailq {
 			}
 			return it;
 		}
+		inline iterator erase(iterator first, iterator last) {
+			pointer curelm = &(*first);
+			while(curelm != nullptr && curelm !=&(*last)) {
+				auto next = traits::next(curelm);
+				remove(curelm);
+				curelm = next;
+			}
+			return last;
+		}
 		inline void remove(pointer elm){ traits::_remove(elm); }
+		void splice(iterator pos, head_type& other, iterator first, iterator last) {
+			traits::traits::splice(&(*pos),  *this, other, &(*first),&(*last));
+		}
+		void splice(iterator pos, head_type& other, iterator it) {
+			splice(pos,other,it,other.end());
+		}
+		void splice(iterator pos, head_type& other) {
+			splice(pos,other,other.begin(),other.end());
+		}
 
 	};
 

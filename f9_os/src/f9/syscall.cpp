@@ -95,4 +95,4 @@ namespace f9 {
 
 
 } /* namespace f9 */
-IRQ_HANDLER(SVC_Handler, f9::__svc_handler);
+//IRQ_HANDLER(SVC_Handler, f9::__svc_handler);

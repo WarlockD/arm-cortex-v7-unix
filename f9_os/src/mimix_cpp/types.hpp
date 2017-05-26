@@ -10,11 +10,87 @@
 #include <os\bitmap.hpp>
 #include <sys\time.h>
 
-extern "C" 	void panic(const char*,...);
-extern "C" 	void printk(const char*,...);
+
+#include <os\printk.hpp>
 
 namespace mimx {
+constexpr static inline size_t ALIGNED(size_t size, size_t align) { return (size / align) + ((size & (align - 1)) != 0); }
+// helper to convert a pointer to a uintptr_t
+namespace priv {
+// https://stackoverflow.com/questions/16893992/check-if-type-can-be-explicitly-converted
+// better idea for a cast
+template<typename From, typename To>
+struct _is_explicitly_convertible
+{
+    template<typename T>
+    static void f(T);
 
+    template<typename F, typename T>
+    static constexpr auto test(int) ->
+    decltype(f(static_cast<T>(std::declval<F>())),true) { return true; }
+
+    template<typename F, typename T>
+    static constexpr auto test(...) -> bool {  return false; }
+
+    static bool constexpr value = test<From,To>(0);
+};
+template<typename From, typename To>
+struct is_explicitly_convertible : std::conditional<_is_explicitly_convertible<From,To>::value,std::true_type, std::false_type>::type {
+    static bool constexpr value = _is_explicitly_convertible<From,To>::value;
+    using type = typename std::conditional<_is_explicitly_convertible<From,To>::value,std::true_type, std::false_type>::type;
+
+};
+// silly cast
+	template<typename T>
+	struct cast_info {
+		using in_type = typename std::remove_reference<T>::type;
+		constexpr static bool is_pointer = std::is_pointer<in_type>::value || std::is_array<in_type>::value;
+		using type = typename std::conditional<std::is_pointer<in_type>::value,typename  std::remove_pointer<in_type>::type,in_type>::type;
+		constexpr static bool is_intergral = std::is_integral<in_type>::value;
+	};
+	template<typename FROM, typename TO>
+	constexpr static inline TO _ptr_to_int(FROM v,std::true_type) { return reinterpret_cast<TO>(v); }
+	template<typename FROM, typename TO>
+	constexpr static inline TO _ptr_to_int(FROM v,std::false_type) { return static_cast<TO>(v); }
+
+	template<typename FROM, typename TO>
+	constexpr static inline TO __ptr_to_int(FROM v,std::false_type) { return reinterpret_cast<TO>(v); }
+	template<typename FROM, typename TO>
+	constexpr static inline TO __ptr_to_int(FROM v,std::true_type) { return static_cast<TO>(v); }
+
+	//template<typename T>
+	//constexpr static inline uintptr_t to_uintptr_t(T v) { return _ptr_to_int<T,uintptr_t>(v,std::is_pointer<T>()); }
+
+	template<typename T>
+	constexpr static inline uintptr_t to_uintptr_t(T v) { return __ptr_to_int<T,uintptr_t>(v,is_explicitly_convertible<T,uintptr_t>()); }
+	template<typename T,typename P>
+	constexpr static inline P to_pointer(T v) { return __ptr_to_int<T,uintptr_t>(v,
+			typename std::conditional<std::is_pointer<P>::value,
+			std::false_type,
+			typename std::conditional<is_explicitly_convertible<T,uintptr_t>::value,
+				std::true_type,
+				std::false_type>::type>::type
+
+
+			{}); }
+
+};
+//template<typename T>
+//constexpr static inline uintptr_t to_uintptr_t(T v) { return _ptr_to_int<T,uintptr_t>(v,std::is_pointer<T>()); }
+
+template<typename T>
+constexpr static inline uintptr_t ptr_to_int(T v) { return priv::_ptr_to_int<T,uintptr_t>(v,std::is_pointer<T>()); }
+template<typename T>
+constexpr static inline T int_to_ptr(uintptr_t v) { return priv::_ptr_to_int<uintptr_t,T>(v,std::is_pointer<T>()); }
+//template<typename T>
+constexpr static inline uintptr_t ptr_to_int(nullptr_t) { return uintptr_t{}; }
+// helper to convert a pointer to a uintptr_t
+template<typename T>
+constexpr static inline typename std::enable_if<std::is_arithmetic<T>::value, void*>::type
+to_voidp(T v) { return static_cast<void*>(v); }
+template<typename T>
+constexpr static inline void*
+to_voidp(T* v) { return reinterpret_cast<void*>(v); }
 	typedef uint32_t reg_t;
 	typedef int irq_id_t;
 
@@ -101,7 +177,226 @@ namespace mimx {
 	static constexpr size_t  SW_TRAP_COUNT = SW_TRAP_SIZE/sizeof(reg_t);
 	static constexpr size_t  TRAP_SIZE = SW_TRAP_SIZE + HW_TRAP_SIZE;
 	static constexpr size_t  TRAP_COUNT = HW_TRAP_COUNT+SW_TRAP_COUNT;
+// f9 context with code
+	// https://stackoverflow.com/questions/36066546/is-the-link-register-lr-affected-by-inline-or-naked-functions/36067265
+	/*
+	 * Intresting info about naked and always_inline. naked gurntess it will be a bl call so lr will have th return addre
+	 * but will NOT emit the prolog so be sure to save lr if you need it
+	 * Always inline dosn't do antying, it just inserts the entire function right where you call it at so its like a macro
+	 * in that respect
+	 */
+	enum class REG : int {
+		/* Saved by hardware */
+		R0=0,
+		R1,
+		R2,
+		R3,
+		R12,
+		LR,
+		PC,
+		xPSR,
+		R4,
+		R5,
+		R6,
+		R7,
+		R8,
+		R9,
+		R10,
+		R11,
+		SP,
+		CONTROL,
+		LR_RET
+	};
+	struct f9_context_t {
+		static constexpr size_t RESERVED_REGS = static_cast<size_t>(REG::xPSR) +1; // count of regesters
+		static constexpr size_t RESERVED_SIZE = RESERVED_REGS * sizeof(uint32_t);//sizeof the regesters
+		static void context_error_return() {
+			assert(0);
+			while(1); // never should get here
+		}
+		uint32_t sp=0;
+		uint32_t ret=0;
+		uint32_t ctl=0;
+		uint32_t regs[8];
 
+		uint32_t& _call_arg(uint32_t i) {
+			if(i < 4)
+				return at(i);
+			else { // the other args are on the stack
+				return stack_before_context()[i-4];
+			}
+		}
+		template<typename T=uint32_t>
+		inline T get_call_arg(int arg) { return int_to_ptr<T>(_call_arg(arg)); }
+		template<typename T=uint32_t>
+		inline T set_call_arg(int arg, T value) { _call_arg(arg) = ptr_to_int(value); }
+
+		inline const uint32_t at(int i) const {
+			if(i < 8){
+				uint32_t* ret = reinterpret_cast<uint32_t*>(sp);
+				return ret[i];
+			} else
+				return regs[i-8];
+		}
+		inline const uint32_t at(REG r) const {
+			switch(r){
+				case REG::SP: 		return sp;
+				case REG::CONTROL: 	return ctl;
+				case REG::LR_RET: 	return ret;
+				default:
+					return at(static_cast<int>(r));
+			}
+		}
+		inline  uint32_t& at(int i)  {
+			if(i < 8){
+				uint32_t* ret = reinterpret_cast<uint32_t*>(sp);
+				return ret[i];
+			} else
+				return regs[i-8];
+		}
+		inline  uint32_t& at(REG r)  {
+			switch(r){
+				case REG::SP: 		return sp;
+				case REG::CONTROL: 	return ctl;
+				case REG::LR_RET: 	return ret;
+				default:
+					return at(static_cast<int>(r));
+			}
+		}
+		uint32_t& operator[](REG r) { return at(r); }
+		uint32_t operator[](REG r) const { return at(r); }
+		uint32_t& operator[](int i) { return at(i); }
+		uint32_t operator[](int i) const { return at(i); }
+		uint16_t last_instruction() const {
+
+			//uint32_t *svc_param1 = reinterpret_cast<uint32_t*>(ctx.sp);
+			//uint32_t svc_num = ((char *) svc_param1[static_cast<uint32_t>(REG::PC)])[-2];
+			return * (int_to_ptr<uint16_t*>(at(REG::PC))-1);
+		}
+		uint8_t svc_number() const { return last_instruction() & 0xFF; }
+		uint32_t* stack_before_context() {
+			return reinterpret_cast<uint32_t*>(sp) + RESERVED_REGS;
+		}
+		const uint32_t* stack_before_context() const {
+			return reinterpret_cast<uint32_t*>(sp) + RESERVED_REGS;
+		}
+		void set_user() {
+			ret = 0xFFFFFFF9;
+			ctl = 0x0;
+		}
+		void set_kernel() {
+			ret = 0xFFFFFFFD;
+			ctl = 0x03;
+		}
+		void set_regs(uint32_t* args, size_t count){
+			std::copy(args,args + std::min(count,8u), reinterpret_cast<uint32_t*>(sp));
+			if(count > 7) { // these are put on r4-r11.
+				count-=8;
+				args+=8;
+				std::copy(args,args + std::min(count,7u), regs);
+			}
+		}
+		template<typename SP, typename PC>
+		void init(SP sp_, PC pc_, uint32_t* regs_= nullptr) {
+			// Reserve 8 words for fake context
+			uint32_t* stack = reinterpret_cast<uint32_t*>(sp_);
+			stack -= RESERVED_REGS;
+			sp = ptr_to_int(stack);
+			set_user(); // user is set by default
+		//	dbg::arg_debug("ctx::init",(void*)sp_,reinterpret_cast<uint32_t*>(sp),stack,(void*)pc_,(void*)regs_);
+			if(regs_)
+				set_regs(regs_,4); // we just set 4 arguments here
+			else
+				std::fill_n(stack,4,0);
+			at(REG::R12) = 0x0; // link
+			at(REG::LR) = ptr_to_int(context_error_return); // 0xFFFFFF
+			at(REG::PC) = ptr_to_int(pc_);
+			at(REG::xPSR) = 0x1000000; /* Thumb bit on */
+		}
+		template<typename SP, typename PC>
+		void init_priv(SP sp_, PC pc_, uint32_t* regs_= nullptr) {
+			init(sp_,pc_,regs_);
+			set_kernel(); // user is set by default
+		}
+		template<typename SP, typename PC>
+		void init_user(SP sp_, PC pc_, uint32_t* regs_= nullptr) {
+			init(sp_,pc_,regs_);
+		}
+		f9_context_t() {}
+		template<typename SP, typename PC>
+		f9_context_t(SP sp_, PC pc_, uint32_t* regs_= nullptr) { init(sp_,pc_,regs_); }
+
+	#ifdef CONFIG_FPU
+		uint64_t fp_regs[8];
+		uint32_t fp_flag;
+		__attribute__((always_inline)) void save() {
+			__asm__ __volatile__ ("cpsid i");
+			this->fp_flag = 0;
+			__save(ctx);
+			__asm__ __volatile__ ("tst lr, 0x10");
+			__asm__ __volatile__ ("bne no_fp");
+			__asm__ __volatile__ ("mov r3, %0"
+					: : "r" (this->fp_regs) : "r3");
+			__asm__ __volatile__ ("vstm r3!, {d8-d15}"
+					::: "r3");
+			__asm__ __volatile__ ("mov r4, 0x1": : :"r4");
+			__asm__ __volatile__ ("stm r3, {r4}");
+			__asm__ __volatile__ ("no_fp:");
+		}
+		__attribute__((always_inline)) void restore() {
+			__restore();
+		if ((ctx)->fp_flag) {
+			__asm__ __volatile__ ("mov r0, %0"
+					: : "r" ((ctx)->fp_regs): "r0");
+			__asm__ __volatile__ ("vldm r0, {d8-d15}");
+		}								\
+		__asm__ __volatile__ ("cpsie i");
+		}
+	#endif
+		__attribute__((always_inline)) void save() {
+			__asm__ __volatile__ ("cpsid i");			\
+			__save();
+		}
+		__attribute__((always_inline)) void restore() {
+			__restore();
+			__asm__ __volatile__ ("cpsie i");
+		}
+		__attribute__((always_inline)) void init_ctx_switch(uintptr_t pc)  {
+			__asm__ __volatile__ ("mov r1, %0" : : "r" (this->sp));
+			__asm__ __volatile__ ("msr msp, r1");
+			__asm__ __volatile__ ("mov r0, %0" : : "r" (pc));
+			__asm__ __volatile__ ("cpsie i");
+			__asm__ __volatile__ ("bx r0");
+		}
+private:
+		__attribute__((always_inline)) void __save() {
+			__asm__ __volatile__ ("mov r0, %0"
+					: : "r" (this->regs) : "r0");
+			__asm__ __volatile__ ("stm r0, {r4-r11}");
+			__asm__ __volatile__ ("and r4, lr, 0xf":::"r4");
+			__asm__ __volatile__ ("teq r4, #0x9");
+			__asm__ __volatile__ ("ite eq");
+			__asm__ __volatile__ ("mrseq r0, msp"::: "r0");
+			__asm__ __volatile__ ("mrsne r0, psp"::: "r0");
+			__asm__ __volatile__ ("mov %0, r0" : "=r" (this->sp));
+			__asm__ __volatile__ ("mov %0, lr" : "=r" (this->ret));
+			__asm__ __volatile__ ("mrs r0, control"::: "r0");
+			__asm__ __volatile__ ("mov %0, r0" : "=r" (this->ctl));
+		}
+		__attribute__((always_inline)) void __restore() {
+			__asm__ __volatile__ ("mov lr, %0" : : "r" (this->ret));
+			__asm__ __volatile__ ("mov r0, %0" : : "r" (this->sp));
+			__asm__ __volatile__ ("mov r2, %0" : : "r" (this->ctl));
+			__asm__ __volatile__ ("and r4, lr, 0xf":::"r4");
+			__asm__ __volatile__ ("teq r4, #0x9");
+			__asm__ __volatile__ ("ite eq");
+			__asm__ __volatile__ ("msreq msp, r0");
+			__asm__ __volatile__ ("msrne psp, r0");
+			__asm__ __volatile__ ("mov r0, %0" : : "r" (this->regs));
+			__asm__ __volatile__ ("ldm r0, {r4-r11}");
+			__asm__ __volatile__ ("msr control, r2");
+		}
+	};
 
 	struct stackframe_s {
 		union {
@@ -174,18 +469,35 @@ namespace mimx {
 	__attribute__( ( always_inline ) ) static inline void cli() { __asm volatile ("cpsie i" : : : "memory"); }
 	__attribute__( ( always_inline ) ) static inline void sli() { __asm volatile ("cpsid i" : : : "memory"); }
 
-	__attribute__( ( always_inline ) ) static inline void save_flags(uint32_t& flags)
+
+	template<typename T> //, typename std::enable_if<std::is_convertible<T,uint32_t>::value>::type>
+	__attribute__( ( always_inline ) ) static inline void save_flags(T& flags)
 	{
+			static_assert(std::is_convertible<T,uint32_t>::value, "WRONG SIZE!");
 		  __asm volatile ("MRS %0, primask" : "=r" (flags) );
 	}
-	__attribute__( ( always_inline ) ) static inline void restore_flags(uint32_t flags)
+	template<typename T>
+	__attribute__( ( always_inline ) ) static inline void restore_flags(T flags)
 	{
 		  __asm volatile ("msr primask, %0" : : "r"(flags) );
 	}
+	__attribute__( ( always_inline ) )static inline uint32_t irq_number(void)
+	{
+		uint32_t irqno;
+		__asm__ __volatile__ ( "mrs %0, ipsr" : "=r" (irqno) : );
+		return irqno;
+	}
 	class irq_simple_lock {
-		uint32_t _status;
+		int _status;
 	public:
-		irq_simple_lock() { save_flags(_status); cli(); }
+		irq_simple_lock(bool start_disabled=false) {
+			if(irq_number() == 0) { // if we are not in interrupt
+				save_flags(_status);
+				if(start_disabled) cli();
+			}
+		}
+		void enable() { sli(); }
+		void disable() { cli(); }
 		~irq_simple_lock() { restore_flags(_status); }
 	};
 	template<typename C, typename V>

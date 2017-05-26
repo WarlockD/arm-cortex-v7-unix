@@ -185,6 +185,30 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1124464924.500543972" name="/" resourcePath="src/f9">
+						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.384351092" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.1337520742.210833028" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.1337520742"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.board.1312316499.303080815" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board.1312316499"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1218761997.950996048" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu.1218761997"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.27564688.841078329" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi.27564688"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="fr.ac6.managedbuild.targetPlatform.gnu.cross" isAbstract="false" osList="all" superClass="fr.ac6.managedbuild.targetPlatform.gnu.cross"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.110912335" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1622423515">
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1556959662" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1993700211" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
+							</tool>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.863280208" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1110897132">
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1603801736" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s.1103952441" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s"/>
+							</tool>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.1850142206" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.1755716755"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1994219239" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1291610303"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.archiver.2131077957" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver.456067656"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.322610402" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.1213780576">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1073329339" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.1957380258" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
 					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1124464924.38863556" name="/" resourcePath="src/os/scmrtos">
 						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.1826320827" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
 							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.1337520742.818765907" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.1337520742"/>
@@ -212,7 +236,7 @@
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="f9/kernel"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="inc"/>
-						<entry excluding="os/scmrtos|cmd|xx6|xv6cpp|cmd/ls.c|v6mini|v6minicpp|sos|v6|xv6/fatfs/drivers/sram_diskio.c|xv6/fatfs/drivers/sdram_diskio.c|xv6/fatfs/drivers/usbh_diskio.c|sos/os_svc_handler.S|sos/old_pensv.s|sos/os_pendsv_handler.S|xv6/fatfs/option" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="f9|os/scmrtos|cmd|xx6|xv6cpp|cmd/ls.c|v6mini|v6minicpp|sos|v6|xv6/fatfs/drivers/sram_diskio.c|xv6/fatfs/drivers/sdram_diskio.c|xv6/fatfs/drivers/usbh_diskio.c|sos/os_svc_handler.S|sos/old_pensv.s|sos/os_pendsv_handler.S|xv6/fatfs/option" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup"/>
 					</sourceEntries>
 				</configuration>
