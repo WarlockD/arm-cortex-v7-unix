@@ -75,7 +75,7 @@ namespace tailq {
 	template<typename T, field<T> FIELD> class head_impl;
 	template<typename T, field<T> FIELD,bool _is_const> struct iterator;
 	template<typename T, field<T> FIELD> struct pcontainer;
-	constexpr static uintptr_t TAILQ_MAGIC = 0x123456789;// needs to be odd, most pinters arn't
+	constexpr static uintptr_t TAILQ_MAGIC = 0x12345678;// needs to be odd, most pinters arn't
 #ifdef TRACK_LIST_OWNER
 	// better than using a void pointer
 	strict container {};

@@ -5,18 +5,139 @@
 #include <sys\types.h>
 #include <climits>
 
+#include <tuple>
+
 #include "config.hpp"
 
 #include <os\bitmap.hpp>
 #include <sys\time.h>
-
+#include <utility>
 
 #include <os\printk.hpp>
+
+
+// combo of lite bsd and a few links here
+	// https://sourceforge.net/p/fixedptc/code/ci/default/tree/fixedptc.h
+	// and a paper called 2013_cppfp_paper_osc.pdf
+
+namespace priv{
+	static constexpr size_t DEFAULT_FPINT_SHIFT = 11;
+	template<typename T,typename R=T> using fixpt_valid = std::enable_if<std::is_arithmetic<T>::value,R>;
+}
+template<size_t _FSHIFT=priv::DEFAULT_FPINT_SHIFT>
+struct fixpt_t { // simple fixed point math for load averages
+	static constexpr size_t FSHIFT = _FSHIFT;
+	static constexpr size_t FSCALE = 1<<FSHIFT;
+	constexpr fixpt_t() : _raw(0) {}
+    template<typename T,
+	typename priv::fixpt_valid<T>::type* = nullptr>
+    constexpr fixpt_t(const T n) : _raw(static_cast<int>(n* FSCALE)) {};
+    static constexpr fixpt_t ONE = fixpt_t(1);
+    static constexpr fixpt_t ZERO = fixpt_t(0);
+
+	template<size_t PP>
+	constexpr fixpt_t(const fixpt_t<PP>& x) : _raw(PP> FSHIFT ?  (_raw>>(PP-FSHIFT)):  (_raw<<(FSHIFT-PP))) {}
+
+
+	//template<typename T>
+	//typename priv::fixpt_valid<T>::type
+	//constexpr operator T() const  { return static_cast<T>(_raw) / static_cast<T>(FSCALE); }
+
+	constexpr operator int32_t() const {return static_cast<int32_t>(_raw) / FSCALE; }
+	constexpr operator uint32_t() const {return static_cast<uint32_t>(_raw) / FSCALE; }
+	constexpr operator float() const {return static_cast<float>(_raw)/ FSCALE; }
+	constexpr operator double() const {return static_cast<double>(_raw)/ FSCALE; }
+	template<size_t PP>
+	constexpr operator fixpt_t<PP>() const { return PP> FSHIFT ?  (_raw>>(PP-FSHIFT)):  (_raw<<(FSHIFT-PP)); }
+	/** Assignment of int */
+	template<typename T,typename priv::fixpt_valid<T>::type* = nullptr>
+	constexpr fixpt_t& operator=(const T& x){ _raw = x*FSCALE; return *this;}
+
+	//constexpr fixpt_t& operator=(const int& x){ _raw = x*FSCALE; return *this;}
+	//constexpr fixpt_t& operator=(const float& x){ _raw = x*FSCALE; return *this;}
+	template<unsigned PP>
+	constexpr inline  fixpt_t& operator=(const fixpt_t<PP>& x){ PP> FSHIFT ?  (x._raw>>(PP-FSHIFT)):  (x._raw<<(FSHIFT-PP)); return *this;}
+
+	constexpr inline  fixpt_t& operator+=(const fixpt_t& x){_raw -= x._raw; return *this;}
+	constexpr inline  fixpt_t& operator-=(const fixpt_t& x){_raw -= x._raw; return *this;}
+	constexpr inline  fixpt_t& operator*=(const fixpt_t& x){
+		int64_t v = _raw;	// expensive?
+		v*= x._raw;
+		v >>= FSHIFT;
+		_raw = static_cast<int>(v);
+		return *this;
+	}
+	constexpr inline  fixpt_t& operator/=(const fixpt_t& x){
+		int64_t v = _raw;	// expensive?
+		v <<= FSHIFT;
+		v/= x._raw;
+		_raw = static_cast<int>(v);
+		return *this;
+	}
+	constexpr inline  fixpt_t& operator<<=(const uint32_t& x){ _raw <<= x; return *this; }
+	constexpr inline  fixpt_t& operator>>=(const uint32_t& x){ _raw >>= x; return *this; }
+
+	template<typename T> constexpr inline typename priv::fixpt_valid<T,fixpt_t&>::type
+		operator+=(const T& x){_raw -= fixpt_t(x); return *this;}
+	template<typename T> constexpr inline typename priv::fixpt_valid<T,fixpt_t&>::type
+		operator-=(const T& x){_raw -= fixpt_t(x); return *this;}
+	template<typename T> constexpr inline typename priv::fixpt_valid<T,fixpt_t&>::type
+		operator*=(const T& x){_raw *= fixpt_t(x); return *this;}
+	template<typename T> constexpr inline typename priv::fixpt_valid<T,fixpt_t&>::type
+		operator/=(const T& x){_raw *= fixpt_t(x); return *this;}
+
+	// logicial
+	bool operator==(const fixpt_t& x) const{ return _raw == x._raw; }
+	bool operator!=(const fixpt_t& x) const{ return _raw != x._raw; }
+	bool operator<(const fixpt_t& x) const{ return _raw < x._raw; }
+	bool operator>(const fixpt_t& x) const{ return _raw > x._raw; }
+	bool operator<=(const fixpt_t& x) const{ return _raw <= x._raw; }
+	bool operator>=(const fixpt_t& x) const{ return _raw >= x._raw; }
+	int raw() const { return _raw; }
+private:
+	int _raw;
+};
+
+#define fixpt_t_math_builder(OP) \
+template<size_t _FSHIFT,typename T> static constexpr inline typename priv::fixpt_valid<T,fixpt_t<_FSHIFT>>::type \
+	operator OP(const T& l, 				const fixpt_t<_FSHIFT>& r){ fixpt_t<_FSHIFT> ret(l); ret OP##= r; return ret; } \
+template<size_t _FSHIFT,typename T> static constexpr inline typename priv::fixpt_valid<T,fixpt_t<_FSHIFT>>::type \
+	operator OP(const fixpt_t<_FSHIFT>& l, const T& r)				  { fixpt_t<_FSHIFT> ret(l); ret OP##= r; return ret; } \
+template<size_t _FSHIFT> static constexpr inline fixpt_t<_FSHIFT> \
+	operator OP(const fixpt_t<_FSHIFT>& l, const fixpt_t<_FSHIFT>& r) { fixpt_t<_FSHIFT> ret(l); ret OP##= r; return ret; }
+
+#define fixpt_t_logic_builder(OP) \
+template<size_t _FSHIFT,typename T> static constexpr inline typename priv::fixpt_valid<T,bool>::type \
+	operator OP(const T& l, 				const fixpt_t<_FSHIFT>& r){ return fixpt_t<_FSHIFT>(l) OP r; } \
+template<size_t _FSHIFT,typename T> static constexpr inline typename priv::fixpt_valid<T,bool>::type \
+	operator OP(const fixpt_t<_FSHIFT>& l, const T& r)				  { return l OP fixpt_t<_FSHIFT>(r); } \
+
+fixpt_t_math_builder(*)
+fixpt_t_math_builder(/)
+fixpt_t_math_builder(+)
+fixpt_t_math_builder(-)
+fixpt_t_math_builder(>>)
+fixpt_t_math_builder(<<)
+fixpt_t_logic_builder(<)
+fixpt_t_logic_builder(>)
+fixpt_t_logic_builder(==)
+fixpt_t_logic_builder(!=)
+fixpt_t_logic_builder(>=)
+fixpt_t_logic_builder(<=)
 
 namespace mimx {
 constexpr static inline size_t ALIGNED(size_t size, size_t align) { return (size / align) + ((size & (align - 1)) != 0); }
 // helper to convert a pointer to a uintptr_t
 namespace priv {
+// case c++17 isn't out yet:(
+	template <size_t ...I>
+	struct index_sequence {};
+
+	template <size_t N, size_t ...I>
+	struct make_index_sequence : public make_index_sequence<N - 1, N - 1, I...> {};
+
+	template <size_t ...I>
+	struct make_index_sequence<0, I...> : public index_sequence<I...> {};
 // https://stackoverflow.com/questions/16893992/check-if-type-can-be-explicitly-converted
 // better idea for a cast
 template<typename From, typename To>
@@ -48,23 +169,29 @@ struct is_explicitly_convertible : std::conditional<_is_explicitly_convertible<F
 		using type = typename std::conditional<std::is_pointer<in_type>::value,typename  std::remove_pointer<in_type>::type,in_type>::type;
 		constexpr static bool is_intergral = std::is_integral<in_type>::value;
 	};
+	template<typename FROM>
+	constexpr static inline uintptr_t __ptr_to_uint(FROM v,std::true_type) { return reinterpret_cast<uintptr_t>(v); }
+	template<typename FROM>
+	constexpr static inline uintptr_t __ptr_to_uint(FROM v,std::false_type) { return static_cast<uintptr_t>(v); }
+	template<typename FROM>
+	constexpr static inline uintptr_t _ptr_to_uint(FROM v) { return __ptr_to_uint(v,std::is_pointer<FROM>()); }
 	template<typename FROM, typename TO>
 	constexpr static inline TO _ptr_to_int(FROM v,std::true_type) { return reinterpret_cast<TO>(v); }
 	template<typename FROM, typename TO>
 	constexpr static inline TO _ptr_to_int(FROM v,std::false_type) { return static_cast<TO>(v); }
 
 	template<typename FROM, typename TO>
-	constexpr static inline TO __ptr_to_int(FROM v,std::false_type) { return reinterpret_cast<TO>(v); }
+	constexpr static inline TO __ptr_to_int(FROM&& v,std::false_type) { return reinterpret_cast<TO>(v); }
 	template<typename FROM, typename TO>
-	constexpr static inline TO __ptr_to_int(FROM v,std::true_type) { return static_cast<TO>(v); }
+	constexpr static inline TO __ptr_to_int(FROM&& v,std::true_type) { return static_cast<TO>(v); }
 
 	//template<typename T>
 	//constexpr static inline uintptr_t to_uintptr_t(T v) { return _ptr_to_int<T,uintptr_t>(v,std::is_pointer<T>()); }
 
 	template<typename T>
-	constexpr static inline uintptr_t to_uintptr_t(T v) { return __ptr_to_int<T,uintptr_t>(v,is_explicitly_convertible<T,uintptr_t>()); }
+	constexpr static inline uintptr_t to_uintptr_t(T&& v) { return __ptr_to_int<T,uintptr_t>(v,is_explicitly_convertible<T,uintptr_t>()); }
 	template<typename T,typename P>
-	constexpr static inline P to_pointer(T v) { return __ptr_to_int<T,uintptr_t>(v,
+	constexpr static inline P to_pointer(T&& v) { return __ptr_to_int<T,uintptr_t>(v,
 			typename std::conditional<std::is_pointer<P>::value,
 			std::false_type,
 			typename std::conditional<is_explicitly_convertible<T,uintptr_t>::value,
@@ -73,13 +200,32 @@ struct is_explicitly_convertible : std::conditional<_is_explicitly_convertible<F
 
 
 			{}); }
+#if 0
+	template <typename... T>
+	auto remove_ref_from_tuple_members(std::tuple<T...> const& t) {
+	    return std::tuple<typename std::remove_reference<T>::type...>{ t };
+	}
+	template <class Tuple, size_t... Is>
+	constexpr auto _to_uintptr(Tuple t, index_sequence<Is...>) {
+		return std::make_tuple(_ptr_to_uint(std::get<Is>(t))... );
 
+		//return std::tie(_ptr_to_uint(std::get<Is>(t)) ...);
+	}
+#endif
+	template<typename T>
+	constexpr auto _to_uintptr_truple(T&& v) { return std::make_tuple(_ptr_to_uint(v)); }
+	template<typename T,typename ... Args>
+	constexpr auto _to_uintptr_truple(T&& v, Args ... args) { return std::make_tuple(_ptr_to_uint(v), _to_uintptr_truple(std::forward<Args>(args)...)); }
+	template <typename ... Args>
+	constexpr auto  to_uintptr_truple(Args ... args) { return _to_uintptr_truple(std::forward<Args>(args)...); }
 };
 //template<typename T>
 //constexpr static inline uintptr_t to_uintptr_t(T v) { return _ptr_to_int<T,uintptr_t>(v,std::is_pointer<T>()); }
 
 template<typename T>
-constexpr static inline uintptr_t ptr_to_int(T v) { return priv::_ptr_to_int<T,uintptr_t>(v,std::is_pointer<T>()); }
+constexpr static inline uintptr_t ptr_to_int(T v) { return priv::_ptr_to_int<T,uintptr_t>(std::forward<T>(v),std::is_pointer<T>()); }
+
+
 template<typename T>
 constexpr static inline T int_to_ptr(uintptr_t v) { return priv::_ptr_to_int<uintptr_t,T>(v,std::is_pointer<T>()); }
 //template<typename T>
@@ -229,7 +375,7 @@ to_voidp(T* v) { return reinterpret_cast<void*>(v); }
 		template<typename T=uint32_t>
 		inline T get_call_arg(int arg) { return int_to_ptr<T>(_call_arg(arg)); }
 		template<typename T=uint32_t>
-		inline T set_call_arg(int arg, T value) { _call_arg(arg) = ptr_to_int(value); }
+		inline void set_call_arg(int arg, T value) { _call_arg(arg) = ptr_to_int(value); }
 
 		inline const uint32_t at(int i) const {
 			if(i < 8){
@@ -288,6 +434,8 @@ to_voidp(T* v) { return reinterpret_cast<void*>(v); }
 			ret = 0xFFFFFFFD;
 			ctl = 0x03;
 		}
+		template<typename T=uint32_t>
+		inline void set_return_value(T value) { at(REG::R0) =  int_to_ptr<T>(value); }
 		void set_regs(uint32_t* args, size_t count){
 			std::copy(args,args + std::min(count,8u), reinterpret_cast<uint32_t*>(sp));
 			if(count > 7) { // these are put on r4-r11.
@@ -296,22 +444,44 @@ to_voidp(T* v) { return reinterpret_cast<void*>(v); }
 				std::copy(args,args + std::min(count,7u), regs);
 			}
 		}
-		template<typename SP, typename PC>
-		void init(SP sp_, PC pc_, uint32_t* regs_= nullptr) {
-			// Reserve 8 words for fake context
-			uint32_t* stack = reinterpret_cast<uint32_t*>(sp_);
-			stack -= RESERVED_REGS;
-			sp = ptr_to_int(stack);
+		//template<class T, size_t I>
+		//inline typename std::enable_if<I == sizeof...(Ts), void>::type
+		//		_init_set_arg(T) {}
+		template<class T, size_t I>
+		inline typename std::enable_if<I >= 4, void>::type
+			_init_set_arg(T&& v) {
+				uint32_t* stack = reinterpret_cast<uint32_t*>(sp);
+				stack[RESERVED_REGS+I-4] = ptr_to_int(v);
+				sp = ptr_to_int(stack);
+		}
+		template<class T, size_t I>
+		inline typename std::enable_if<I < 4, void>::type
+			_init_set_arg(T&& v) {
+				at(I) = ptr_to_int(v);
+		}
+
+
+	//	template<typename T>   void set_reg(REG r, T value) {  at(r) = ptr_to_int(value); }
+	//	template<typename PCT> void set_pc(PCT pc_){ at(REG::PC) = ptr_to_int(pc_); }
+	//	template<typename LRT> void set_lr(LRT lr_){  at(REG::LR) = ptr_to_int(lr_);  }
+		template<typename SP, typename PC> //typename ... Args>
+		void init(SP sp_, PC pc_) {
+			sp = ptr_to_int(sp);
+		//	static constexpr size_t arg_count = sizeof...(Args);
+			sp -= RESERVED_REGS * sizeof(uint32_t);
+		//	if(arg_count >=4) sp-= (arg_count * sizeof(uint32_t))-4; // reserve more args
+		//	init_arg(priv::to_uintptr_truple(std::forward<Args>(args)...)); //std::forward<Args>(args)...));
+
 			set_user(); // user is set by default
-		//	dbg::arg_debug("ctx::init",(void*)sp_,reinterpret_cast<uint32_t*>(sp),stack,(void*)pc_,(void*)regs_);
-			if(regs_)
-				set_regs(regs_,4); // we just set 4 arguments here
-			else
-				std::fill_n(stack,4,0);
 			at(REG::R12) = 0x0; // link
-			at(REG::LR) = ptr_to_int(context_error_return); // 0xFFFFFF
+			at(REG::LR) = ptr_to_int(context_error_return); // set error return
 			at(REG::PC) = ptr_to_int(pc_);
 			at(REG::xPSR) = 0x1000000; /* Thumb bit on */
+		}
+		template<typename SP, typename PC, typename Args> //typename ... Args>
+		void init(SP sp_, PC pc_, Args arg) {
+			init(sp_,pc_);
+			set_call_arg(0, arg);
 		}
 		template<typename SP, typename PC>
 		void init_priv(SP sp_, PC pc_, uint32_t* regs_= nullptr) {
@@ -323,8 +493,13 @@ to_voidp(T* v) { return reinterpret_cast<void*>(v); }
 			init(sp_,pc_,regs_);
 		}
 		f9_context_t() {}
+
+		template<typename SP, typename PC, typename Args>  //... Args>
+		f9_context_t(SP sp_, PC pc_, Args  arg) { init(sp_,pc_, arg); }
+
 		template<typename SP, typename PC>
-		f9_context_t(SP sp_, PC pc_, uint32_t* regs_= nullptr) { init(sp_,pc_,regs_); }
+		f9_context_t(SP sp_, PC pc_) { init(sp_,pc_); }
+		//f9_context_t() { init(0,0); }
 
 	#ifdef CONFIG_FPU
 		uint64_t fp_regs[8];

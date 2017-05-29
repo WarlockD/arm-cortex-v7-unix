@@ -445,8 +445,20 @@ namespace list {
 				return operator()(reinterpret_cast<uintptr_t>(x));
 			}
 		};
+		template<typename T>
+		struct pointer_hasher  {
+			constexpr size_t operator()(const T& x) const { return int_hasher<T>()(*x); }
+			constexpr size_t operator()(const T* x) const { return int_hasher<T>()(x); }
+			constexpr size_t operator()(uintptr_t x) const { return int_hasher<T>()(x); }
+		};
 
-		template<typename T, list::field<T> FIELD, size_t _BUCKET_COUNT, typename HASHER, typename EQUALS>
+		template<typename T>
+		struct pointer_equals  {
+			constexpr bool operator()(const T& a, const T& b) const { return &a == &b; }
+			constexpr bool operator()(const T& a, const T* b) const { return &a == b; }
+			constexpr bool operator()(const T& a, uintptr_t b) const { return reinterpret_cast<uintptr_t>(&a) == b; }
+		};
+		template<typename T, list::field<T> FIELD, size_t _BUCKET_COUNT, typename HASHER = pointer_hasher<T>, typename EQUALS = pointer_equals<T>>
 		class hash {
 		public:
 			using hasher = HASHER;
@@ -517,13 +529,24 @@ namespace list {
 
 			//const HASHER _hasher = HASHER{};
 			//const EQUALS _equals= EQUALS{};
+
+			inline bool obj_equal(const_reference a, value_type&& b) const {
+				return _equals(a,std::forward<value_type>(b));
+			}
+			inline bool obj_equal(const_reference a, const_pointer b) const { return obj_equal(a,*b); }
+			inline bool obj_equal(const_reference a, pointer b) const { return obj_equal(a,*b); }
+			template<typename ... Args>
+			inline bool obj_equal(const_reference a, Args... args) const {
+					return _equals(a,std::forward<Args>(args)...);
+			}
+
 			template<typename ... Args>
 			pointer search(Args... args) {
 				size_t hash = _hasher(std::forward<Args>(args)...);
 				head_type& bucket = _buckets[hash% BUCKET_COUNT];
 				if(!bucket.empty()){
 					for(reference o : bucket){
-						if(_equals(std::forward<const_reference>(o), std::forward<Args>(args)...)){
+						if(obj_equal(std::forward<const_reference>(o), std::forward<Args>(args)...)){
 							return &o;
 						}
 					}
@@ -533,13 +556,13 @@ namespace list {
 
 			status insert(pointer obj) {
 				const_reference obj_ref = *obj;
-				size_t hash = _hasher(std::forward<const_reference>(obj_ref)) ;
+				size_t hash = _hasher(obj_ref);
 				head_type& bucket = _buckets[hash% BUCKET_COUNT];
 				if(!bucket.empty()) {
 					for(reference o : bucket){
 						if(&o == obj)
 							return status::exists;
-						else if(_equals(std::forward<const_reference>(o), std::forward<const_reference>(obj_ref)))
+						else if(obj_equal(std::forward<const_reference>(o), std::forward<const_reference>(obj_ref)))
 							return status::dup; // return the pointer its equal to
 					} // keep searching
 				}
@@ -547,13 +570,15 @@ namespace list {
 				bucket.push_front(obj);
 				return status::ok;
 			}
+			status insert(reference obj) { return insert(&obj); }
+
 			template<typename ... Args>
 			pointer remove(Args... args) noexcept {
 				size_t hash = _hasher(std::forward<Args>(args)...) % BUCKET_COUNT;
 				head_type& bucket = _buckets[hash];
 				if(!bucket.empty()){
 					for(reference o : bucket){
-						if(_equals(std::forward<const_reference>(o), std::forward<Args>(args)...)){
+						if(obj_equal(o, std::forward<Args>(args)...)){
 							bucket.remove(&o);
 							return &o;
 						}
@@ -561,10 +586,11 @@ namespace list {
 				}
 				return nullptr;
 			}
+
 			//
-			status remove(const_pointer p, bool remove_dup=false) {
+			status remove(pointer p) {
 				const_reference obj_ref = *p;
-				size_t hash = _hasher(std::forward<const_reference>(obj_ref)) % BUCKET_COUNT;
+				size_t hash = _hasher(obj_ref) % BUCKET_COUNT;
 				head_type& bucket = _buckets[hash];
 				if(!bucket.empty()){
 					for(reference o : bucket){

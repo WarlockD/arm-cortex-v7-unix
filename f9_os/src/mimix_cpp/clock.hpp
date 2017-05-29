@@ -36,22 +36,7 @@ namespace mimx {
 		int32_t stat(int *times){ (void)times; return 0;}
 	};
 #endif
-	class ktimer {
-		static void execute();
-		void recalc(uint32_t delta);
-	protected:
 
-		uint32_t _delta;
-		virtual uint32_t handler()  = 0 ; // return delta
-		friend class softirq_ktimers_t;
-		ktimer();
-	public:
-
-		tailq::entry<ktimer> _link;
-		virtual ~ktimer() {}
-		void schedule(uint32_t ticks);
-		void unschedule();
-	};
 	class sysclock : public softirq {
 		uint32_t _ticks;
 		void handler()  final;

@@ -56,7 +56,7 @@ sv_call_handler_c(unsigned int * hardfault_args)
 static uint32_t* do_no_switch(uint32_t* stack) { return stack; } // so pendsv can be called and nothing happens
 irq::switch_callback irq_context_switch_hook=do_no_switch;
 
-
+#if 0
 /*
  * PendSV is used to perform a context switch. This is a recommended method for Cortex-M.
  * This is because the Cortex-M automatically saves half of the processor context
@@ -152,6 +152,7 @@ extern "C" __attribute__((naked)) void PendSV_Handler()
 #endif  // #if (defined __SOFTFP__)
 #endif  // #if (defined __ARM_ARCH_6M__)
 }
+#endif
 // weak alias to support old name of PendSV_Handler.
 #pragma weak PendSVC_ISR = PendSV_Handler
 

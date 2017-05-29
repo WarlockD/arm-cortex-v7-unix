@@ -36,7 +36,259 @@ __attribute__((weak)) void mimx_idle_task() {
 }
 //globals, FIX
 namespace mimx{
+	proc proc::procs[NR_TASKS+NR_PROCS];
+	proc *proc::proc_ptr=nullptr;	/* &proc[cur_proc] */
+	proc *proc::bill_ptr=nullptr;	/* ptr to process to bill for clock ticks */
+	int proc::prev_proc = 0;
+	int proc::cur_proc = 0;
+	uint32_t proc::busy_map=0;		/* bit map of busy tasks */
+	message proc::task_mess[NR_TASKS+1];	/* ptrs to messages for busy tasks */
+	proc::proc_queue_t proc::rdy_queue[NQ];	/* pointers to ready list tails */
+	message_hash_t proc::message_lookup;
+	int proc::interrupt(int task, message& m_ptr) {
+		/* An interrupt has occurred.  Schedule the task that handles it. */
+
+		  uint32_t old_map;
+		  int ret = 0; // not busy
+		  /* Try to send the interrupt message to the indicated task. */
+		  uint32_t this_bit = 1 << (-task);
+		  if (mini_send(HARDWARE, task, m_ptr) != OK) {
+			/* The message could not be sent to the task; it was not waiting. */
+			old_map = busy_map;	/* save original map of busy tasks */
+			///if (task == CLOCK) {
+			//	lost_ticks++;
+			//} else {
+				busy_map |= this_bit;		/* mark task as busy */
+				task_mess[-task] = m_ptr;	/* record message pointer */
+			//}
+			ret = -1; // error
+		  } else {
+			/* Hardware interrupt was successfully sent as a message. */
+			busy_map &= ~this_bit;	/* turn off the bit in case it was on */
+			old_map = busy_map;
+		  }
+
+		  /* See if any tasks that were previously busy are now listening for msgs. */
+		  if (old_map != 0) {
+			for (int i = 2; i <= NR_TASKS; i++) {
+				/* Check each task looking for one with a pending interrupt. */
+				if ( (old_map>>i) & 1) {
+					/* Task 'i' has a pending interrupt. */
+					int n = mini_send(HARDWARE, -i, task_mess[i]);
+					if (n == OK) busy_map &= ~(1 << i);
+				}
+			}
+		  }
+
+		  /* If a task has just been readied and a user is running, run the task. */
+		  if (!rdy_queue[TASK_Q].empty()&& (cur_proc >= 0 || cur_proc == IDLE))
+			pick_proc();
+		  return ret;
+	}
+	int proc::sys_call(int function, int caller, int src_dest, message& m_ptr){
+		/* The only system calls that exist in MINIX are sending and receiving
+		 * messages.  These are done by trapping to the kernel with an INT instruction.
+		 * The trap is caught and sys_call() is called to send or receive a message (or
+		 * both).
+		 */
+
+		  int n;
+
+		  /* Check for bad system call parameters. */
+		  proc* rp = proc_addr(caller);
+		  if (src_dest < -NR_TASKS || (src_dest >= NR_PROCS && src_dest != ANY) )
+			  return E_BAD_SRC;
+		//	  rp->ctx[REG::R0] = E_BAD_SRC;
+
+
+		  if (function != BOTH && caller >= LOW_USER)
+			  return E_NO_PERM;	/* users only do BOTH */
+			  //rp->ctx[REG::R0]= E_NO_PERM;	/* users only do BOTH */
+		  /* The parameters are ok. Do the call. */
+		  if (function & SEND) {
+				/* func = SEND or BOTH */
+			if ((n=mini_send(caller, src_dest, m_ptr)) != OK) return n;  // rp->p_reg[RET_REG] = n;
+		  }
+		  return (function & RECEIVE) ? mini_rec(caller, src_dest, m_ptr) : OK;      /* func = RECEIVE or BOTH */
+	}
+
+	int proc::mini_send(int caller, int dest, message& m_ptr){
+		/* Send a message from 'caller' to 'dest'.  If 'dest' is blocked waiting for
+		 * this message, copy the message to it and unblock 'dest'.  If 'dest' is not
+		 * waiting at all, or is waiting for another source, queue 'caller'.
+		 */
+
+		 proc *caller_ptr, *dest_ptr, *next_ptr;
+
+		  /* User processes are only allowed to send to FS and MM.  Check for this. */
+		  if (caller >= LOW_USER && (dest != FS_PROC_NR && dest != MM_PROC_NR))
+			return(E_BAD_DEST);
+		  caller_ptr = proc_addr(caller);	/* pointer to source's proc entry */
+		  dest_ptr = proc_addr(dest);	/* pointer to destination's proc entry */
+		  if (dest_ptr->p_flags & P_SLOT_FREE) return(E_BAD_DEST);	/* dead dest */
+
+
+		  /* Check to see if 'dest' is blocked waiting for this message. */
+
+		  if ( (dest_ptr->p_flags & RECEIVING) &&
+				(dest_ptr->p_getfrom == ANY || dest_ptr->p_getfrom == caller) ) {
+			  /* Destination is indeed waiting for this message. */
+			  // don't bother putting it on the que
+			  dest_ptr->p_messageq.push_front(&m_ptr); // either case the message is queded
+			  dest_ptr->p_flags &= ~RECEIVING;	/* deblock destination */
+			  if (dest_ptr->p_flags == 0)  {
+				  // insted of encusing the message we return it
+				  dest_ptr->ctx.set_return_value(&m_ptr);
+				  dest_ptr->ready(); // push front
+			  }
+		  } else {
+			/* Destination is not waiting.  Block and queue caller. */
+			 if (caller == HARDWARE) return(E_OVERRUN);
+			auto status = message_lookup.insert(&m_ptr);
+				if(status == list::status::exists)  // need to block here somehow
+					panic("message already is in queue somewhere");
+				dest_ptr->p_messageq.push_front(&m_ptr);
+				caller_ptr->p_flags |= SENDING;
+				caller_ptr->unready(); // tail push
+
+		  }
+
+		  return(OK);
+
+
+	}
+	int proc::mini_rec(int caller, int src, message &m_ptr){
+		/* A process or task wants to get a message.  If one is already queued,
+		 * acquire it and deblock the sender.  If no message from the desired source
+		 * is available, block the caller.  No need to check parameters for validity.
+		 * Users calls are always sendrec(), and mini_send() has checked already.
+		 * Calls from the tasks, MM, and FS are trusted.
+		 */
+		  proc *caller_ptr = proc_addr(caller);	/* pointer to caller's proc structure */
+		  /* Check to see if a message from desired source is already available. */
+		  for(auto it= caller_ptr->p_callerq.begin(); it != caller_ptr->p_callerq.end(); it++){
+			  proc *sender_ptr = &(*it);
+			  int sender = sender_ptr->proc_number();
+			if (src == ANY || src == sender) {
+				/* An acceptable message has been found. */
+				caller_ptr->p_messbuf = message(sender, caller_ptr->p_messbuf);
+				sender_ptr->p_flags &= ~SENDING;	/* deblock sender */
+				if (sender_ptr->p_flags == 0) sender_ptr->ready();
+				caller_ptr->p_callerq.erase(it);
+				return(OK);
+			}
+		  }
+
+		  /* No suitable message is available.  Block the process trying to receive. */
+		  caller_ptr->p_getfrom = src;
+		  caller_ptr->p_messbuf = &m_ptr;
+		  if((caller_ptr->p_flags & RECEIVING) == 0) {
+			  caller_ptr->p_flags |= RECEIVING;
+			  caller_ptr->unready();
+		  }
+
+		  /* If MM has just blocked and there are kernel signals pending, now is the
+		   * time to tell MM about them, since it will be able to accept the message.
+		   */
+		 // if (sig_procs > 0 && caller == MM_PROC_NR && src == ANY) inform(MM_PROC_NR);
+		  return(OK);
+	}
+
+	void  proc::sched(){
+		irq_simple_lock lock;
+		if(rdy_queue[USER_Q].empty()) return;
+		auto p = rdy_queue[USER_Q].first_entry();
+		rdy_queue[USER_Q].pop_front();
+		rdy_queue[USER_Q].push_back(p);
+		pick_proc();
+	}
+	void proc::ready(){
+		/* Add 'rp' to the end of one of the queues of runnable processes. Three
+		 * queues are maintained:
+		 *   TASK_Q   - (highest priority) for runnable tasks
+		 *   SERVER_Q - (middle priority) for MM and FS only
+		 *   USER_Q   - (lowest priority) for user processes
+		 */
+		irq_simple_lock lock;
+		assert(p_flags == 0);
+		auto& q = proc_queue();
+		q.push_back(this);
+	}
+	void proc::unready(){
+		/* A process has blocked. */
+		irq_simple_lock lock;
+		assert(p_flags != 0);
+		auto& q = proc_queue();
+		q.remove(this);
+	}
+	void proc::pick_proc(){
+		/* Decide who to run now. */
+
+		/* which queue to use */
+		  proc::proc_queue_t& q = !rdy_queue[TASK_Q].empty() ? rdy_queue[TASK_Q] : !rdy_queue[SERVER_Q].empty() ? rdy_queue[SERVER_Q] :rdy_queue[USER_Q];
+
+		  /* Set 'cur_proc' and 'proc_ptr'. If system is idle, set 'cur_proc' to a
+		   * special value (IDLE), and set 'proc_ptr' to point to an unused proc table
+		   * slot, namely, that of task -1 (HARDWARE), so save() will have somewhere to
+		   * deposit the registers when a interrupt occurs on an idle machine.
+		   * Record previous process so that when clock tick happens, the clock task
+		   * can find out who was running just before it began to run.  (While the
+		   * clock task is running, 'cur_proc' = CLOCKTASK. In addition, set 'bill_ptr'
+		   * to always point to the process to be billed for CPU time.
+		   */
+		  prev_proc = cur_proc;
+		  if (!q.empty()) {
+			/* Someone is runnable. */
+			  proc_ptr = q.first_entry();
+
+			cur_proc = proc_ptr - proc - NR_TASKS;
+			if (cur_proc >= LOW_USER) bill_ptr = proc_ptr;
+		  } else {
+			/* No one is runnable. */
+			cur_proc = IDLE;
+			proc_ptr = proc_addr(HARDWARE);
+			bill_ptr = proc_ptr;
+		  }
+		  if(prev_proc!=cur_proc){
+			  if(!proc_ptr->p_messageq.empty()){
+				  // get a message and return it
+				  auto m_ptr  = proc_ptr->p_messageq.first_entry();
+				  message_lookup.remove(m_ptr);
+				  proc_ptr->p_messageq.remove(m_ptr);
+				  proc_ptr->ctx.set_return_value(m_ptr);
+			  } else {
+				  proc_ptr->ctx.set_return_value(0);
+			  }
+			  request_schedule();
+		  }
+
+
+	}
+#if 0
   	static proc *proc_ptr;	/* &proc[cur_proc] */
+  	static uint32_t curpriority = 0;
+    void proc::resetpriority(){
+		uint32_t newpriority;
+
+		newpriority = PUSER + p_estcpu / 4 + 2 * p_nice;
+		newpriority = std::min(newpriority, MAXPRI);
+		p_usrpri = newpriority;
+		if (newpriority < curpriority)
+			request_schedule();
+    }
+	void proc::update_priority(){
+		auto loadfac = loadfactor(ldavg[0]);
+		uint32_t newcpu = p_estcpu;
+	    if (p_slptime > (5 * loadfactor(ldavg[0])))
+			p_estcpu = 0;
+		else {
+			p_slptime--; /* the first time was done in schedcpu */
+			while (newcpu && --p_slptime)
+				newcpu = (int) decay_cpu(loadfac, newcpu);
+			p_estcpu = std::min(newcpu, (uint32_t)UCHAR_MAX);
+		}
+	    resetpriority();
+	}
   	//static proc *prev_proc_ptr; // previous process
   	static proc *bill_ptr;	/* ptr to process to bill for clock ticks */
   	using softirq_queue_t = tailq::head<softirq,&softirq::_link> ;
@@ -49,11 +301,8 @@ namespace mimx{
   	static softirq* SOFTIRQ_MARK = reinterpret_cast<softirq*>(0x123456789);
   	static proc* PROC_MARK = reinterpret_cast<proc*>(0x123456789);
 	static proc _idle_proc;
-	softirq::softirq() {
-		_link.tqe_next = SOFTIRQ_MARK;
-	}
+
 	void softirq::execute() {
-		bool ret;
 		while(!softirq_queue.empty()) { // do nothing if nothing is queueed
 			irq_simple_lock lock;
 			softirq_queue_t tmp(std::move(softirq_queue));
@@ -646,5 +895,5 @@ namespace mimx {
 	}
 
 
-
+#endif
 }; /* namespace mimx */
