@@ -761,7 +761,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 		static constexpr size_type ELEMENT_COUNT = _COUNT;
 		static constexpr size_type TYPE_SIZE = _TYPE_SIZE;
 		// we want to make sure this type is allinged to the 32 bit mark
-		static constexpr size_type ELEMENT_SIZE = (TYPE_SIZE / sizeof(uint32_t)) + ((TYPE_SIZE & (sizeof(uint32_t) - 1)) != 0);
+		static constexpr size_type ELEMENT_SIZE = TYPE_SIZE  + ((TYPE_SIZE & (sizeof(uint32_t) - 1)) != 0);
 		static constexpr size_type TOTAL_SIZE = ELEMENT_SIZE*ELEMENT_COUNT;
 
 		using value_type = T;
@@ -1069,7 +1069,6 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 
 
 		};
-
 }; /* namespace xv6 */
 
 #endif /* XV6CPP_BITMAP_H_ */

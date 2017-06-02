@@ -14,7 +14,7 @@
 #include "f9\thread.hpp"
 
 #include <os\printk.hpp>
-
+#include "mimix_cpp\clock.hpp"
 #if 0
 #include <scm\scmRTOS.h>
 typedef TProfiler<0> TProfilerBase;
@@ -268,9 +268,24 @@ void root_task() {
 }
 uint32_t  root_stack[50];
 
+uint32_t mills = 0;
+uint32_t timer_event0(uint32_t* data) {
+	if(++mills == 999) {
+		printk("timer_event0: %d\n", *data);
+		if(--data ==0) return 0;
+	}
+	return mimx::mills_to_ticks(1);
+}
+uint32_t event0_data;
+
 extern "C" void scmrtos_test_start()
 {
 	printk("starting os!\n");
+	mimx::mills_to_ticks(500);
+	mimx::ktimer_init();
+	event0_data=20;
+	mimx::ktimer::create_event(mimx::mills_to_ticks(1), timer_event0, &event0_data);
+	while(1);
 
 	pid_t pid = mimx::create_task(root_task,root_stack,50*4);
 

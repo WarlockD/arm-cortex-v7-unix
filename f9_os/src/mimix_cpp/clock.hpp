@@ -36,13 +36,21 @@ namespace mimx {
 		int32_t stat(int *times){ (void)times; return 0;}
 	};
 #endif
+	typedef uint32_t (*ktimer_callback)(void* arg);
 
-	class sysclock : public softirq {
-		uint32_t _ticks;
-		void handler()  final;
-	public:
-		sysclock();
+	using ktimer_t = uint32_t; // handle
+
+	void ktimer_init();
+	ktimer_t ktimer_event_create(uint32_t ticks, ktimer_callback handler, void *data);
+	uint32_t mills_to_ticks(uint32_t mills) ;
+	namespace ktimer {
+	template<typename CALLBACK, typename DATA>
+		inline ktimer_t create_event(uint32_t ticks, CALLBACK callback, DATA data) {
+			return ktimer_event_create(ticks,reinterpret_cast<ktimer_callback>(callback),reinterpret_cast<void*>(data));
+		}
 	};
+
+	void ktimer_cancel(ktimer_t handle);
 
 } /* namespace f9 */
 

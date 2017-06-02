@@ -154,7 +154,7 @@ extern "C" __attribute__((naked)) void PendSV_Handler()
 }
 #endif
 // weak alias to support old name of PendSV_Handler.
-#pragma weak PendSVC_ISR = PendSV_Handler
+//#pragma weak PendSVC_ISR = PendSV_Handler
 
 
 

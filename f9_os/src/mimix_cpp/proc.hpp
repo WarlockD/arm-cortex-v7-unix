@@ -40,7 +40,7 @@ namespace mimx {
 	static constexpr pid_t INIT_PROC_NR       =2;	/* init -- the process that goes multiuser */
 	static constexpr pid_t LOW_USER           =2;	/* first user not part of operating system */
 
-	const auto& panic = ::kpanic;;
+	static const auto& panic = ::kpanic;;
 	enum sys_function {
 			SEND		   =1,	/* function code for sending messages */
 			RECEIVE		   =2,	/* function code for receiving messages */
@@ -762,8 +762,9 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		size_t _size;
 		tailq::entry<message> 	p_link; // quueue of messages
 		list::entry<message> 	p_hash; // lookup if message is used
+		static constexpr int ANY = -1;	// any message match
 		friend struct proc;
-		friend list::tailq<message,&message::p_link>;
+		friend tailq::head<message,&message::p_link>;
 		friend list::hash<message,&message::p_hash,MESSAGE_BUCKET_COUNT>;
 	public:
 		using message_queue_t = tailq::head<message,&message::p_link>;
@@ -783,308 +784,115 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		virtual bool operator==(const message& r) const { return _type == r._type; }
 		bool operator!=(const message& r) const { return !(*this==r); }
 	} __attribute__((aligned(4))) ;
-	using message_list_t = tailq::head<message,&message::p_link>;
-	using message_hash_t = list::hash<message,&message::p_hash,MESSAGE_BUCKET_COUNT>;
+////	using message_list_t = tailq::head<message,&message::p_link>;
+//	using message_hash_t = list::hash<message,&message::p_hash,MESSAGE_BUCKET_COUNT>;
 
-	struct proc {
-		static constexpr size_t NR_TASKS  = 8;
-		static constexpr size_t NR_PROCS  = 16;
-		static constexpr int HARDWARE     = -1;	/* used as source on interrupt generated msgs */
-		static constexpr int IDLE         = -999;	/* used as source on interrupt generated msgs */
-		static constexpr proc* IDLEPROC   = reinterpret_cast <proc*>(IDLE); 	/* used as source on interrupt generated msgs */
-		f9_context_t ctx;
-		/* Bits for p_flags in proc[].  A process is runnable iff p_flags == 0 */
-		enum flag_t{
-			P_SLOT_FREE   	 =001,	/* set when slot is not in use */
-			NO_MAP           =002,	/* keeps unmapped forked child from running */
-			SENDING          =004,	/* set when process blocked trying to send */
-			RECEIVING        =010,	/* set when process blocked trying to recv */
-		};
-		enum queues_t {
-			TASK_Q             =0,	/* ready tasks are scheduled via queue 0 */
-			SERVER_Q           ,	/* ready servers are scheduled via queue 1 */
-			USER_Q             ,	/* ready users are scheduled via queue 2 */
-			NQ                 	/* # of scheduling queues */
-		};
-		enum task_numbers_t {
-			MM_PROC_NR        = 0,	/* process number of memory manager */
-			FS_PROC_NR        = 1,	/* process number of file system */
-			INIT_PROC_NR      = 2,	/* init -- the process that goes multiuser */
-		};
-		static constexpr int LOW_USER          = 2;	/* first user not part of operating system */
-		/* The following items pertain to the 3 scheduling queues. */
-
-		tailq::entry<proc> p_link;
-		using proc_queue_t = tailq::head<proc,&proc::p_link>;
-		int p_flags;			/* P_SLOT_FREE, SENDING, RECEIVING, etc. */
-		int *p_splimit;		/* lowest legal stack value */
-		int p_pid;			/* process id passed in from MM */
-
-		clock_t user_time;		/* user time in ticks */
-		clock_t sys_time;		/* sys time in ticks */
-		clock_t child_utime;	/* cumulative user time of children */
-		clock_t child_stime;	/* cumulative sys time of children */
-		clock_t p_alarm;		/* time of next alarm in ticks, or 0 */
-
-	//	proc_queue_t p_callerq;	/* head of list of procs wishing to send */
-		//proc *p_sendlink;	/* link to next proc wishing to send */
-		message_list_t p_messageq;
-	//	message* p_messbuf;		/* pointer to message buffer */
-		int p_getfrom;		/* from whom does process want to receive? */
-
-		proc *p_nextready;	/* pointer to next ready process */
-		int p_pending;		/* bit map for pending signals 1-16 */
-
-
-
-		static proc *proc_ptr;	/* &proc[cur_proc] */
-		static proc *bill_ptr;	/* ptr to process to bill for clock ticks */
-		static int prev_proc;
-		static int cur_proc;
-		static uint32_t busy_map;   /* list of message backups */
-		static message task_mess[NR_TASKS+1];	/* ptrs to messages for busy tasks */
-		static  proc_queue_t rdy_queue[NQ];	/* pointers to ready list tails */
-		static proc procs[NR_TASKS+NR_PROCS];
-		static message_hash_t message_lookup;
-		static proc* proc_addr(int n) { return &procs[NR_TASKS+n]; }
-		void ready();
-		void unready();
-		static void  sched();
-		static int mini_send(int caller, int dest, message& m_ptr);
-		static int sys_call(int function, int caller, int src_dest, message& m_ptr);
-		/*===========================================================================*
-		 *				interrupt				     *
-		 *===========================================================================*/
-		// kernel task hardware interrupt
-		// need to increase the mask
-		static int interrupt(int task, message& m_ptr);
-	private:
-		static int mini_rec(int caller, int src, message& m_ptr);
-
-		int proc_number() const { return static_cast<int>(this - procs - NR_TASKS);	} /* task or proc number */
-
-		proc_queue_t& proc_queue() const {
-			int r = proc_number();
-			return rdy_queue[(r < 0 ? TASK_Q : r < LOW_USER ? SERVER_Q : USER_Q)];
-		}
-
-		static void pick_proc();
-	};
-#if 0
-	struct proc {
-
-		enum prioritys_t {
-			PSWP   	= 0,
-			PVM     =4,
-			PINOD   =8,
-			PRIBIO  =16,
-			PVFS    =20,
-			PZERO   =22,          /* No longer magic, shouldn't be here.  XXX */
-			PSOCK   =24,
-			PWAIT   =32,
-			PLOCK   =36,
-			PPAUSE  =40,
-			PUSER   =50,
-			MAXPRI  =127,         /* Priorities range from 0 through MAXPRI. */
-		};
-
-		bool p_not_a_zombie=false;
-		using pfixpt_t = fixpt_t<11>;
-		static constexpr pfixpt_t ldavg[] = {  5.68, 10.32,14.94, 19.55 };
-		static constexpr pfixpt_t ccpu = 0.95122942450071400909; //* decay 95% of `p_pctcpu' in 60 seconds; see CCPU_SHIFT before changing */
-
-		/* calculations for digital decay to forget 90% of usage in 5*loadav sec */
-		template<typename T>
-		static constexpr inline T loadfactor(T loadav)  { return 2* loadav ; }
-
-		template<typename T>
-		static constexpr inline T decay_cpu(const pfixpt_t& loadfac, T cpu) { return  static_cast<T>((loadfac * cpu) / (loadfac + pfixpt_t::ONE)); }
-
-
-		/* Guard word for task stacks. */
-		constexpr static reg_t STACK_GUARD	 = ((reg_t) (sizeof(reg_t) == 2 ? 0xBEEF : 0xDEADBEEF));
-		static constexpr int  IDLE     =       -999;	/* 'cur_proc' = IDLE means nobody is running */
-		static constexpr int  HARDWARE     =       -1;	/* 'cur_proc' = IDLE means nobody is running */
-
-		f9_context_t ctx;
-		tailq::entry<proc> 	p_link; // sorted quueue of all running process
-
-		// priority system
-	    uint32_t p_estcpu;           /* Time averaged value of p_cpticks. */
-	    int 	 p_nice;			// ever used anymore?
-	    int      p_cpticks;          /* Ticks of cpu time. */
-	    pfixpt_t  p_pctcpu;           /* %cpu for this process during p_swtime */
-	    uint32_t p_slptime;
-	    uint32_t p_usrpri;
-		clock_t  user_time;		/* user time in ticks */
-		clock_t  sys_time;		/* sys time in ticks */
-		clock_t  child_utime;		/* cumulative user time of children */
-		clock_t  child_stime;		/* cumulative sys time of children */
-
-	    void resetpriority();
-		void update_priority();
-
-		PPRI p_priority;		/* task, server, or user process */
-		message::message_queue_t q_messages;
-		size_t message_count; // unprocessed messages
-		uint32_t real_priority;
-		int priority() const { return 0; }
-		pid_t p_pid;		// the pid
-		int p_nr;			/* number of this process (for fast access) */
-
-		bool p_int_blocked;		/* nonzero if int msg blocked by busy task */
-		bool p_int_held;		/* nonzero if int msg held by busy syscall */
-		struct proc *p_nextheld;	/* next in chain of held-up int processes */
-
-		PSTATE p_flags;			/* SENDING, RECEIVING, etc. */
-		pid_t p_pid;			/* process id passed in from MM */
-
-
-
-
-		timer_t *p_exptimers;		/* list of expired timers */
-
-		proc *p_callerq;	/* head of list of procs wishing to send */
-		proc *p_sendlink;	/* link to next proc wishing to send */
-		message *p_messbuf;		/* pointer to message buffer */
-		size_t p_msgsize;
-		int p_getfrom;		/* from whom does process want to receive? */
-		int p_sendto;
-
-		proc *p_nextready;	/* pointer to next ready process */
-		sigset_t p_pending;		/* bit map for pending signals */
-		unsigned p_pendcount;		/* count of pending and unfinished signals */
-
-		char p_name[16];		/* name of the process */
-		// static part, more ore less the kernel
-		static proc procs[NR_TASKS+NR_PROCS];
-		static proc *pproc_addr[NR_TASKS + NR_PROCS];
-
-
-
-	    constexpr static proc* NIL_PROC = (struct proc *)nullptr;
-
-	    /* Magic process table addresses. */
-	   inline static proc* BEG_PROC_ADDR() { return &procs[0]; }
-	   inline   static proc* END_PROC_ADDR()  { return &procs[NR_TASKS + NR_PROCS]; }
-	   inline  static proc* END_TASK_ADDR()  { return (&procs[NR_TASKS]);}
-	   inline   static proc* BEG_SERV_ADDR()  { return (&procs[NR_TASKS]);}
-	   inline  static proc* BEG_USER_ADDR()  { return (&procs[NR_TASKS + LOW_USER]);}
-
-	     inline bool  isempty() const { return p_priority == PPRI::NONE; }
-	     inline bool  istask() const { return p_priority == PPRI::TASK; }
-	     inline bool  isserv() const { return p_priority == PPRI::SERVER; }
-	     inline bool  isuser() const { return p_priority == PPRI::USER; }
-
-	    constexpr inline static bool isokprocn(int n) { return  ((unsigned) ((n) + NR_TASKS) < NR_PROCS + NR_TASKS); }
-
-	    constexpr inline static bool isidlehardware(int n) { return ((n) == IDLE || (n) == HARDWARE); }
-	    constexpr inline static bool isoksrc_dest(int n) { return isokprocn(n) || n == ANY; }
-	    constexpr inline static bool isrxhardware(int n) { return ((n) == ANY || (n) == HARDWARE); }
-	    constexpr inline static bool issysentn(int n) { return ((n) == FS_PROC_NR || (n) == MM_PROC_NR); }
-
-
-		constexpr static inline proc* cproc_addr(pid_t n) { return (&(procs + NR_TASKS)[(n)]); }
-	    constexpr static inline proc* proc_addr(pid_t n) { return (pproc_addr + NR_TASKS)[(n)]; }
-
-
-	    inline void ready() {
-	    	switching = true;
-	    	_ready();
-	    	switching = false;
-	    }
-	    inline void unready() {
-	    	switching = true;
-	    	_unready();
-	    	switching = false;
-	    }
-	    int mini_send(int dest, message* m_ptr,size_t msgsize){
-	    	switching = true;
-	    	int result = _mini_send(dest,m_ptr,msgsize);
-	    	switching = false;
-	    	return result;
-	    }
-
-		  template <typename T,
-		              typename = typename std::enable_if<std::is_base_of<T, message>::value
-		                                              || std::is_same<T,message>::value>::type>
-	    int mini_send(int dest, typename std::remove_pointer<T>::type & m_ptr){
-			  return mini_send(dest,&m_ptr,sizeof(T));
-	    }
-
-
-	    int proc_number() const { return p_nr; }
-	//public: // public interface
-	    static void unhold(); // flush unhandled interrupts
-	    static void lock_sched();
-	    static void sched() {
-	    	switching = true;
-	    	_sched();
-	    	switching = false;
-	    }
-	    static int sys_call(int function, int src_dest, message* m_ptr,size_t msg_size);
-
-
-	    void inform() {} // filler for right now as we don't have signal handling yet
-	//private:
-	    static volatile bool switching;
-	    void _ready();
-	    void _unready();
-	    static void _sched();
-	    int _mini_send(int dest, message* m_ptr, size_t msg_size);
-	    int _mini_rec(int src, message* m_ptr, size_t msg_size);
-
-
-	    static void cp_mess(int src,proc* src_p,message* src_m, proc* dst_p, message* dst_m, size_t msg_size);
-	    static void pick_proc();
-		static void interrupt(pid_t task);
-		friend stackframe_s* _syscall(int function, int src_dest, message* m_ptr, stackframe_s* stack);
-
-	} ;
-#endif
-
-#if 0
-	template<size_t _STACK_SIZE>
-	class task {
-	protected:
-		static constexpr size_t STACK_SIZE = (_STACK_SIZE+(sizeof(uint32_t)*2)-1) /(sizeof(uint32_t)*2);
-		uint8_t _stack[STACK_SIZE];
-		proc* _proc;
-		static void bad_exit() {
-			panic("TASK EXITED!\r\n");
-			while(1);
-		}
-		static void start(task* ptr) {
-			ptr->run();
-			bad_exit();
-		}
-		template<typename T> static inline reg_t cast_to_reg(T a) { return static_cast<reg_t>(a); }
-		template<typename T> static inline reg_t cast_to_reg(T* a) { return reinterpret_cast<reg_t>(a); }
-
-		task(int nbr) : _proc(&proc::procs[nbr]) {
-			_proc->p_stack_begin = reinterpret_cast<uint32_t*>(_stack);
-			_proc->p_stack_end = reinterpret_cast<uint32_t*>(_stack + STACK_SIZE);
-			_proc->p_reg = reinterpret_cast<stackframe_s*>(_proc->p_stack_end) -1;
-			_proc->p_reg->set_r0(cast_to_reg(this));
-			_proc->p_reg->set_pc(cast_to_reg(&task::start));
-			_proc->p_reg->set_lr(cast_to_reg(&task::bad_exit));
-		}
-		  template <typename T,
-		              typename = typename std::enable_if<std::is_base_of<T, message>::value
-		                                              || IsBase<Other>::value>::type>
-	    pid_t send(pid_t dst, message* msg){ return _proc->send(dst,msg);   }
-	    pid_t receive(pid_t src, message* msg){ return _proc->receive(src,msg);   }
-	    pid_t sendrec(pid_t src_dst, message* msg) { return _proc->sendrec(src_dst,msg);   }
-		virtual void run() = 0;
+	class ref {
+		int _ref_count;
 	public:
-		virtual ~task() {}
-		void dump() {
-			printk("task dump: %d", _proc->p_nr);
-			_proc->p_reg->dump();
+		ref() : _ref_count(0) {}
+		int ref_and_test() { return _ref_count++; }
+		int unref() {
+			int ret = --_ref_count;
+			assert(ret >= 0);
+			return ret;
 		}
-	};
+		int ref_count() const { return _ref_count; }
 
-#endif
+	};
+	// Per-process state
+	struct proc  {
+		enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+		enum procprio {
+			PSWP    =0,
+			PINOD   =10,
+			PRIBIO  =20,
+			PZERO   =25,
+			NZERO  	=20,
+			PPIPE   =26,
+			PWAIT   =30,
+			PSLEP   =40,
+			PUSER   =50,
+		};
+		static constexpr int BACKPRI =35 ;     /* low bound of nice for background processes */
+		/* stat codes */
+		enum procstat {
+			SSLEEP  =1 ,              /* awaiting an event */
+			SWAIT   =2,               /* (abandoned state) */
+			SRUN    =3,               /* running */
+			SIDL    =4,               /* intermediate state in process creation */
+			SZOMB   =5,               /* intermediate state in process termination */
+			SSTOP   =6,               /* process being traced */
+			SRECV   =7,				  // block on waiting for an ipc
+		};
+		enum flagcodes {
+		/* flag codes */
+			SLOAD   =01,             /* in core */
+			SSYS    =02,             /* scheduling process */
+			SLOCK   =04,           /* process cannot be swapped */
+			SSWAP   =010,             /* process is being swapped out */
+			STRC    =020,             /* process is being traced */
+			SWTED   =040 ,            /* another tracing flag */
+			SULOCK  =0100 ,           /* user settable lock in core */
+		};
+
+		uint32_t p_stat;
+		uint32_t p_flag;
+		uint32_t p_pri;
+		uint32_t p_time;
+		uint32_t p_cpu;
+		uint32_t p_nice;
+		uint32_t p_sig;
+		uint32_t p_sig_mask;
+		bool operator<(const proc& b) const { return p_pri < b.p_pri; }
+		void* p_wchan;
+		int p_pid;            // Process ID
+		int p_clktim;
+		int fsig() const {  return 31- __builtin_clz(p_sig); }
+
+		tailq::entry<proc> 				link;	// link of running pids
+		tailq::entry<proc> 				hash_lookup;	// hash lookup of all pids
+		list::entry<proc> 				p_peers;
+		list::head<proc,&proc::p_peers> p_children;
+
+		f9_context_t ctx;
+		uintptr_t stack_base;		// start of the stack memory and where this proc is
+		uintptr_t stack_size;		// total size of the stack
+		uintptr_t heap_end;			// current end of heap (starts at stack_base+sizeof(proc))
+
+
+	  void sleep(void* chan,int prio);
+	  void yield();
+	  static void wakeup(void* chan);
+	  static proc* current();
+	  static proc* create(uintptr_t pc, uintptr_t stack, size_t stack_size);
+	  template<typename PC, typename STACK>
+	  inline static proc* create(PC pc, STACK stack, size_t stack_size){
+		  return create(ptr_to_int(pc),ptr_to_int(stack),stack_size);
+	  }
+
+	  static void sched();
+	  static void proc_switch(proc *p); // clean up
+	  static proc* schedule_select();
+	  // since we cannot remap, we need a new memory space to put the process in
+
+
+	  proc* vfork(uintptr_t stack, size_t stack_size);
+	  template<typename STACK>
+	  inline static proc* vfork(STACK stack, size_t stack_size){
+		  return vfork(ptr_to_int(stack),stack_size);
+	  }
+	  bool growproc(int n);
+	  // copying a proc is tricky as we need
+	//  proc();
+	//  proc(const proc& copy);
+
+	private:
+	  void setrq();
+	  void setrun();
+	  int setpri();
+	} __attribute__((aligned(8)));
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wreturn-type"
 	  template <typename T,
@@ -1131,6 +939,8 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 #pragma GCC diagnostic pop
 
 };
+
+
 #if 0
 template<>
 struct enable_bitmask_operators<mimx::PSTATE>{

@@ -66,7 +66,7 @@ struct qm_trace {
 #endif	/* QUEUE_MACRO_DEBUG_TRACE || QUEUE_MACRO_DEBUG_TRASH */
 
 
-
+#define TAILQ_TRACK_HEAD_IN_ENTRY
 
 namespace tailq {
 	template<typename T> class entry;
@@ -75,7 +75,7 @@ namespace tailq {
 	template<typename T, field<T> FIELD> class head_impl;
 	template<typename T, field<T> FIELD,bool _is_const> struct iterator;
 	template<typename T, field<T> FIELD> struct pcontainer;
-	constexpr static uintptr_t TAILQ_MAGIC = 0x12345678;// needs to be odd, most pinters arn't
+	constexpr static uintptr_t UNLINK_MAGIC_VALUE = 0x87654321;
 #ifdef TRACK_LIST_OWNER
 	// better than using a void pointer
 	strict container {};
@@ -91,7 +91,7 @@ namespace tailq {
 		using reference = T&;
 		using const_pointer = const_value_type*;
 		using const_reference = const_value_type&;
-		constexpr static pointer NOENTRY = reinterpret_cast<pointer>(TAILQ_MAGIC);
+		constexpr static pointer UNLINK_MAGIC = reinterpret_cast<pointer>(UNLINK_MAGIC_VALUE);
 	};
 
 	template<typename T, field<T> FIELD>
@@ -110,6 +110,7 @@ namespace tailq {
 		using field_type = field<T>;
 		using head_type = head_impl<T,FIELD>;
 		using container_type = pcontainer<T,FIELD>;
+		constexpr static pointer UNLINK_MAGIC = reinterpret_cast<pointer>(UNLINK_MAGIC_VALUE);
 		friend head_type;
 		constexpr static field_type member=FIELD;
 		constexpr static field_type member_offset=member == nullptr ? 0 : (size_t) &( reinterpret_cast<pointer>(0)->*member);
@@ -121,7 +122,15 @@ namespace tailq {
 			static_assert(member!=nullptr,"Don't know what field you want!");
 			return (p->*member).tqe_prev;
 		}
-
+#ifdef TAILQ_TRACK_HEAD_IN_ENTRY
+		constexpr static inline head_type** elm_head(pointer p)  {
+			static_assert(member!=nullptr,"Don't know what field you want!");
+			assert(p);
+			return reinterpret_cast<head_type**>(&(p->*member).tqe_head);
+		}
+#endif
+		static inline void unlink(pointer elm) { next(elm) = UNLINK_MAGIC; }
+		static inline bool islinked(pointer elm) { return next(elm) != UNLINK_MAGIC;}
 #ifdef QUEUE_MACRO_DEBUG_TRASH
 		static constexpr inline void trashit(pointer& elm){
 			elm = reinterpret_cast<pointer>((void*)-1);
@@ -216,6 +225,10 @@ namespace tailq {
 		}
 		static inline void insert_after(head_type& head, pointer listelm, pointer elm){
 			check_next(listelm);
+#ifdef TAILQ_TRACK_HEAD_IN_ENTRY
+			if(islinked(elm)) remove(elm);
+			*elm_head(elm) = &head;
+#endif
 			if((next(elm) = next(listelm)) != nullptr)
 				prev(next(elm)) = &next(elm);
 			else {
@@ -227,8 +240,18 @@ namespace tailq {
 			QMD_TRACE_ELEM(&(elm)->field);
 			QMD_TRACE_ELEM(&(listelm)->field);
 		}
+#ifdef TAILQ_TRACK_HEAD_IN_ENTRY
+		static inline void insert_after(pointer listelm, pointer elm){
+			assert(islinked(elm));
+			insert_after(**elm_head(listelm),listelm,elm);
+		}
+#endif
 		static inline void insert_before(pointer listelm, pointer elm){
 			check_prev(listelm);
+#ifdef TAILQ_TRACK_HEAD_IN_ENTRY
+			if(islinked(elm)) remove(elm);
+			*elm_head(elm) = *elm_head(listelm);
+#endif
 			prev(elm) = prev(listelm);
 			next(elm) = listelm;
 			*prev(listelm) = elm;
@@ -238,6 +261,10 @@ namespace tailq {
 		}
 		static inline void insert_head(head_type& head, pointer elm){
 			check_head(head);
+#ifdef TAILQ_TRACK_HEAD_IN_ENTRY
+			if(islinked(elm)) remove(elm);
+			*elm_head(elm) = &head;
+#endif
 			if ((next(elm) = head.tqh_first) != nullptr)
 				prev(head.tqh_first) =&next(elm);
 			else
@@ -249,6 +276,10 @@ namespace tailq {
 		}
 		static inline void insert_tail(head_type& head, pointer elm){
 			check_tail(head);
+#ifdef TAILQ_TRACK_HEAD_IN_ENTRY
+			if(islinked(elm)) remove(elm);
+			*elm_head(elm) = &head;
+#endif
 			next(elm)  = nullptr;
 			prev(elm) = head.tqh_last;
 			*head.tqh_last = elm;
@@ -256,11 +287,14 @@ namespace tailq {
 			QMD_TRACE_HEAD(head);
 			QMD_TRACE_ELEM(&(elm)->field);
 		}
+
+
 		static inline void remove(head_type& head, pointer elm){
 #ifdef QUEUE_MACRO_DEBUG_TRASH
 			auto& oldnext = next(elm);
 			auto& oldprev = prev(elm);
 #endif
+			assert(islinked(elm));
 			check_next(elm);
 			check_prev(elm);
 			if (next(elm) != nullptr)
@@ -275,7 +309,15 @@ namespace tailq {
 			trashit(*oldprev);
 #endif
 			QMD_TRACE_ELEM(&(elm)->field);
+			unlink(elm);
 		}
+#ifdef TAILQ_TRACK_HEAD_IN_ENTRY
+		static inline void remove(pointer elm){
+			assert(islinked(elm));
+			remove(**elm_head(elm),elm);
+		}
+
+#endif
 		// hack for now
 		//template<typename A, typename B>
 		//static inline void swap(A& head1, B& head2){
@@ -320,15 +362,18 @@ namespace tailq {
 		using const_reference = typename traits::const_reference;
 		constexpr static pointer NOENTRY = traits::NOENTRY;
 		friend T;
-		constexpr entry() : tqe_next(NOENTRY),tqe_prev(&tqe_next)  {}
+#ifdef TAILQ_TRACK_HEAD_IN_ENTRY
+		void* tqe_head;
+		constexpr entry() : tqe_head(nullptr), tqe_next(traits::UNLINK_MAGIC),tqe_prev(&tqe_next)  {}
+#else
+		constexpr entry() : tqe_next(traits::UNLINK_MAGIC),tqe_prev(&tqe_next)  {}
+#endif
+
 	//	bool unlinked() const { return &tqe_next == tqe_prev && tqe_next == nullptr; }
-		bool unlinked() const { return tqe_next == NOENTRY; }
-	//protected:
-		// must be a way to make this protected
-	//	void unlink() { tqe_next = NOENTRY; tqe_prev= &tqe_next; }
-		void unlink() { tqe_next = NOENTRY; }
 		pointer tqe_next;	/* next element */
 		pointer *tqe_prev;	/* address of previous next element */
+
+		inline bool islinked() const { return tqe_next!= traits::UNLINK_MAGIC; }
 	};
 
 	// not sure of a way not to make this public since I cannot keep
@@ -509,10 +554,12 @@ namespace tailq {
 			return iterator(elm);
 		}
 		iterator insert_before(iterator position, pointer elm){
-			insert_before(position._current,elm);
+			insert_before(&(*position),elm);
 			return iterator(elm);
 		}
-		iterator insert(iterator position, pointer elm){ return insert_after(position,elm); }
+		iterator insert(iterator position, pointer elm){
+			return insert_after(position,elm);
+		}
 
 		inline pointer pop_front() {
 			pointer head = first_entry();
@@ -588,7 +635,7 @@ namespace tailq {
 		iterator insert(iterator position, pointer elm){ return insert_after(position); }
 		inline void swap(type& head){ traits::swap(*this,head); }
 		bool empty() const { return traits::empty(*this); }
-
+		const_reference top() const { return *traits::_first(); }
 		void push(pointer elm){
 			assert(elm); // checking
 		    pointer curelm = traits::_first();
@@ -596,15 +643,23 @@ namespace tailq {
 		    	traits::_insert_head(elm);
 		    else {
 		    	COMPARE comp;
-		    	while(traits::next_entry(curelm) !=nullptr){
-		    		if(comp(std::forward<const_reference>(*curelm),std::forward<const_reference>(*elm))) {
-		    			traits::_insert_before(curelm,elm);
-		    			 return;
+		    	pointer ptr_before = nullptr;
+		    	while(curelm !=nullptr){
+		    		if(ptr_before != nullptr ){
+			    		if(comp(std::forward<const_reference>(*curelm),std::forward<const_reference>(*elm))) {
+			    			ptr_before = curelm;
+			    		}
 		    		}
-		    		if(curelm == elm) return;
-					curelm = traits::next_entry(curelm);
+		    		if(curelm == elm) {
+		    			// its already in here, this is stupid but makes it easy
+		    			traits::_remove(elm);
+		    			push(elm); // this is a stupid hack to requeue
+		    			return;
+		    		}
+		    		curelm = traits::next_entry(curelm);
 		    	}
-		    	traits::_insert_after(curelm,elm);
+		    	if(ptr_before == nullptr)
+		    		traits::_insert_tail(elm);
 		    }
 		}
 		pointer pop(){

@@ -108,7 +108,7 @@ Default_Handler:
 #ifdef DEBUG_IN_ECLIPSE
 	mrs r0, ipsr
 	mov r1, sp
-	bl do_debug_default
+	blx do_debug_default
 #else
 		tst lr, #4
 		ite eq

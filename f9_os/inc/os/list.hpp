@@ -9,6 +9,7 @@
 
 #include <os\printk.h>
 
+#define LIST_ENTRY_DETECT_IN_LIST
 
 namespace list {
 	template<typename T> class entry;
@@ -16,7 +17,7 @@ namespace list {
 	template<typename T, field<T> FIELD> class head_impl;
 	template<typename T, field<T> FIELD,bool _is_const> struct iterator;
 	template<typename T, field<T> FIELD> struct container;
-
+	constexpr static uintptr_t UNLINK_MAGIC_VALUE = 0x87654321;
 	//template<typename T, field<T> FIELD> struct head;
 	//template<typename T, field<T> FIELD> struct head;
 	template<typename T>
@@ -29,6 +30,7 @@ namespace list {
 		using reference = T&;
 		using const_pointer = const_value_type*;
 		using const_reference = const_value_type&;
+		constexpr static pointer UNLINK_MAGIC = reinterpret_cast<pointer>(0x87654321);
 	};
 
 	template<typename T, field<T> FIELD=nullptr>
@@ -47,7 +49,7 @@ namespace list {
 		using head_type = head_impl<T,FIELD>;
 		using container_type = container<T,FIELD>;
 		friend head_type;
-
+		constexpr static pointer UNLINK_MAGIC = reinterpret_cast<pointer>(0x87654321);
 		constexpr static field_type member=FIELD;
 		constexpr static field_type member_offset=member == nullptr ? 0 : (size_t) &( reinterpret_cast<pointer>(0)->*member);
 		constexpr static inline  pointer& next(pointer p)  {
@@ -114,12 +116,15 @@ namespace list {
 
 		static inline bool empty(const head_type& head){ return head.lh_first == nullptr; }
 		static inline T* first(const head_type& head){ return head.lh_first; }
+
 		static inline T* last(const head_type& head){
 			auto current = head.lh_first;
 			auto prev = current;
 			while(current!=nullptr){ prev = current; current = next(current); }
 			return prev;
 		}
+		static inline void unlink(pointer elm) { next(elm) = UNLINK_MAGIC; }
+		static inline bool islinked(pointer elm) { return next(elm) != UNLINK_MAGIC;}
 
 		static inline void init(head_type& head){ head.lh_first = nullptr; }
 		// entry is just here, technicaly we don't check for these values
@@ -145,6 +150,7 @@ namespace list {
 			init(head2);
 		}
 		static inline void insert_after(pointer listelm, pointer elm){
+			if(islinked(elm)) remove(elm);
 			check_next(listelm);
 			if((next(elm) = next(listelm)) != nullptr)
 				prev(next(elm)) = &next(elm);
@@ -152,6 +158,7 @@ namespace list {
 			prev(elm) = &next(listelm);
 		}
 		static inline void insert_before(pointer listelm, pointer elm){
+			if(islinked(elm)) remove(elm);
 			check_prev(listelm);
 			prev(elm) = prev(listelm);
 			next(elm) = listelm;
@@ -160,20 +167,18 @@ namespace list {
 		}
 		static inline void insert_head(head_type& head, pointer elm){
 			check_head(head);
+			if(islinked(elm)) remove(elm);
 			if ((next(elm) = head.lh_first) != nullptr)
 				prev(head.lh_first) =&next(elm);
 			head.lh_first = elm;
 		}
-		static inline void remove(head_type& head, pointer elm){
+		static inline void remove(pointer elm){
 			check_next(elm);
 			check_prev(elm);
 			if (next(elm) != nullptr)
 				prev(next(elm)) = prev(elm);
 			*prev(elm)=next(elm);
-#ifdef QUEUE_MACRO_DEBUG_TRASH
-			trashit(oldnext);
-			trashit(*oldprev);
-#endif
+			unlink(elm);
 		}
 		static inline void swap(head_type& head1, head_type& head2){
 			auto swap_tmp = head1.lh_first;
@@ -200,11 +205,15 @@ namespace list {
 		using const_reference = typename traits::const_reference;
 		using entry_type = type;
 
-
-		constexpr entry() : le_next(nullptr),le_prev(&le_next)  {}
+#ifdef LIST_ENTRY_SAVES_CONTAINER
+		constexpr entry() : le_list(nullptr), le_next(nullptr),le_prev(&le_next)   {}
+		void* le_list;
+#else
+		constexpr entry() : le_next(traits::UNLINK_MAGIC),le_prev(&le_next) {}
+#endif
 		pointer le_next;	/* next element */
 		pointer *le_prev;	/* address of previous next element */
-
+		inline bool islinked() const { return le_next!= traits::UNLINK_MAGIC;}
 	};
 	//template<typename T>
 	template<typename T, field<T> FIELD>
@@ -289,7 +298,7 @@ namespace list {
 		inline void _insert_before(pointer listelm, pointer elm){ traits::insert_before(listelm,elm); }
 		inline void _insert_head(pointer elm) { traits::insert_head(*this,elm); }
 		inline void _insert_tail(pointer elm) { traits::insert_tail(*this,elm); }
-		inline void _remove(pointer elm){ traits::remove(*this,elm); }
+		inline void _remove(pointer elm){ traits::remove(elm); }
 
 		constexpr inline pointer _first() { return  lh_first; }
 		constexpr inline const pointer _first() const { return  lh_first; }
