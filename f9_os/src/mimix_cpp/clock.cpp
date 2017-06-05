@@ -6,6 +6,7 @@
  */
 
 #include "clock.hpp"
+#include "context.hpp"
 #include <stm32f7xx.h>
 
 namespace {
@@ -401,7 +402,7 @@ namespace mimx {
 #endif
 
 };
-static mimx::f9_context_t timer_context;
+static f9::context timer_context;
 
 void handle_clock() {
 	mimx::ktimer_event_handler(); // fuckit, we will do it live!

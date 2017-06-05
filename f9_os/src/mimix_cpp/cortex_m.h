@@ -31,63 +31,7 @@ namespace chip {
 		if (tick_next_reload)
 			SysTick->LOAD  = tick_next_reload - 1;
 	}
-	// from nuttx
-	/************************************************************************************
-	 * Pre-processor Definitions
-	 ************************************************************************************/
 
-	/* The processor saves an EXC_RETURN value to the LR on exception entry. The
-	 * exception mechanism relies on this value to detect when the processor has
-	 * completed an exception handler.
-	 *
-	 * Bits [31:28] of an EXC_RETURN value are always 1.  When the processor loads a
-	 * value matching this pattern to the PC it detects that the operation is a not
-	 * a normal branch operation and instead, that the exception is complete.
-	 * Therefore, it starts the exception return sequence.
-	 *
-	 * Bits[4:0] of the EXC_RETURN value indicate the required return stack and eventual
-	 * processor mode.  The remaining bits of the EXC_RETURN value should be set to 1.
-	 */
-
-	/* EXC_RETURN_BASE: Bits that are always set in an EXC_RETURN value. */
-	static inline uint32_t EXC_RETURN_BASE = 0xffffffe1; // these bits are aalways set
-
-	/* EXC_RETURN_PROCESS_STACK: The exception saved (and will restore) the hardware
-	 * context using the process stack pointer (if not set, the context was saved
-	 * using the main stack pointer)
-	 */
-	static inline uint32_t EXC_RETURN_PROCESS_STACK =(1 << 2);
-
-/* EXC_RETURN_THREAD_MODE: The exception will return to thread mode (if not set,
- * return stays in handler mode)
- */
-
-	static inline uint32_t EXC_RETURN_THREAD_MODE   =(1 << 3);
-
-/* EXC_RETURN_STD_CONTEXT: The state saved on the stack does not include the
- * volatile FP registers and FPSCR.  If this bit is clear, the state does include
- * these registers.
- */
-
-	static inline uint32_t EXC_RETURN_STD_CONTEXT   =(1 << 4);
-
-/* EXC_RETURN_HANDLER: Return to handler mode. Exception return gets state from
- * the main stack. Execution uses MSP after return.
- */
-
-	static inline uint32_t EXC_RETURN_HANDLER       =0xfffffff1;
-
-/* EXC_RETURN_PRIVTHR: Return to privileged thread mode. Exception return gets
- * state from the main stack. Execution uses MSP after return.
- */
-	static inline bool return_has_fp_context(uint32_t exec) { return (exec & EXC_RETURN_STD_CONTEXT) == 0; }
-	static inline uint32_t HW_REGS_COUNT = 8;
-	static inline uint32_t HW_REGS_SIZE = HW_REGS_COUNT * sizeof(uint32_t);
-	static inline uint32_t HW_FP_COUNT = 16;// 15 regs and fpcr
-	static inline uint32_t HW_FP_SIZE = HW_FP_COUNT * sizeof(uint32_t);
-	static inline uintptr_t after_hw_context(uintptr_t ctx, uint32_t lr_ret) { return return_has_fp_context(lr_ret) ? ctx + (16 * sizeof(uint32_t)) : ctx; }
-	template<typename T>
-	static inline T after_hw_context(T ctx, uint32_t lr_ret) { return after_hw_context(ptr_to_int(ctx),lr_ret); }
 
 }
 #if 0

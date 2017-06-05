@@ -10,84 +10,73 @@
 
 namespace {
 	static f9::context g_inital;						// the initial context
-	static volatile f9::context* g_current = &g_inital;  // current
-	static volatile f9::context* g_switchto = nullptr;  // current
+	static f9::context* g_current = &g_inital;  // current
+	static f9::context* g_switchto = nullptr;  // current
+}
+static void pendset() {
+asm volatile (
+    "    CPSID     I                 \n" // Prevent interruption during context switch
+    "    MRS       R0, PSP           \n" // PSP is process stack pointer
+    "    TST       LR, #0x10         \n" // exc_return[4]=0? (it means that current process
+    "    IT        EQ                \n" // has active floating point context)
+    "    VSTMDBEQ  R0!, {S16-S31}    \n" // if so - save it.
+    "    STMDB     R0!, {R4-R11, LR} \n" // save remaining regs r4-11 and LR on process stack
+
+    // At this point, entire context of process has been saved
+    "    LDR     R1, =os_context_switch_hook  \n"   // call os_context_switch_hook();
+    "    BLX     R1                \n"
+
+    // R0 is new process SP;
+    "    LDMIA     R0!, {R4-R11, LR} \n" // Restore r4-11 and LR from new process stack
+    "    TST       LR, #0x10         \n" // exc_return[4]=0? (it means that new process
+    "    IT        EQ                \n" // has active floating point context)
+    "    VLDMIAEQ  R0!, {S16-S31}    \n" // if so - restore it.
+    "    MSR       PSP, R0           \n" // Load PSP with new process SP
+    "    CPSIE     I                 \n"
+    "    BX        LR                \n" // Return to saved exc_return. Exception return will restore remaining context
+		);
 }
 namespace f9 {
- 	volatile context* f9::current() { return g_current; }
-	volatile context* f9::schedule_select(){ // override this for schedual select
+ 	context* context::current() { return g_current; }
+	context* context::schedule_select(){ // override this for schedual select
 		if(g_switchto != nullptr){
-			volatile context* ret=nullptr;
+			context* ret=nullptr;
 			std::swap(g_switchto,ret);
 			return ret;
 		} else return this;
 	}
 	// hard simple switch, returns null if there wasn't a pending switch
-	volatile context*  f9::switch_to(volatile context* ctx){
+	context*  context::switch_to(context* ctx){
 		std::swap(g_switchto,ctx);
 		chip::request_schedule();
 		return ctx;
 	}
-	__attribute__((naked)) void f9::call_return(){
-		__asm volatile(
-			"blx r12\n" // r12 has the call
-
-
-		);
-
-
+	__attribute__((naked)) void context::call_return(){
+		volatile register uint32_t* ctx_sp __asm("r5");
+		//volatile register void* call __asm("r4"); // the call
+		__asm volatile("blx r4"); // call it
+		context nctx(const_cast<uint32_t*>(ctx_sp));
+		nctx.hard_restore();
 	}
-
 	// we push a new call onto the stack and return the original
-	void context::push_call(uintptr_t pc, uint32_t arg0=0, uint32_t arg1=0, uint32_t arg2=0) {
+	void context::push_call(uintptr_t pc, uint32_t arg0, uint32_t arg1, uint32_t arg2) {
 		context nctx(sp,call_return,arg0,arg1,arg2); // make aa new context based off the old stack
-		if(is_user()) nctx.set_user() ; else nctx.set_kernel(); // user is set by default
-		at(REG::R12) = pc;
-
-		--sp;
-		*sp = reinterpret_cast<uint32_t*>(this);
-		sp = push_std_context(sp); // new context
-				at(REG::LR_RET) = copy.at(REG::LR_RET);
-
-				at(REG::LR) = ptr_to_int(context_error_return); // set error return
-				at(REG::PC) = pc;
-				at(REG::xPSR) = 0x1000000; /* Thumb bit on */
-				at(REG::R0) = arg0;
-				at(REG::R1) = arg1;
-				at(REG::R2) = arg2;
-
-				_init(ptr_to_int(pc), ptr_to_int(arg)...);
-				if(__get_CONTROL() == 0x3)  // we are a unprivliaged thread
-
-				else
-
-
-
-				context copy = *this;
-				sp -= sizeof(uint32_t);
-				*reinterpret_cast<uint32_t*>(sp) = reinterpret_cast<uintptr_t>(this);
-
-			    sp -= RESERVED_REGS * sizeof(uint32_t);
-				at(REG::LR) = copy.at(REG::PC); // chain
-				at(REG::PC) = ptr_to_int(push_call_return);
-				at(REG::R0) = pc;
-				at(REG::R1) = ptr_to_int(this);
-				//at(REG::R2) =
-				//at(REG::R3) = arg3;
+		if(is_user()) nctx.set_user() ; else nctx.set_kernel();
+		nctx.at(REG::R4) = pc;
+		nctx.at(REG::R5) = ptr_to_int(sp);
 	}
 } /* namespace f9 */
-
+#if 0
 extern "C" void __attribute__ (( naked ))PendSV_Handler() ;
 extern "C" void __attribute__ (( naked ))PendSV_Handler() {
 	__asm__ __volatile__ ("push {lr}");
-	volatile f9::context* sel = f9::schedule_select();
-	if(g_proc_current != sel){
-		__asm__ __volatile__ ("pop {lr}");
+	auto sel = g_current->schedule_select();
+	__asm__ __volatile__ ("pop {lr}");
+	if(g_current != sel){
 		g_current->save();
 		g_current = sel;
 		g_current->restore();
-		__asm__ __volatile__ ("bx lr");
 	}
-	__asm__ __volatile__ ("pop {lr}");				\
 	__asm__ __volatile__ ("bx lr");
 }
+#endif

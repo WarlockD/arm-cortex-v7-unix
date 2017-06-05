@@ -16,6 +16,7 @@
 #include <os\printk.hpp>
 
 #include <stm32f7xx.h>
+#include "context.hpp"
 
 
 namespace mimx {
@@ -855,7 +856,7 @@ using hash_list_t = list::hash<proc,&proc::_hash_link, 32, proc_hasher,proc_equa
 		list::entry<proc> 				p_peers;
 		list::head<proc,&proc::p_peers> p_children;
 
-		f9_context_t ctx;
+		f9::context ctx;
 		uintptr_t stack_base;		// start of the stack memory and where this proc is
 		uintptr_t stack_size;		// total size of the stack
 		uintptr_t heap_end;			// current end of heap (starts at stack_base+sizeof(proc))
