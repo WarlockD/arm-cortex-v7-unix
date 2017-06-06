@@ -51,19 +51,9 @@ namespace f9 {
 		chip::request_schedule();
 		return ctx;
 	}
-	__attribute__((naked)) void context::call_return(){
-		volatile register uint32_t* ctx_sp __asm("r5");
-		//volatile register void* call __asm("r4"); // the call
-		__asm volatile("blx r4"); // call it
-		context nctx(const_cast<uint32_t*>(ctx_sp));
-		nctx.hard_restore();
-	}
 	// we push a new call onto the stack and return the original
 	void context::push_call(uintptr_t pc, uint32_t arg0, uint32_t arg1, uint32_t arg2) {
-		context nctx(sp,call_return,arg0,arg1,arg2); // make aa new context based off the old stack
-		if(is_user()) nctx.set_user() ; else nctx.set_kernel();
-		nctx.at(REG::R4) = pc;
-		nctx.at(REG::R5) = ptr_to_int(sp);
+		regs.push_handler_call(pc,arg0,arg1,arg2);
 	}
 } /* namespace f9 */
 #if 0

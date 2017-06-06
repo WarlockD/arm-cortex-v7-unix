@@ -199,11 +199,11 @@ namespace mimx{
 		p->p_clktim = p->p_cpu = p->p_time = 0;		// reset run times
 		g_proc_current->p_children.push_front(p);
 		assert(proc_lookup.insert(p) == hash::status::ok);
-		uint32_t current_stack_size = stack_base -     reinterpret_cast<uintptr_t>(ctx.sp);
+		//uint32_t current_stack_size = stack_base -     reinterpret_cast<uintptr_t>(ctx.sp);
 		p->stack_base = stack;
 		p->stack_size = nstack_size;
 		p->ctx = ctx;
-		p->ctx.sp = reinterpret_cast<uint32_t*>(current_stack_size + stack);
+		//p->ctx.sp = reinterpret_cast<uint32_t*>(current_stack_size + stack);
 		p->ctx.at(f9::REG::R0) = 0;
 	//	ctx.at(REG::R0) = p->p_pid;
 		return p;

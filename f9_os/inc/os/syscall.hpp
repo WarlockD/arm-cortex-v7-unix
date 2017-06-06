@@ -13,6 +13,8 @@
 #include <cstdint>
 #include <cstddef>
 
+#include "reg.hpp"
+
 namespace os {
 
 	namespace priv {

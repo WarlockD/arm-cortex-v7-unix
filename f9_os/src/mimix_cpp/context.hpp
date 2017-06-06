@@ -180,9 +180,9 @@ namespace f9 {
 		}
 		template<typename SP, typename PC> //typename ... Args>
 		void init(SP sp_, PC pc_, uint32_t arg0=0, uint32_t arg1=0, uint32_t arg2 =0) {
-			regs = chip::irq_state(push_std_context(sp_));
-			_init(ptr_to_int(pc_),arg0,arg1,arg2);
-			set_user(); // user is set by default
+			//regs = chip::irq_state(push_std_context(sp_));
+		//	_init(ptr_to_int(pc_),arg0,arg1,arg2);
+			//set_user(); // user is set by default
 		}
 		bool is_user() const { return (at(REG::EXC_RETURN) & chip::EXC_RETURN_THREAD_MODE) != 0; }
 		template<typename PC, typename ... Args>
@@ -209,9 +209,7 @@ namespace f9 {
 			return reinterpret_cast<uintptr_t>(_sp);
 		}
 		__attribute__((always_inline))  inline
-		context() : regs(reinterpret_cast<uint32_t*>(get_current_sp())) {}
-		__attribute__((always_inline))  inline
-		context(uint32_t* sp) : regs(sp) {}
+		context() : regs() {}
 		__attribute__((always_inline)) void  hard_jump() {
 			// we restore the context, stack, eveything and then bx to it
 			__hard_restore() ;
@@ -292,14 +290,15 @@ private:
 		// restores the context, outside of an irq return
 		// dosn't  check if we are in the right kernel thread
 		__attribute__((always_inline)) void __hard_restore() {
-			regs -= chip::XCPTCONTEXT_REGS;
-			chip::jump_context(sp+ chip::XCPTCONTEXT_REGS);
+			assert(0); // die
+			//regs -= chip::XCPTCONTEXT_REGS;
+			//chip::jump_context(sp+ chip::XCPTCONTEXT_REGS);
 		}
 		__attribute__((always_inline)) void __save() {
-			sp = chip::save_context();
+			regs.save();
 		}
 		__attribute__((always_inline)) void __restore() {
-			chip::restore_context(sp);
+			regs.restore();
 		}
 	};
 
