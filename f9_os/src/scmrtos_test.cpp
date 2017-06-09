@@ -283,8 +283,8 @@ extern "C" void scmrtos_test_start()
 	printk("starting os!\n");
 	mimx::mills_to_ticks(500);
 	mimx::ktimer_init();
-	//event0_data=20;
-	//mimx::ktimer::create_event(mimx::mills_to_ticks(1), timer_event0, &event0_data);
+	event0_data=20;
+	mimx::ktimer::create_event(mimx::mills_to_ticks(1), timer_event0, &event0_data);
 	while(1);
 
 	pid_t pid = mimx::create_task(root_task,root_stack,50*4);

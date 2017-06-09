@@ -12,7 +12,6 @@
 #include <type_traits>
 #include <cstdint>
 #include <cstddef>
-#include <cassert>
 
 #define CONFIG_BUILD_PROTECTED
 #define CONFIG_ARMV7M_USEBASEPRI
@@ -22,35 +21,34 @@
 
 namespace chip {
 
+
+	/* EXC_RETURN_BASE: Bits that are always set in an EXC_RETURN value. */
 	static constexpr uint32_t EXC_RETURN_BASE = 0xffffffe1; // these bits are aalways set
+
+	/* EXC_RETURN_PROCESS_STACK: The exception saved (and will restore) the hardware
+	 * context using the process stack pointer (if not set, the context was saved
+	 * using the main stack pointer)
+	 */
 	static constexpr uint32_t EXC_RETURN_PROCESS_STACK =(1 << 2);
+
+	/* EXC_RETURN_THREAD_MODE: The exception will return to thread mode (if not set,
+	* return stays in handler mode)
+	*/
+
 	static constexpr uint32_t EXC_RETURN_THREAD_MODE   =(1 << 3);
-	static constexpr uint32_t EXC_RETURN_STD_CONTEXT   =(1 << 4); // no fp
-	static constexpr uint32_t EXC_RETURN_HANDLER       =0xfffffff1; // state on main stack Execution uses MSP after return.
 
-	class ex_return {
-	public:
-		constexpr bool state_on_psp() const { return (_ret & EXC_RETURN_PROCESS_STACK) != 0; }
-		constexpr bool thread_mode() const { return (_ret & EXC_RETURN_THREAD_MODE) != 0; }
-		constexpr bool std_context() const { return (_ret & EXC_RETURN_STD_CONTEXT) != 0; }
-		constexpr void set_state_on_psp() { _ret |= EXC_RETURN_PROCESS_STACK; }
-		constexpr void set_state_on_msp() { _ret &= ~EXC_RETURN_PROCESS_STACK; }
-		constexpr void set_thread_mode() { _ret |= EXC_RETURN_THREAD_MODE; }
-		constexpr void set_handler_mode() { _ret &= ~EXC_RETURN_THREAD_MODE; }
-		constexpr void set_std_context() { _ret |= EXC_RETURN_STD_CONTEXT; }
-		constexpr void set_fp_context() { _ret &= ~EXC_RETURN_STD_CONTEXT; }
-		constexpr operator uint32_t()  const { return _ret; }
-		constexpr ex_return(uint32_t ret) : _ret(ret) {}
-		constexpr ex_return(bool thread_mode, bool state_on_psp, bool std_context=true) :
-				_ret(EXC_RETURN_HANDLER |
-						(thread_mode ?  EXC_RETURN_THREAD_MODE : 0) |
-						(state_on_psp ?  EXC_RETURN_PROCESS_STACK : 0)  |
-						(std_context ?  EXC_RETURN_STD_CONTEXT : 0)) {}
-		constexpr ex_return() : _ret(EXC_RETURN_HANDLER)  {}
-	public:
-		uint32_t _ret;
-	};
+	/* EXC_RETURN_STD_CONTEXT: The state saved on the stack does not include the
+	* volatile FP registers and FPSCR.  If this bit is clear, the state does include
+	* these registers.
+	*/
 
+	static constexpr uint32_t EXC_RETURN_STD_CONTEXT   =(1 << 4);
+
+	/* EXC_RETURN_HANDLER: Return to handler mode. Exception return gets state from
+	* the main stack. Execution uses MSP after return.
+	*/
+
+	static constexpr uint32_t EXC_RETURN_HANDLER       =0xfffffff1;
 	static constexpr size_t REG_EXTRA = 1000; // used for fpu
 
 	static inline uint8_t  getreg8(uintptr_t addr) { return *reinterpret_cast<volatile uint8_t*>(addr); }
@@ -543,119 +541,107 @@ namespace chip {
 	typedef volatile uint32_t* (*os_hook_func)(volatile uint32_t*);
 	void set_os_hook(os_hook_func func);
 	static inline void raise_context_switch() { *((volatile uint32_t*)0xE000ED04) |= 0x10000000; }
-
-
-	struct irq_state {
-		template<typename T>
-		static constexpr uint32_t hard_cast(T v) { return (uint32_t)((void*)v); }
-		static constexpr size_t sw_reg_count = static_cast<size_t>(REG::EXC_RETURN)- static_cast<size_t>(REG::SP);
-		static constexpr size_t hw_reg_count =  static_cast<size_t>(REG::XPSR) -static_cast<size_t>(REG::R0);
-		static constexpr size_t total_reg_count =  sw_reg_count+hw_reg_count;
-
-		inline volatile uint32_t& at(REG r) {
-			assert(r < REG::MAX_STATE_SIZE);
-			return r<=REG::EXC_RETURN
-					? _sw_regs[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::SP)]
-				    : _hw_regs[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::R0)];
-		}
-		inline uint32_t at(REG r)  const {
-			assert(r < REG::MAX_STATE_SIZE);
-			return r<=REG::EXC_RETURN
-					? _sw_regs[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::SP)]
-				    : _hw_regs[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::R0)];
-		}
-		inline uint32_t operator[](REG r) const { return at(r); }
-		inline volatile uint32_t& operator[](REG r)  { return at(r); }
-
-		__attribute__((always_inline)) inline void _save(irq_state* state) {
-			//  register irq_state* reg0 __asm__("r0") = state;
-			__asm__ __volatile__ (
-				"mov 		r0, %0\n"
-				"tst 		lr, #4\n" // exc_return[2]=0? (it means that current is thread
-				"ite 		eq\n"
-				"mrseq 		r2, msp\n"
-				"mrsne 		r2, psp\n"
-				"str 		r2, [r0, #0]\n" 		// save hw_regs
-				"ldr		r1, [r0, #8]\n"			// load calls
-				"cbnz		r1, 1f\n"				// if calls isn't zero skip sw_stack save
-				"mov		sp, r2\n"				// move to stack now
-				"tst	 	lr, #0x10\n"			// exc_return[4]=0? (it means that current process
-				"it	 		eq\n"					// has active floating point context)
-				"vstmdbeq 	sp!, {S16-S31}\n"		// if so, save it
-				"stmdb 		sp!, {r2-r11, lr}\n"	// save other regs
-				"mrs 		r3, basepri\n"
-				"str 		sp, [r0, #4]\n"// save swregs
-			//	"bic		sp, #7\n"			// 8 byte align the stack
-				"1: add 	r1, #1\n"			// inc call
-				"str 		r1, [r0, #8]\n"		// store call
-				"str 		lr, [r0, #12]\n"	// save exlr
-			 ::"r"(state) : "r0", "r2", "r3");
-		}
-		__attribute__((always_inline)) inline void _restore(irq_state* state) {
-			 // register irq_state* reg0 __asm__("r0") = state;
-			__asm__ __volatile__ (
-				"mov 		r0, %0\n"
-				//"ldr		r1, [r0, #8]\n"		// load calls
-			//	"subs		r1, #1\n"				// decrment
-			//	"bgt		1f\n"				// skip if not zero
-				"ldr		r1, [r0, #4]\n" 		// get sw_regs
-				"ldmia 		r1!, {r2-r11, lr}\n"	// restore the sw regs
-				"tst	 	lr, #0x10\n"			// exc_return[4]=0? (it means that new process
-				"it	 		eq\n"					// has active floating point context)
-				"vldmiaeq 	r1!, {S16-S31}\n"	// if so - restore it.
-				// r1, r2 and hw_regs should equal r2 at this point
-				// we should be at the stack now but lets just use the pointer from the class
-				"ldr		r1, [r0, #0]\n" 	// get hw_regs
-				"tst 		lr, #4\n"
-				"ite 		eq\n"
-				"msreq    	msp, r2\n"
-				"msrne 		psp, r2\n"
-				"msr 		basepri, r3\n"
-			//	"mov   		r1, #0\n"		// set calls to 0
-			//	"1: str		r1, [r0, #8]\n" // save calls
-			 ::"r"(state) : "r0", "r2", "r3");
-		}
-		__attribute__((always_inline)) inline void save(){
-			_save(this); // hopefuly _calls is loaded into r0
-		}
-
-		__attribute__((always_inline)) inline void restore(){
-			if(--_calls==0) {
-				at(REG::EXC_RETURN) = _ret;	// be sure to use this
-				_restore(this);
-			} else {
-				__asm__ __volatile__ (
-					"mov 		r0, %0\n"
-					"ldr		lr, [r0, #12]\n"  // load the return
-					"ldr		sp, [r0, #0]\n"  // load stack
-				::"r"(this) : "r0");
-				_hw_regs+=hw_reg_count; // do we need this? this gets changed a bunch
-			}
-		}
-		irq_state() : _hw_regs(nullptr),_sw_regs(nullptr),_calls(0) {}
-		__attribute((naked)) static void do_call_return();
-
-		// pushes the stack for a new call, we assume we don't need floating point
-		void push_handler_call(uintptr_t pc, uint32_t arg0=0, uint32_t arg1=0, uint32_t arg2=0, uint32_t arg3=0);
-
-		template<typename PC, typename ... Args>
-		inline void push_handler_call(PC pc, Args ... args) { push_handler_call(hard_cast(pc),hard_cast<Args>(args)...); }
-
-		void startup(uintptr_t sp, uintptr_t pc, uint32_t arg0=0, uint32_t arg1=0, uint32_t arg2=0, uint32_t arg3=0);
-		reg_t<uint32_t*> stack() { return reg_t<uint32_t*>(at(REG::SP)); }
-		reg_t<uint16_t*> inst() { return reg_t<uint16_t*>(at(REG::PC)); }
-		operator  bool() const { return _hw_regs != nullptr; }
-		bool operator==(const irq_state& other) const { return _hw_regs == other._hw_regs; }
-		bool operator!=(const irq_state& other) const { return _hw_regs != other._hw_regs; }
-	public:
-		volatile uint32_t* _hw_regs;
-		volatile uint32_t* _sw_regs;
-		uint32_t _calls;
-		ex_return _ret;
-	};
 	irq_state current_irq_state();
 	__attribute((naked)) void switch_to(irq_state& from, irq_state& to);
 	__attribute((naked)) void switch_to(irq_state& to);
+	struct irq_state {
+		static constexpr size_t sw_reg_count = static_cast<size_t>(REG::EXC_RETURN)- static_cast<size_t>(REG::SP);
+		static constexpr size_t hw_reg_count =  static_cast<size_t>(REG::XPSR) -static_cast<size_t>(REG::R0);
+		static constexpr size_t total_reg_count =  sw_reg_count+hw_reg_count;
+		inline volatile uint32_t& _at(REG r) {
+			assert(r < REG::MAX_STATE_SIZE);
+			return r<=REG::EXC_RETURN
+					? _regs[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::SP)]
+				    : _sp[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::R0)];
+		}
+		inline uint32_t at(REG r) const {
+			assert(r < REG::MAX_STATE_SIZE);
+			return r<=REG::EXC_RETURN
+					? _regs[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::SP)]
+				    : _sp[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::R0)];
+		}
+		inline volatile uint32_t& at(REG r) {
+			assert(r < REG::MAX_STATE_SIZE);
+			return r<=REG::EXC_RETURN
+					? _regs[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::SP)]
+				    : _sp[static_cast<uint32_t>(r)- static_cast<uint32_t>(REG::R0)];
+		}
+		uint32_t operator[](REG r) const { return at(r); }
+		volatile uint32_t& operator[](REG r)  { return at(r); }
+		volatile uint32_t* regs() const { return _regs; }
+		__attribute__((always_inline)) inline void save(){
+			if(_calls == 0) {
+				__asm__ __volatile__ ("mov 		r0, %0" : : "r" (_regs) : "r0");
+				__asm__ __volatile__ ("tst 		lr, #4"); // exc_return[2]=0? (it means that current is thread
+				__asm__ __volatile__ ("ite 		eq");
+				__asm__ __volatile__ ("mrseq 	r2, msp"::: "r2");
+				__asm__ __volatile__ ("mrsne 	r2, psp"::: "r2");
+				__asm__ __volatile__ ("msr 		r3, basepri"::: "r3");
+				__asm__ __volatile__ ("stm 		r0, {r2-r11, lr}");
+				_sp = at(REG::SP);
+				_ret = at(REG::EXC_RETURN);
+			} else {
+				__asm__ __volatile__ ("mov 		r0, %0" : : "r" (&_sp) : "r0");
+				__asm__ __volatile__ ("str 		sp, [r0]");
+			}
+			_calls++;
+		}
+
+		__attribute__((always_inline)) inline void restore(){
+			if(--_calls == 0){ // restore to thread
+				__asm__ __volatile__ ("mov 		r0, %0" : : "r" (_regs) : "r0");
+				__asm__ __volatile__ ("ldm 		r0, {r2-r11, lr}");
+				__asm__ __volatile__ ("tst 		lr, #4"); // exc_return[2]=0? (it means that current is thread
+				__asm__ __volatile__ ("ite 		eq");
+				__asm__ __volatile__ ("msreq 	msp, r2");
+				__asm__ __volatile__ ("msrne 	psp, r2");
+				__asm__ __volatile__ ("mrs 		basepri, r3"); // need to handle the control switch mabye?
+			} else { // restore from recursive callback
+				__asm__ __volatile__ ("mov lr, %0" : : "r" (_ret));
+				__asm__ __volatile__ ("mov sp, %0" : : "r" (_sp));
+				_sp += hw_reg_count;
+			}
+		}
+		irq_state() : _calls(0), _ret(EXC_RETURN_BASE), _sp(nullptr) {}
+		void push_new_state() { _sp -= hw_reg_count; }
+		void pop_state() { _sp += hw_reg_count; }
+		__attribute((naked)) static void do_call_return();
+
+		// pushes the stack for a new call
+		void push_call(uintptr_t pc, uint32_t arg0=0, uint32_t arg1=0, uint32_t arg2=0, uint32_t arg3=0) {
+			irq_state prev = *this;
+			 push_new_state();
+			 at(REG::R0) = arg0;
+			 at(REG::R1) = arg1;
+			 at(REG::R2) = arg2;
+			 at(REG::R3) = arg3;
+			 at(REG::PC) = ptr_to_int(do_call_return);
+			 at(REG::LR) = 0x00; // dosn't matter as we are repushed
+			 at(REG::R12) = pc; // r12 has the call
+			 _calls++;
+		}
+		void startup(uintptr_t sp, uintptr_t pc, uint32_t arg0=0, uint32_t arg1=0, uint32_t arg2=0, uint32_t arg3=0);
+		void push(const irq_state& copy) {
+			_sp -= XCPTCONTEXT_REGS;
+			std::copy(copy._regs, copy._regs + XCPTCONTEXT_REGS, _regs);
+		}
+		void push_copy() {
+			auto nregs = _sp - XCPTCONTEXT_REGS;
+			std::copy(_sp, _sp + XCPTCONTEXT_REGS, _regs);
+			_sp = nregs;
+		}
+		reg_t<uint32_t*> stack() { return reg_t<uint32_t*>(at(REG::SP)); }
+		reg_t<uint16_t*> inst() { return reg_t<uint16_t*>(at(REG::PC)); }
+		operator  bool() const { return _regs != nullptr; }
+		bool operator==(const irq_state& other) const { return _sp == other._regs; }
+		bool operator!=(const irq_state& other) const { return _sp != other._regs; }
+	public:
+		uint32_t _calls;
+		uint32_t _ret;
+		volatile uint32_t* _sp;
+		uint32_t _regs[sw_reg_count];
+	};
+
 };
 template<>
 struct enable_bitmask_operators<chip::CTRL_FLAGS>{

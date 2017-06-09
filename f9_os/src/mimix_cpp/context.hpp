@@ -1,4 +1,6 @@
 /*
+
+
  * context.hpp
  *
  *  Created on: Jun 2, 2017
@@ -110,7 +112,10 @@ namespace f9 {
 
 
 	struct context {
-		chip::irq_state regs;
+		uint32_t* sp;
+		uint32_t ret;
+		uint32_t calls;
+		uint32_t regs[16];
 		friend void __attribute__ (( naked ))PendSV_Handler();
 		virtual context* schedule_select(); // override this for schedual select
 		static void set_schduler(void(*func)(void*),void*arg);
@@ -180,9 +185,9 @@ namespace f9 {
 		}
 		template<typename SP, typename PC> //typename ... Args>
 		void init(SP sp_, PC pc_, uint32_t arg0=0, uint32_t arg1=0, uint32_t arg2 =0) {
-			//regs = chip::irq_state(push_std_context(sp_));
-		//	_init(ptr_to_int(pc_),arg0,arg1,arg2);
-			//set_user(); // user is set by default
+			regs = chip::irq_state(push_std_context(sp_));
+			_init(ptr_to_int(pc_),arg0,arg1,arg2);
+			set_user(); // user is set by default
 		}
 		bool is_user() const { return (at(REG::EXC_RETURN) & chip::EXC_RETURN_THREAD_MODE) != 0; }
 		template<typename PC, typename ... Args>
@@ -209,7 +214,9 @@ namespace f9 {
 			return reinterpret_cast<uintptr_t>(_sp);
 		}
 		__attribute__((always_inline))  inline
-		context() : regs() {}
+		context() : regs(reinterpret_cast<uint32_t*>(get_current_sp())) {}
+		__attribute__((always_inline))  inline
+		context(uint32_t* sp) : regs(sp) {}
 		__attribute__((always_inline)) void  hard_jump() {
 			// we restore the context, stack, eveything and then bx to it
 			__hard_restore() ;
@@ -251,8 +258,31 @@ namespace f9 {
 		__asm__ __volatile__ ("cpsie i");
 		}
 	#endif
-		__attribute__((always_inline)) void save() {
-			__asm__ __volatile__ ("cpsid i");
+		__attribute__((always_inline)) void irq_save(context* ctx) {
+			__asm__ __volatile__ (
+					"cpsid i\n"
+					"tst lr, #4\n"
+					"ite eq\n"
+					"mrseq r2, msp\n"
+					"mrsne r2, psp\n"
+					"str r2, [r0, #0]\n"	// store sp
+
+			__asm__ __volatile__ ("mrseq r2, msp"::: "r2");
+			__asm__ __volatile__ ("mrsne r2, psp"::: "r2");
+			if(calls == 0){
+				__asm__ __volatile__ ("mov r0, %0" : : "r" (this->regs) : "r0");
+				__asm__ __volatile__ ("stm r0, {r4-r11}");
+			}
+			__asm__ __volatile__ ("mov r0, %0" : : "r" (this->regs) : "r0");
+			__asm__ __volatile__ ("stm r0, {r4-r11}");
+			__asm__ __volatile__ ("and r4, lr, 0xf":::"r4");
+			__asm__ __volatile__ ("tst lr, #4");
+			__asm__ __volatile__ ("ite eq");
+			__asm__ __volatile__ ("mrseq r0, msp"::: "r0");
+			__asm__ __volatile__ ("mrsne r0, psp"::: "r0");
+			__asm__ __volatile__ ("mov %0, r0" : "=r" ((ctx)->sp));
+			__asm__ __volatile__ ("mov %0, lr" : "=r" ((ctx)->ret));
+
 			__save();
 		}
 		__attribute__((always_inline)) void restore() {
@@ -290,15 +320,14 @@ private:
 		// restores the context, outside of an irq return
 		// dosn't  check if we are in the right kernel thread
 		__attribute__((always_inline)) void __hard_restore() {
-			assert(0); // die
-			//regs -= chip::XCPTCONTEXT_REGS;
-			//chip::jump_context(sp+ chip::XCPTCONTEXT_REGS);
+			regs -= chip::XCPTCONTEXT_REGS;
+			chip::jump_context(sp+ chip::XCPTCONTEXT_REGS);
 		}
 		__attribute__((always_inline)) void __save() {
-			regs.save();
+			sp = chip::save_context();
 		}
 		__attribute__((always_inline)) void __restore() {
-			regs.restore();
+			chip::restore_context(sp);
 		}
 	};
 

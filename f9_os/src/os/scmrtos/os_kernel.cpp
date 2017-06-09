@@ -41,13 +41,20 @@
 
 
 #include <scm\scmRTOS.h>
-using namespace OS;
+#include <scm\os_kernel.h>
 
 OS::TKernel OS::Kernel;
+__attribute__((weak)) void OS::system_timer_user_hook(){}
+__attribute__((weak)) void OS::context_switch_user_hook(){}
+__attribute__((weak)) void OS::idle_process_user_hook(){}
+__attribute__((weak)) void OS::idle_process_target_hook(){}
+using namespace OS;
 
-#if scmRTOS_SUSPENDED_PROCESS_ENABLE != 0
-OS::TProcessMap OS::TBaseProcess::SuspendedProcessMap = (1ul << (PROCESS_COUNT)) - 1; 
-#endif
+
+
+
+
+
 
 //TBaseProcess * TKernel::ProcessTable[scmRTOS_PROCESS_COUNT + 1];
 
@@ -55,64 +62,34 @@ OS::TProcessMap OS::TBaseProcess::SuspendedProcessMap = (1ul << (PROCESS_COUNT))
 //
 //    TKernel functions
 //
-#if scmRTOS_CONTEXT_SWITCH_SCHEME == 0
-void TKernel::sched()
-{
-    uint_fast8_t NextPrty = highest_priority(ReadyProcessMap);
-    if(NextPrty != CurProcPriority)
-    {
-    #if scmRTOS_CONTEXT_SWITCH_USER_HOOK_ENABLE == 1
-        context_switch_user_hook();
-    #endif
 
-        stack_item_t*  Next_SP      = ProcessTable[NextPrty]->StackPointer;
-        stack_item_t** Curr_SP_addr = &(ProcessTable[CurProcPriority]->StackPointer);
-        CurProcPriority = NextPrty;
-        os_context_switcher(Curr_SP_addr, Next_SP);
-    }
-}
-#else
 //------------------------------------------------------------------------------
 void TKernel::sched()
 {
-    auto NextProc = next_highest_priority();
+    TBaseProcess* NextProc = highest_priority(CurProcPriority);
     if(NextProc != CurProc)
     {
         SchedProc = NextProc;
         raise_context_switch();
-        do
-        {
-            enable_context_switch();
-            DUMMY_INSTR();
-            disable_context_switch();
-        } 
-        while(NextProc != SchedProc); // until context switch done
+        if(__get_IPSR() == 0){ // in thread mode so we got to wait
+            do
+            {
+                __WFI();
+            }
+            while(NextProc != SchedProc); // until context switch done
+        }
+
     }
 }
 //------------------------------------------------------------------------------
 stack_item_t* os_context_switch_hook(stack_item_t* sp) { return Kernel.context_switch_hook(sp); }
 //------------------------------------------------------------------------------
-#endif // scmRTOS_CONTEXT_SWITCH_SCHEME
-
-//------------------------------------------------------------------------------
-//
-//       OS Process's constructor
-//
-//       Performs:  
-//           * initializing process data;
-//           * registering process in the kernel;
-//           * initializing stack frame;
-//                  
-//
-#if SEPARATE_RETURN_STACK == 0
 
 TBaseProcess::TBaseProcess( stack_item_t * StackPoolEnd
-                          , TPriority pr
+                          , int pr
                           , void (*exec)()
-                      #if scmRTOS_DEBUG_ENABLE == 1
                           , stack_item_t * aStackPool
                           , const char   * name_str
-                      #endif
                           ) : Timeout(0)
                             , Priority(pr)
                       #if scmRTOS_DEBUG_ENABLE == 1
@@ -120,8 +97,6 @@ TBaseProcess::TBaseProcess( stack_item_t * StackPoolEnd
                             , StackPool(aStackPool)
                             , StackSize(StackPoolEnd - aStackPool)
                             , Name(name_str)
-							,  Pid(TKernel::new_pid())
-							, State(ProcessStateType::Init)
                       #endif 
                       #if scmRTOS_PROCESS_RESTART_ENABLE == 1
                             , WaitingProcessMap(0)
@@ -131,86 +106,40 @@ TBaseProcess::TBaseProcess( stack_item_t * StackPoolEnd
     TKernel::register_process(this);
     init_stack_frame( StackPoolEnd
                     , exec
-                #if scmRTOS_DEBUG_ENABLE == 1     
+              //  #if scmRTOS_DEBUG_ENABLE == 1
                     , aStackPool
-                #endif  
+            //    #endif
                     );
 }
-
-#else  // SEPARATE_RETURN_STACK
-
-TBaseProcess::TBaseProcess( stack_item_t * Stack
-                          , stack_item_t * RStack
-                          , TPriority pr
-                          , void (*exec)()
-                      #if scmRTOS_DEBUG_ENABLE == 1
-                          , stack_item_t * aStackPool
-                          , stack_item_t * aRStackPool
-                          , const char   * name_str
-                      #endif
-                          ) : StackPointer(Stack)
-                            , Timeout(0)
-                            , Priority(pr)
-                      #if scmRTOS_DEBUG_ENABLE == 1
-                            , WaitingFor(0)
-                            , StackPool(aStackPool)
-                            , StackSize(Stack - aStackPool)
-                            , Name(name_str)
-                            , RStackPool(aRStackPool)
-                            , RStackSize(RStack - aRStackPool)
-                      #endif 
-                      #if scmRTOS_PROCESS_RESTART_ENABLE == 1
-                            , WaitingProcessMap(0)
-                      #endif
-
-{
-    TKernel::register_process(this);
-    init_stack_frame( Stack
-                    , RStack
-                    , exec
-                #if scmRTOS_DEBUG_ENABLE == 1     
-                    , aStackPool
-                    , aRStackPool
-                #endif  
-                    );
-}
-#endif // SEPARATE_RETURN_STACK
-//------------------------------------------------------------------------------
-void TBaseProcess::sleep(timeout_t timeout)
-{
-    TCritSect cs;
-    Kernel.set_process_sleeping(Kernel.CurProc,timeout);
-    Kernel.scheduler();
-}
-void TBaseProcess::wait(void* ptr,uint32_t timeout=0)
-{
-    TCritSect cs;
-    Kernel.set_process_waiting(Kernel.CurProc,ptr, timeout);
-    Kernel.scheduler();
-}
-
-//------------------------------------------------------------------------------
-void OS::TBaseProcess::wake_up()
-{
-    TCritSect cs;
-
-    if(this->Timeout)
-    {
-        this->Timeout = 0;
-        Kernel.set_process_ready(this);
-        Kernel.scheduler();
+void TKernel::wait(void* chan, timeout_t timeout){
+	auto current = CurProc;
+    if(current->State != ProcessState::Waiting) {
+        TCritSect cs;
+        if(current->State != ProcessState::Waiting) {
+        	Kernel.set_process_unready(const_cast<TBaseProcess*>(current));
+        	current->WaitingFor = chan;
+        	current->Timeout = timeout;
+			Kernel.scheduler();
+        }
     }
 }
-//------------------------------------------------------------------------------
-void OS::TBaseProcess::force_wake_up()
-{
-    TCritSect cs;
+void TKernel::sleep(timeout_t timeout){ wait(nullptr,timeout); }
 
-    this->Timeout = 0;
-    this->_waiting = 0;
-    Kernel.set_process_ready(this->Priority);
-    Kernel.scheduler();
+void TKernel::wakeup(void* chan){
+	// make this a hash lookup latter
+    TCritSect cs;
+    for(auto it = waiting_queue.begin(); it != waiting_queue.end();) {
+    	if(it->WaitingFor == chan) {
+    		TBaseProcess* p = &(*it);
+    		it = ready_queue.erase(it);
+    		ready_queue.push_back(p);
+        	p->State = ProcessState::Runable;
+        	p->Timeout = 0;
+    	} else ++it;
+    }
 }
+
+
 //------------------------------------------------------------------------------
 //
 //
@@ -219,64 +148,43 @@ void OS::TBaseProcess::force_wake_up()
 //
 namespace OS
 {
-#ifndef __GNUC__  // avoid GCC bug ( http://gcc.gnu.org/bugzilla/show_bug.cgi?id=15867 )
-    template<> void TIdleProc::exec();
-#endif
-
-#if scmRTOS_DEBUG_ENABLE == 1
     TIdleProc IdleProc("Idle");
-#else
-    TIdleProc IdleProc;
-#endif
-
-
 }
 
 namespace OS
 {
+	__attribute((weak)) void idle_process_user_hook() {}
+	__attribute((weak)) void idle_process_target_hook() {}
     template<> void TIdleProc::exec()
     {
         for(;;)
         {
-        #if scmRTOS_IDLE_HOOK_ENABLE == 1
-            idle_process_user_hook();
-        #endif
-
-        #if scmRTOS_TARGET_IDLE_HOOK_ENABLE == 1
-            idle_process_target_hook();
-        #endif
+        	OS::idle_process_user_hook();
+        	OS::idle_process_target_hook();
+            __WFI();
         }
     }
 }
 //------------------------------------------------------------------------------
-#if scmRTOS_DEBUG_ENABLE == 1
-#if SEPARATE_RETURN_STACK == 0
+
 size_t TBaseProcess::stack_slack() const
 {
      size_t slack = 0;
      const stack_item_t * Stack = StackPool;
-     while (*Stack++ == scmRTOS_STACK_PATTERN)
+     while (*Stack++ == 0x43214321)
          slack++;
      return slack;
 }
-#else  // SEPARATE_RETURN_STACK
-static size_t calc_stack_slack(const stack_item_t * Stack)
+stack_item_t* TKernel::context_switch_hook(stack_item_t* sp)
 {
-     size_t slack = 0;
-     while (*Stack++ == scmRTOS_STACK_PATTERN)
-         slack++;
-     return slack;
+    // no need for crit, PendSV is set at the highest priority
+	CurProc->StackPointer = sp;
+	sp = SchedProc->StackPointer;
+    context_switch_user_hook();
+    CurProc = SchedProc;
+    return sp;
 }
-size_t TBaseProcess::stack_slack() const
-{
-     return calc_stack_slack(StackPool);
-}
-size_t TBaseProcess::rstack_slack() const
-{
-     return calc_stack_slack(RStackPool);
-}
-#endif // SEPARATE_RETURN_STACK
-#endif // scmRTOS_DEBUG_ENABLE
+
 //------------------------------------------------------------------------------
 #if scmRTOS_PROCESS_RESTART_ENABLE == 1
 void TBaseProcess::reset_controls()
@@ -294,5 +202,8 @@ void TBaseProcess::reset_controls()
 }
 #endif  // scmRTOS_PROCESS_RESTART_ENABLE
 //------------------------------------------------------------------------------
+
+
+
 
 

@@ -52,6 +52,7 @@ namespace hash {
 		template<typename T, typename _CONTAINER_TYPE, size_t _BUCKET_COUNT, typename HASHER = pointer_hasher<T>, typename EQUALS = pointer_equals<T>>
 		class table {
 		public:
+			constexpr static size_t BUCKET_COUNT = _BUCKET_COUNT;
 			using hasher = HASHER;
 			using equals = EQUALS;
 			using container_type = _CONTAINER_TYPE;
@@ -68,32 +69,37 @@ namespace hash {
 	 		using entry_type = typename traits::entry_type;
 	 		using head_type =  typename traits::head_type;
 	 		using field_type = typename traits::field_type;
-			constexpr static size_t BUCKET_COUNT = _BUCKET_COUNT;
+	 		using bucket_array_type = std::array<container_type,BUCKET_COUNT>;
+
 
 			class head_iterator {
 			public:
 				using difference_type = typename traits::difference_type;
 				using iterator_category = std::forward_iterator_tag; // only forward for right now
-				using value_type =  typename traits::value_type;
-				using pointer =  typename traits::pointer;
-				using reference = typename traits::reference;
+				using value_type =  typename container_type::value_type;
+				using pointer =  typename container_type::pointer;
+				using reference = typename container_type::reference;
+				using container_iterator = typename container_type::iterator;
 				using iterator =  head_iterator;
 			private:
-				type& _hlist;
-				container_type* _cbucket;
-				pointer _current;
+				bucket_array_type& _hlist;
+				size_t _pos;
+				container_iterator cit;
+
 				void _get_next() {
-					do {
-						if(_cbucket>= &_hlist._buckets[BUCKET_COUNT]) break;
-						if(_current == nullptr && (_current = &_cbucket->front()) != nullptr) break;
-						if(_current != nullptr && (_current = traits::next(_current)) != nullptr) break;
-						++_cbucket;
-					} while(1);
+					while(_pos < _hlist.size()) {
+						if(_hlist[_pos].end() != cit) ++cit;
+						while(_hlist[_pos].end() == cit) {
+							if(++_pos >= _hlist.size()) return;
+							cit = _hlist[_pos].begin();
+						}
+						break;
+					}
 				}
 			//	size_t load_count;
 			public:
 				//size_t load_avg() const { return  load_count/
-				head_iterator(type& hlist, size_t bindex) : _hlist(hlist), _cbucket(&hlist._buckets[bindex]),_current(nullptr) { _get_next(); }
+				head_iterator(type& hlist, size_t bindex, container_iterator it) : _hlist(hlist), _pos(bindex), cit(it) {  }
 				inline iterator operator++() noexcept {
 					_get_next();
 					return iterator(*this);
@@ -104,21 +110,19 @@ namespace hash {
 					return tmp;
 				}
 				  // Must downcast from _List_node_base to _List_node to get to _M_data.
-				value_type& operator*()  const noexcept { return *_current; }
+				value_type& operator*()  const noexcept { return &(*cit); }
 				//const_value_type& operator*()  noexcept const { return *_current; }
-				value_type& operator&()  const noexcept { return *_current; }
-				pointer operator->()  const noexcept { return _current; }
+				value_type& operator&()  const noexcept { return *cit; }
+				pointer operator->()  const noexcept { return &(*cit); }
 
 				// do I need to test if the field pointers are equal?
-				bool operator==(const iterator& r) const { return _current == r._current && _cbucket == r._cbucket; }
+				bool operator==(const iterator& r) const { return cit == r.cit && _pos == r._pos; }
 				bool operator!=(const iterator& r) const { return !(*this == r); }
-
-
 			};
 			using iterator =  head_iterator;
 
-			iterator begin() { return iterator(*this,0); }
-			iterator end() { return iterator(*this,BUCKET_COUNT); }
+			iterator begin() { return iterator(_buckets,0,_buckets[0].begin()); }
+			iterator end() { return iterator(_buckets,BUCKET_COUNT, _buckets[BUCKET_COUNT].end()); }
 			table() : _hasher{}, _equals{} {}
 			// this is for debugging
 
@@ -203,7 +207,7 @@ namespace hash {
 			// this is for debuging
 			head_type* dbg_bucket(size_t i) { return  i < BUCKET_COUNT ? &_buckets[i] : nullptr; }
 		protected:
-			container_type _buckets[BUCKET_COUNT];
+			bucket_array_type _buckets;
 			const HASHER _hasher;
 			const EQUALS _equals;
 		};

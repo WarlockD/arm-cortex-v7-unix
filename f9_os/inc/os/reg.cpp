@@ -65,22 +65,6 @@ namespace chip {
 
 		__asm__ __volatile__ ("pop { lr } \nbx lr\n");
 	}
-	// pushes the stack for a new call, we assume we don't need floating point
-	void irq_state::push_handler_call(uintptr_t pc, uint32_t arg0=0, uint32_t arg1=0, uint32_t arg2=0, uint32_t arg3=0) {
-		irq_state prev = *this;
-		ex_return nex = _ret;
-		nex.set_std_context();
-		nex.set_handler_mode();
-		_hw_regs+=hw_reg_count; // expand stack by standard amount
-		 at(REG::R0) = arg0;
-		 at(REG::R1) = arg1;
-		 at(REG::R2) = arg2;
-		 at(REG::R3) = arg3;
-		 at(REG::PC) = pc;
-		 at(REG::LR) = ptr_to_int(do_call_return);
-		 at(REG::R12) = pc; // r12 has the call
-		 _calls++;
-	}
 }
 extern "C" void __attribute__ (( naked ))PendSV_Handler() ;
 extern "C" void __attribute__ (( naked ))PendSV_Handler() {

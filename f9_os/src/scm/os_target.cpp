@@ -46,8 +46,6 @@
 //*     Cortex-M0 port by Sergey A. Borshch, Copyright (c) 2011-2016
 
 
-#include <scm\scmRTOS.h>
-
 #include <scmRTOS.h>
 
 /*
@@ -60,6 +58,25 @@ using namespace OS;
 
 namespace OS
 {
+
+#if scmRTOS_DEBUG_ENABLE == 1
+
+struct TDebugSupportInfo
+{
+    uint8_t PROCESS_COUNT;
+    uint8_t TIMEOUT_SIZE;
+    uint8_t NAME_OFFSET;
+};
+
+
+__attribute__((used))
+extern const TDebugSupportInfo DebugInfo =
+{
+    PROCESS_COUNT,
+    sizeof(timeout_t),
+    sizeof(timeout_t) == 2 ? 20 : 24
+};
+#endif // scmRTOS_DEBUG_ENABLE
 
 } // namespace OS
 
@@ -97,6 +114,12 @@ void TBaseProcess::init_stack_frame( stack_item_t * Stack
     *(--StackPointer)  = 0xFFFFFFFDUL;      // exc_return: Return to Thread mode, floating-point context inactive, execution uses PSP after return.
     StackPointer -= 8;                      // emulate "push R4-R11"
 #endif
+#if scmRTOS_DEBUG_ENABLE == 1
+    *(StackPointer)  = reinterpret_cast<stack_item_t>(&DebugInfo); // dummy load to keep 'DebugInfo' in output binary
+
+    for (stack_item_t *pDst = StackBegin; pDst < StackPointer; pDst++)
+        *pDst = STACK_DEFAULT_PATTERN;
+#endif // scmRTOS_DEBUG_ENABLE
 }
 
 /*
@@ -198,7 +221,12 @@ extern "C" __attribute__((naked)) void PendSV_Handler()
 // weak alias to support old name of PendSV_Handler.
 #pragma weak PendSVC_ISR = PendSV_Handler
 
-
+/*
+ * By default port uses SysTick timer as a system timer.
+ */
+#if (! defined SCMRTOS_USE_CUSTOM_TIMER)
+#define SCMRTOS_USE_CUSTOM_TIMER 0
+#endif
 
 /*
  * Some Cortex-MX registers and constants.
@@ -267,10 +295,15 @@ enum
 
 }
 
+/*
+ * System timer stuff.
+ */
+#if (SCMRTOS_USE_CUSTOM_TIMER == 0)
 OS_INTERRUPT void SysTick_Handler()
 {
     system_timer_isr();
 }
+#endif
 
 /*
  * Default system timer initialization.
@@ -408,5 +441,4 @@ namespace OS
     };
 }   //namespace
 #endif
-
 
