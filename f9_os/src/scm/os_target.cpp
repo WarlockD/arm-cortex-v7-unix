@@ -46,7 +46,7 @@
 //*     Cortex-M0 port by Sergey A. Borshch, Copyright (c) 2011-2016
 
 
-#include <scmRTOS.h>
+#include "scmRTOS.h"
 
 /*
  * M0(+) core : __ARM_ARCH_6M__ defined.

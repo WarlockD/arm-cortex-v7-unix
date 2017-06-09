@@ -152,7 +152,7 @@ typedef uint32_t status_reg_t;
 //
 #include "scmRTOS_CONFIG.h"
 #include "scmRTOS_TARGET_CFG.h"
-#include <scmRTOS_defs.h>
+#include "scmRTOS_defs.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -298,7 +298,7 @@ INLINE void raise_context_switch() { *((volatile uint32_t*)0xE000ED04) |= 0x1000
 
 }
 
-#include <os_kernel.h>
+#include "os_kernel.h"
 
 namespace OS
 {

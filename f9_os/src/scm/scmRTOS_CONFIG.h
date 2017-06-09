@@ -92,7 +92,7 @@ typedef uint_fast32_t tick_count_t;
 //    scmRTOS Idle Process Hook
 //
 //
-#define  scmRTOS_IDLE_HOOK_ENABLE           0
+#define  scmRTOS_IDLE_HOOK_ENABLE           1
 
 //-----------------------------------------------------------------------------
 //

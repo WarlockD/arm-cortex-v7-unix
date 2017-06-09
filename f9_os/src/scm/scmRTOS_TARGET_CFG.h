@@ -64,13 +64,19 @@
 // Define SysTick clock frequency and its interrupt rate in Hz.
 // It makes sense if USE_CUSTOM_TIMER = 0.
 //
+#if 0
 #if   defined(STM32F10X_LD_VL) || defined(STM32F10X_MD_VL) || defined(STM32F10X_HD_VL)
 #	define SYSTICKFREQ     24000000UL
 #else
 #	define SYSTICKFREQ     72000000UL
 #endif
-#define SYSTICKINTRATE  1000
+#endif
+extern "C" {
+	extern uint32_t SystemCoreClock;
+};
 
+#define SYSTICKFREQ SystemCoreClock
+#define SYSTICKINTRATE  1000
 //------------------------------------------------------------------------------
 // Define number of priority bits implemented in hardware.
 //

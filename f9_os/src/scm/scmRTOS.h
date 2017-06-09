@@ -48,8 +48,8 @@
 //
 #include <stddef.h>
 #include <stdint.h>
-#include <usrlib.h>
-#include <os_target.h>
+#include "usrlib.h"
+#include "os_target.h"
 
 //------------------------------------------------------------------------------
 

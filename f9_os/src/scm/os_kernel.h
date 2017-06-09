@@ -44,7 +44,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <usrlib.h>
+#include "usrlib.h"
 
 //------------------------------------------------------------------------------
 
@@ -503,7 +503,7 @@ namespace OS
 }   // namespace OS
 //------------------------------------------------------------------------------
 
-#include <os_services.h>
+#include "os_services.h"
 #include "scmRTOS_extensions.h"
 
 //------------------------------------------------------------------------------
@@ -639,6 +639,6 @@ INLINE bool OS::os_running()
 }
 //-----------------------------------------------------------------------------
 
-#include <os_services.h>
+#include "os_services.h"
 
 #endif // OS_KERNEL_H

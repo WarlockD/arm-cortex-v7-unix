@@ -41,7 +41,7 @@
 #ifndef RECURSIVE_MUTEX_H
 #define RECURSIVE_MUTEX_H
 
-#include <scmRTOS.h>
+#include "scmRTOS.h"
 
 
 namespace OS

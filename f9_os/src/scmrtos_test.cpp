@@ -8,13 +8,12 @@
 
 #include <os\printk.h>
 #include <sys\time.h>
-#include <os\thread.hpp>
 
-#include "mimix_cpp\main.hpp"
 #include "f9\thread.hpp"
 
 #include <os\printk.hpp>
-#include "mimix_cpp\clock.hpp"
+#include "scm\scmRTOS.h"
+#include "scm\os_serial.hpp"
 #if 0
 #include <scm\scmRTOS.h>
 typedef TProfiler<0> TProfilerBase;
@@ -134,181 +133,128 @@ OS::TEventFlag event;
 OS::TEventFlag timer_event;
 #endif
 
-/**
- * Waste some time (payload emulation).
- */
- void waste_time()
-{
-	for (volatile int i = 0; i < 0x3FF; i++) ;
-}
+typedef OS::process<OS::pr0, 512> TProc1;
+typedef OS::process<OS::pr1, 512> TProc2;
+typedef OS::process<OS::pr2, 512> TProc3;
+extern UART_HandleTypeDef huart1;
+OS::STM32F7_UART test(&huart1);
 
-/**
- * Stack angry function.
- * Eats approximately (12 * count) bytes from caller process stack.
- * Called by different processes some time after start.
- * Stack usage changes can be observed in debug terminal.
- */
-int waste_stack(int count)
-{
-	volatile int arr[2];
-	arr[0] = TIM2->CNT;	// any volatile register
-	arr[1] = count ? waste_stack(count - 1) : TIM2->CNT;
-	return (arr[0] + arr[1]) / 2;
-}
-
-int simple_mutex;
-void process1() {
-	using os::kernel;
-	timeval_t time;
-
-	int count=0;
-   for(;;)
-   {
-	   simple_mutex++;
-	   kernel::sleep(&simple_mutex,kernel::PUSER);
-	   simple_mutex--;
-	   // waste some time (simulate payload)
-	   waste_time();
-	   gettimeofday(&time,nullptr);
-	   // waste some stack (increasing with time)
-	   uint32_t t = (time.tv_usec % 40000) / 5000;
-	   waste_stack(t);
-	   printk("\x1B[10;1H TProc0 = %d",count++);
-   }
-}
-void process2() {
-	using os::kernel;
-	timeval_t time;
-
-	int count=0;
-   for(;;)
-   {
-	   if(simple_mutex)
-		   kernel::wakeup(&simple_mutex);
-
-       waste_time();
-       waste_time();
-	   gettimeofday(&time,nullptr);
-	   // waste some stack (increasing with time)
-	  // uint32_t t = (time.tv_usec % 40000) / 5000;
-	  // waste_stack(t);
-	   printk("\x1B[11;1H TProc0 = %d",count++);
-   }
-}
-void process3() {
-	using os::kernel;
-	timeval_t time;
-
-	int count=0;
-   for(;;)
-   {
-	   simple_mutex++;
-	   kernel::sleep(&simple_mutex,kernel::PUSER);
-	   simple_mutex--;
-	   // waste some time (simulate payload)
-	   waste_time();
-	   gettimeofday(&time,nullptr);
-	   // waste some stack (increasing with time)
-	   uint32_t t = (time.tv_usec % 40000) / 5000;
-	   waste_stack(t);
-	   printk("\x1B[12;1H TProc0 = %d",count++);
-   }
-}
-uint32_t proc1_stack[1024];
-uint32_t proc2_stack[1024];
-uint32_t proc3_stack[1024];
-os::proc proc1(proc1_stack, process1);
-os::proc proc2(proc2_stack, process2);
-os::proc proc3(proc3_stack, process3);
-
-void test_clock(clock_t& start) {
-	clock_t current = clock();
-	if((current-start) < 100) return;
-	printk("CLOCK %d!\r\n",current);
-	start = current;
-}
-void test_time(timeval_t& start) {
-	constexpr static timeval_t sec = {1,0 };
-	timeval_t current;
-	gettimeofday(&current,NULL);
-	if((current-start) < sec) return;
-	printk("TIMEOFDAY!\r\n");
-	start = current;
-}
-#include "mimix_cpp/fs.hpp"
-#include "mimix_cpp/proc.hpp"
-extern "C" void __root_thread(void* meh, void* arg) {
-	// we are in root thread!
-	printk("in root thread!");
-	while(1);
-
-}
-
-DECLARE_THREAD(root_thread, __root_thread);
-
-pid_t thread1_pid;
-pid_t thread2_pid;
-void thread1() {
-	printk("thread1\r\n");
-	while(1);
-}
-uint32_t thread1_stack[50];
-
-void thread2() {
-	printk("thread2\r\n");
-	while(1);
-}
-uint32_t thread2_stack[50];
-
-void root_task() {
-	thread1_pid= mimx::create_task(thread1,thread1_stack,50*4);
-	thread2_pid= mimx::create_task(thread2,thread2_stack,50*4);
-	printk("root thread1=%d, thread2=%d%\n",thread1_pid,  thread2_pid);
-	while(1);
-}
-uint32_t  root_stack[50];
-
-uint32_t mills = 0;
-uint32_t timer_event0(uint32_t* data) {
-	if(++mills == 999) {
-		printk("timer_event0: %d\n", *data);
-		if(--data ==0) return 0;
+template<size_t _BUFFER_SIZE>
+struct TLog {
+	static constexpr size_t BUFFER_SIZE=_BUFFER_SIZE;
+	char _buffer[BUFFER_SIZE+1];
+	bool filled = false;
+	void vprint(const char* fmt, va_list va) {
+		while(filled) {
+			OS::sleep(100);
+		}
+		int len = vsnprintf(_buffer,BUFFER_SIZE,fmt,va);
+		if(len > 0 && len < BUFFER_SIZE) {
+			if(_buffer[len-1] != '\n') {
+				_buffer[len++] = '\n';
+				_buffer[len++] = 0;
+			}
+			filled = true;
+			test.write(_buffer,len);
+		}
 	}
-	return mimx::mills_to_ticks(1);
+	void print(const char* fmt,...) {
+		va_list va;
+		va_start(va,fmt);
+		vprint(fmt,va);
+		va_end(va);
+	}
+};
+TLog<512> log;
+
+TProc1 Proc1;
+TProc2 Proc2;
+TProc3 Proc3;
+//
+//      Test objects
+//
+struct TMamont                   //  data type for sending by message
+{                                //
+    enum TSource
+    {
+        PROC_SRC,
+        ISR_SRC
+    }
+    src;
+    int data;                    //
+};                               //
+
+
+OS::message<TMamont> MamontMsg;  // OS::message object
+
+namespace OS
+{
+    template <>
+    OS_PROCESS void TProc1::exec()
+    {
+        for(;;)
+        {
+            MamontMsg.wait();               // wait for message
+            TMamont Mamont = MamontMsg;     // read message content into local TMamont variable
+
+            if (Mamont.src == TMamont::PROC_SRC)
+            {
+            	log.print("TProc1: Message recived from Process (%d)\n"); // show that message received from other process
+            }
+            else
+            {
+            	log.print("TProc1: Message recived from isr (%d)\n"); // show that message received from other process
+            }
+        }
+    }
+
+    template <>
+    OS_PROCESS void TProc2::exec()
+    {
+        for(;;)
+        {
+            sleep(100);
+        }
+    }
+
+    template <>
+    OS_PROCESS void TProc3::exec()
+    {
+        for (;;)
+        {
+            sleep(1);
+            TMamont m;                      // create message content
+            m.src  = TMamont::PROC_SRC;
+            m.data = 5;
+            MamontMsg = m;                  // put the content to the OS::message object
+            log.print("TProc3: Message sending\n"); // show that message received from other process
+            MamontMsg.send();               // send the message
+        }
+    }
 }
-uint32_t event0_data;
+
+void OS::system_timer_user_hook()
+{
+   // TMamont m;                              // create message content
+   // m.src  = TMamont::ISR_SRC;
+   // m.data = 10;
+  //  MamontMsg = m;                          // put the content to the OS::message object
+  //  PB0.On();
+    MamontMsg.send_isr();                   // send the message
+}
+
+#if scmRTOS_IDLE_HOOK_ENABLE
+void OS::idle_process_user_hook()
+{
+	__WFI();
+}
+#endif
+
 
 extern "C" void scmrtos_test_start()
 {
 	printk("starting os!\n");
-	mimx::mills_to_ticks(500);
-	mimx::ktimer_init();
-	event0_data=20;
-	mimx::ktimer::create_event(mimx::mills_to_ticks(1), timer_event0, &event0_data);
-	while(1);
-
-	pid_t pid = mimx::create_task(root_task,root_stack,50*4);
-
-//	f9::tcb_t::startup();
-
-	//mimx::startup();
-
-	//os::kernel::start_os();
-
-	clock_t start = clock();
-	timeval_t start_tv;
-	gettimeofday(&start_tv,NULL);
-
-	while(1) {
-		test_clock(start);
-		test_time(start_tv);
-	}
-    // configure IO pins
-  //  PE0::Direct(OUTPUT);
-   // PE0::Off();
-  //  PE1::Direct(OUTPUT);
-  //  PE1::Off();
-
+	OS::run();
 }
 
 

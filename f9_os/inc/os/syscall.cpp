@@ -8,19 +8,7 @@
 #include "syscall.hpp"
 #include <os\printk.hpp>
 
-namespace {
-	static void syscall_stub(uint32_t arg0, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
-		  register uint32_t reg1 __asm__("r12") = arg3;
-		printk("SYSCALL STUB %d(%p, %p, %p, %p)\n",)
-	}
-	static constexpr size_t MAX_SYSCALLS = 128;
 
-
-	static uintptr_t g_stublookup[MAX_SYSCALLS];
-	struct syscall_init_t {
-
-	};
-}
 namespace os {
 #if 0
 static void dispatch_syscall(void) naked_function;
@@ -47,6 +35,7 @@ static void dispatch_syscall(void)
 
 
 }
+#if 0
 enum register_stack_t {
 	/* Saved by hardware */
 	REG_R0,
@@ -82,14 +71,12 @@ __attribute((always_inline) )static inline void copy_stack() {
 	__asm__ __volatile__ ("push {r12 }sub sp, #(8*4)\n");
 	copy_stack<REG_R0+8, REG_R0>();
 }
-extern "C" void SVC_Handler() __attribute((naked)) ;
+#endif
+//extern "C" void SVC_Handler() __attribute((naked)) ;
 
-extern "C" void SVC_Handler() __attribute((naked)) {
-	__asm__ __volatile__ (
-		"push {r4, lr}\n"
-		"sub sp, #(8*4)\n"
-		"r4, sp\n"
-	:::"r4");
+extern "C" void SVC_Handler() {
+	assert(0);
+
 }
 
 
