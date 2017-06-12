@@ -114,8 +114,16 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/stm32f746g-disco_hal_lib/Utilities/Fonts}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/stm32f746g-disco_hal_lib/Utilities/Log}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/stm32f746g-disco_hal_lib/Utilities/STM32746G-Discovery}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/f9/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/kernel/public}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/libs/memutil/public}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/unit_test}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/libs/streamer/public}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/kernel/target/public}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/libs/graphics/public}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/libs/random/public}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/libs/gui/public}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/f9_os/src/mark3/libs/heap/public}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1482307375" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="STM32F746G_DISCO"/>
@@ -209,10 +217,39 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<fileInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1124464924.24187584" name="ut_sanity.cpp" rcbsApplicability="disable" resourcePath="src/mark3/tests/ut_sanity.cpp" toolsToInvoke="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1110897132.2011653665">
+						<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1110897132.2011653665" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1110897132">
+							<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.248350754" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp"/>
+							<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s.1983031804" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s"/>
+						</tool>
+					</fileInfo>
+					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1124464924.172012199" name="/" resourcePath="src/scm">
+						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.703040403" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.1337520742.735612492" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.1337520742"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.board.1312316499.803775994" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board.1312316499"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1218761997.1800960530" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu.1218761997"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.27564688.859872041" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi.27564688"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="fr.ac6.managedbuild.targetPlatform.gnu.cross" isAbstract="false" osList="all" superClass="fr.ac6.managedbuild.targetPlatform.gnu.cross"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1184084786" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1622423515">
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1081380450" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1132412265" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
+							</tool>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.856429891" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1110897132">
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.724349237" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s.1786599691" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s"/>
+							</tool>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.1655195512" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.1755716755"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1397086514" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1291610303"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.archiver.1806569952" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver.456067656"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.800336524" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.1213780576">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.702827040" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.1287258937" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="f9/kernel"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="inc"/>
-						<entry excluding="f9|cmd|xx6|xv6cpp|cmd/ls.c|v6mini|v6minicpp|sos|v6|xv6/fatfs/drivers/sram_diskio.c|xv6/fatfs/drivers/sdram_diskio.c|xv6/fatfs/drivers/usbh_diskio.c|sos/os_svc_handler.S|sos/old_pensv.s|sos/os_pendsv_handler.S|xv6/fatfs/option" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="mark3/tests/ut_sanity.cpp|mark3/tests/ut_thread.cpp|scm|f9|cmd|xx6|xv6cpp|cmd/ls.c|v6mini|v6minicpp|sos|v6|xv6/fatfs/drivers/sram_diskio.c|xv6/fatfs/drivers/sdram_diskio.c|xv6/fatfs/drivers/usbh_diskio.c|sos/os_svc_handler.S|sos/old_pensv.s|sos/os_pendsv_handler.S|xv6/fatfs/option" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup"/>
 					</sourceEntries>
 				</configuration>

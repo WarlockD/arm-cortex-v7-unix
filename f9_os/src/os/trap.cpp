@@ -216,10 +216,28 @@ void dump_trapframe (trapframe *tf)
 	buf[4] = '\0';
 	printk(" xpsr: %s\r\n", buf);
 }
+#define STACK_END ((uint32_t*)0x20050000)
+void dump_stack_intresting_addresses(struct hw_trap *tf){
+	uint32_t* stack = (uint32_t*)(tf+1);
+	int pos = 0;
+	printk("intresting addresses from: 0x%08x to: 0x%08x\n",(uint32_t)stack,(uint32_t)STACK_END);
+	while(stack < STACK_END){
+		uint32_t value = *stack ;
+		if(value > 0x80000000) {
+			printk("lr  0x%08x(%d): 0x%08x\n",((uint32_t)stack), pos, value);
+		} else {
+			printk("    0x%08x(%d): 0x%08x\n",((uint32_t)stack), pos, value);
+		}
+		stack++;
+		pos--;
+	}
+	printk("end stack addresses %d\n",pos);
+}
 void dump_debug_trapframe (struct hw_trap *tf)
 {
+	uint32_t* stack = (uint32_t*)(tf+1);
 	printk(" r0: 0x%08x  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x\r\n", tf->r0,tf->r1, tf->r2,tf->r3);
-	printk(" ip: 0x%08x  lr: 0x%08x  pc: 0x%08x ", tf->ip,tf->lr,tf->pc);
+	printk(" ip: 0x%08x  lr: 0x%08x  pc: 0x%08x  sp: 0x%08x ", tf->ip,tf->lr,tf->pc, (uint32_t)stack);
 	char buf[5];
 	buf[0] = tf->xpsr & PSR_N_BIT ? 'N' : 'n';
 	buf[1] = tf->xpsr & PSR_Z_BIT ? 'Z' : 'z';
@@ -227,6 +245,8 @@ void dump_debug_trapframe (struct hw_trap *tf)
 	buf[3] = tf->xpsr & PSR_V_BIT ? 'V' : 'v';
 	buf[4] = '\0';
 	printk(" xpsr: %s\r\n", buf);
+	// we need to dump the stack as well
+	dump_stack_intresting_addresses(tf);
 }
 void DebugMon_Handler() {
 	while(1); // forever hack

@@ -56,10 +56,12 @@
 
 uint64_t sys_usec();
 #define USEC 1000000U
+#define MSEC 1000U
 #define OC_INCRMENT (USEC/(CLOCKS_PER_SEC))-1
-volatile uint32_t jiffies = 0; // based off HZ
+#define HAL_INCRMENT (USEC/(MSEC))-1
+volatile uint32_t HAL_Ticks = 0;
 
-clock_t clock() { return jiffies; }
+
 
 
 
@@ -92,8 +94,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	TimerSecondCallback();
 }
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
+#if 0
 	switch(htim->Channel){
 	case HAL_TIM_ACTIVE_CHANNEL_1:
+		++jiffies;
+		htim->Instance->CCR1 +=OC_INCRMENT;
+		JiffiesCallback();
+		break;
+	case HAL_TIM_ACTIVE_CHANNEL_2:
 		++jiffies;
 		htim->Instance->CCR1 +=OC_INCRMENT;
 		JiffiesCallback();
@@ -101,6 +109,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim){
 	default:
 		break;
 	}
+#endif
 }
 
 uint64_t sys_usec() {
@@ -118,21 +127,27 @@ uint64_t sys_usec() {
 }
 clock_t _times (struct tms *buf)
 {
+	uint64_t stamp = sys_usec();
 	if(buf) {
-		buf->tms_utime  = TimerOverflow;
-		buf->tms_stime   = TimerOverflow;
-		buf->tms_cutime   = TimerOverflow;
-		buf->tms_cstime   = TimerOverflow;
+		uint64_t sec = stamp/ USEC;
+		buf->tms_utime  = sec;
+		buf->tms_stime   = sec;
+		buf->tms_cutime   = sec;
+		buf->tms_cstime   = sec;
 	}
+	stamp*= _CLOCKS_PER_SEC_;
+	stamp /= USEC;
  // errno = EINVAL;
-  return jiffies;
+  return stamp;
 }
-clock_t old_clock() {
+
+clock_t clock() {
 	uint64_t stamp = sys_usec();
 	stamp*= _CLOCKS_PER_SEC_;
 	stamp /= USEC;
 	return stamp;
 }
+
 int _gettimeofday(struct timeval *__p, void *__tz){
 	if(__p) {
 #ifdef OVERFLOW_ON_SECOND
@@ -151,9 +166,31 @@ int _gettimeofday(struct timeval *__p, void *__tz){
 	return 1;
 }
 
+#define MAX_MSEC (0xFFFFFFFF/MSEC)
+
+void HAL_Delay(__IO uint32_t Delay)
+{
+	if(Delay < MAX_MSEC){
+		Delay *= 1000U;
+		 uint32_t tickstart = TIM2->CNT;
+		 while((TIM2->CNT - tickstart) < Delay) {}
+
+	} else {
+		assert(0); // wow, thats a looong time
+	}
+#if 0
+  uint32_t tickstart = 0;
+  tickstart = HAL_GetTick();
+  while((HAL_GetTick() - tickstart) < Delay)
+  {
+  }
+#endif
+}
 
 uint32_t HAL_GetTick(void)
 {
+	uint64_t stamp = sys_usec();
+	return stamp / 1000U;
 #ifdef OVERFLOW_ON_SECOND
 	uint32_t cnt= TIM2->CNT;
 	uint32_t ret = TimerOverflow;
@@ -162,7 +199,7 @@ uint32_t HAL_GetTick(void)
 	}
 	return ret * 1000U + (cnt / 1000U);
 #else
-	return TIM2->CNT / 1000U; // TIM is 1MHZ
+	//return TIM2->CNT / 1000U; // TIM is 1MHZ
 #endif
 
 }
@@ -232,20 +269,21 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
   TimHandle.Init.ClockDivision = 0;
   TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
   TimHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+#if 0
   TIM_OC_InitTypeDef jiffysetup;
   jiffysetup.OCMode = TIM_OCMODE_TIMING;
   jiffysetup.Pulse = OC_INCRMENT;
   jiffysetup.OCPolarity = TIM_OCPOLARITY_HIGH;
+  assert(HAL_TIM_OC_Init(&TimHandle) == HAL_OK);
 
-  assert(HAL_TIM_Base_Init(&TimHandle) == HAL_OK);
-  assert(HAL_TIM_OC_ConfigChannel(&TimHandle, &jiffysetup,TIM_CHANNEL_1)==HAL_OK);
-  //enable clock
-#if 0
- assert(HAL_TIM_OC_Init(&TimHandle) == HAL_OK);
-
-  assert(HAL_TIM_OC_Start(&TimHandle,TIM_CHANNEL_1) == HAL_OK);
-  assert(HAL_TIM_OC_Start_IT(&TimHandle,TIM_CHANNEL_1) == HAL_OK);
+   assert(HAL_TIM_OC_Start(&TimHandle,TIM_CHANNEL_1) == HAL_OK);
+   assert(HAL_TIM_OC_Start_IT(&TimHandle,TIM_CHANNEL_1) == HAL_OK);
 #endif
+  assert(HAL_TIM_Base_Init(&TimHandle) == HAL_OK);
+  assert(HAL_TIM_Base_Start_IT(&TimHandle) == HAL_OK);
+ // assert(HAL_TIM_OC_ConfigChannel(&TimHandle, &jiffysetup,TIM_CHANNEL_1)==HAL_OK);
+  //enable clock
+
   //TimHandle.Instance->CCR1 =OC_INCRMENT;
   /* Enable the TIM Update interrupt */
  // __HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_UPDATE);

@@ -149,8 +149,18 @@ void register_console(void (*proc)(const char *));
 void console_print(const char* str) {
 	while(*str) uartputc(*str++);
 }
+#include "lcd_dbg\lcd_log.h"
+static void LCD_Config(void);
+// fuck this lets get itm working
+
+void print_itm(const char* test) {
+	while(*test) ITM_SendChar(*test++);
+
+}
+
 int main(void)
 {
+
 	 /* Configure the system clock @ 200 Mhz */
 		HAL_Init();
 	  SystemClock_Config();
@@ -158,9 +168,25 @@ int main(void)
 	  MX_GPIO_Init();
 	  MX_USART1_UART_Init();
 	  printk_setup(uartputc, NULL, SERIAL_OPTIONS);
+	  ITM->TCR |= ITM_TCR_ITMENA_Msk;
+	  ITM->TER |= 1; /* ITM Port #0 enabled */
+	  printk("Booting %s\r\n", __TIME__);
+	  printk("CoreClock %d \r\n", SystemCoreClock);
+	  while(1) {
+		  print_itm("ITM output \r\n");
+		  printk("SERIAL output \r\n");
+		  HAL_Delay(1000);
+	  }
+
+	  LCD_Config();
+
+	  LCD_LOG_Init();
+
+	  LCD_ErrLog("I hope this works %s\n", "shit");
+
 	//  register_console(console_print);
 
-	  printk("Booting %s\r\n", __TIME__);
+
 
 	 // uint32_t old_msp = __get_MSP();
 	 // __set_PSP((old_msp +KPAGEMASK) & (~KPAGEMASK));
@@ -191,7 +217,40 @@ int main(void)
 	  /* Configure the board */
 	for(;;);
 }
+/**
+  * @brief  LCD configuration
+  * @param  None
+  * @retval None
+  */
+static void LCD_Config(void)
+{
+  /* LCD Initialization */
+  BSP_LCD_Init();
 
+  /* LCD Initialization */
+  BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
+  BSP_LCD_LayerDefaultInit(1, LCD_FB_START_ADDRESS+(BSP_LCD_GetXSize()*BSP_LCD_GetYSize()*4));
+
+  /* Enable the LCD */
+  BSP_LCD_DisplayOn();
+
+  /* Select the LCD Background Layer  */
+  BSP_LCD_SelectLayer(0);
+
+  /* Clear the Background Layer */
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
+
+  /* Select the LCD Foreground Layer  */
+  BSP_LCD_SelectLayer(1);
+
+  /* Clear the Foreground Layer */
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
+
+  /* Configure the transparency for foreground and background :
+     Increase the transparency */
+  BSP_LCD_SetTransparency(0, 0);
+  BSP_LCD_SetTransparency(1, 100);
+}
 /**
   * @brief  System Clock Configuration
   *         The system Clock is configured as follow :

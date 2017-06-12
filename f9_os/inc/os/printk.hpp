@@ -22,7 +22,6 @@ namespace dbg {
 		constexpr format_args() : fill(' '), width(0), precission(0), type(' ') {}
 	};
 
-
 	struct tag_unsigned {};
 	struct tag_signed : tag_unsigned{};
 	struct tag_pointer : tag_unsigned{};

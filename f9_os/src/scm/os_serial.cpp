@@ -16,9 +16,7 @@ void _USART1_IRQHandler() {
 }
 
 }
-extern "C" void USART1_IRQHandler() {
-	OS::_USART1_IRQHandler();
-}
+
 namespace OS {
 	class STM32F7_RAWUART {
 		USART_TypeDef* _uart;

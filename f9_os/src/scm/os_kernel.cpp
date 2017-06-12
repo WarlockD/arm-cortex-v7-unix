@@ -227,6 +227,7 @@ namespace OS
 
 namespace OS
 {
+#if 0
     template<> void TIdleProc::exec()
     {
         for(;;)
@@ -240,6 +241,7 @@ namespace OS
         #endif
         }
     }
+#endif
 }
 //------------------------------------------------------------------------------
 #if scmRTOS_DEBUG_ENABLE == 1

@@ -73,12 +73,12 @@ __attribute((always_inline) )static inline void copy_stack() {
 }
 #endif
 //extern "C" void SVC_Handler() __attribute((naked)) ;
-
+#if 0
 extern "C" void SVC_Handler() {
 	assert(0);
 
 }
-
+#endif
 
 
 

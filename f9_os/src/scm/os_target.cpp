@@ -48,6 +48,8 @@
 
 #include "scmRTOS.h"
 
+#define DISABLE_SYSTEM_IRQS
+
 /*
  * M0(+) core : __ARM_ARCH_6M__ defined.
  * M3 core    : __SOFTFP__ defined, __ARM_ARCH_6M__ not defined.
@@ -134,7 +136,11 @@ void TBaseProcess::init_stack_frame( stack_item_t * Stack
  * we can be sure that it will run only when no other exception or interrupt is active, and
  * therefore safe to assume that context being switched out was using the process stack (PSP).
  */
+#ifdef DISABLE_SYSTEM_IRQS
+extern "C" __attribute__((naked)) void SCM__PendSV_Handler()
+#else
 extern "C" __attribute__((naked)) void PendSV_Handler()
+#endif
 {
 #if (defined __ARM_ARCH_6M__)   // Cortex-M0(+)/Cortex-M1
     asm volatile (
@@ -218,8 +224,14 @@ extern "C" __attribute__((naked)) void PendSV_Handler()
 #endif  // #if (defined __ARM_ARCH_6M__)
 }
 
-// weak alias to support old name of PendSV_Handler.
+#ifdef DISABLE_SYSTEM_IRQS
+#pragma weak PendSVC_ISR = SCM__PendSV_Handler
+#else
 #pragma weak PendSVC_ISR = PendSV_Handler
+#endif
+
+// weak alias to support old name of PendSV_Handler.
+//#pragma weak PendSVC_ISR = PendSV_Handler
 
 /*
  * By default port uses SysTick timer as a system timer.
@@ -299,7 +311,11 @@ enum
  * System timer stuff.
  */
 #if (SCMRTOS_USE_CUSTOM_TIMER == 0)
+#ifdef DISABLE_SYSTEM_IRQS
+OS_INTERRUPT void SCM_SysTick_Handler()
+#else
 OS_INTERRUPT void SysTick_Handler()
+#endif
 {
     system_timer_isr();
 }

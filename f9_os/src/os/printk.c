@@ -530,7 +530,7 @@ void panic(const char*fmt,...){
 
 void printk(const char* fmt, ...){
 	uint32_t irq_status = __get_PRIMASK();
-	if(g_panic_mode) __set_PRIMASK(1);
+	if(g_panic_mode) __disable_irq();
 	va_list ap;
 	va_start(ap,fmt);
 	kprintf(fmt,0,NULL,ap);
