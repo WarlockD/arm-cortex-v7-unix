@@ -44,6 +44,9 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <array>
+#include <algorithm>
+#include <type_traits>
 //------------------------------------------------------------------------------
 //
 //  DESCRIPTON: user namespace for some useful types and functions
@@ -51,6 +54,85 @@
 //
 namespace usr
 {
+	namespace priv {
+	// https://github.com/arobenko/embxx/blob/master/embxx/util/SizeToType.h
+		// wierd sizes, can I use std::enable_if for these ranges?
+		template <std::size_t  _SIZE,  typename E = void> struct size_to_type;
+		template<std::size_t  _SIZE>
+		struct size_to_type<_SIZE, typename std::enable_if<(_SIZE > 2 && _SIZE <= 4)>> { using type = std::uint32_t; };
+		template<std::size_t  _SIZE>
+		struct size_to_type<_SIZE, typename std::enable_if<(_SIZE > 4 && _SIZE <= 8)>> { using type = std::uint64_t; };
+		template<>
+		struct size_to_type<1> { using type = std::uint8_t; };
+		template<>
+		struct size_to_type<2> { using type = std::uint16_t; };
+
+	};
+	// help from https://arobenko.gitbooks.io/bare_metal_cpp/content/basic_needs/queue.html
+	template<typename T, typename _SIZE_TYPE = std::size_t>
+	class buffer_base {
+	   	using value_type = T;
+		using refrence = value_type&;
+		using pointer = value_type*;
+		using const_refrence = const value_type&;
+		using const_pointer = const value_type*;
+		using iterator = pointer;
+		using const_iterator = const_pointer;
+
+    	using size_type = _SIZE_TYPE;
+    	static constexpr size_t ELEMENT_SIZE = sizeof(T);
+    	using type = buffer_base<T,_SIZE_TYPE>;
+
+	protected:
+    	// helper here
+		template<typename U>
+		using is_simple = typename std::integral_constant<bool, std::is_pod<U>::value || std::is_arithmetic<U>::value || std::is_trivial<U>::value>;
+        using storage_type =  typename std::aligned_storage<sizeof(value_type),std::alignment_of<value_type>::value>::type;
+    	using storage_pointer = storage_type*;
+
+    	template<typename U>
+    	bool push_back(U&& new_elm) {
+    		if(_count == size()) return false;
+			auto* ptr = &_data[_count++];
+			new(ptr) value_type(std::forward<U>(new_elm));
+    		return true;
+    	}
+
+    	void clear() { _count = _start_idx; }
+
+    	template<typename U = T>
+
+    	void pop_back() {
+    		if(_count ==0) return;
+    		auto* space = &_data[--_count];
+    		auto* elm  = reinterpret_cast<value_type*>(space);
+    		if(!is_simple<T>::value) elm->~T();
+    	}
+
+    	template<typename U>
+    	bool pop_back(U&& v) {
+    		if(_count == 0) return false;
+    		auto* space = &_data[--_count];
+    		auto* elm  = reinterpret_cast<value_type*>(space);
+    		v = std::move(*elm);
+    		return true;
+    	}
+    	constexpr inline size_type size() const { return _capacity; }
+    	constexpr inline size_type count() const { return _count; }
+    	constexpr inline size_type free() const { return _capacity - _count - _start_idx; }
+    	pointer begin() { return _data; }
+    	pointer end() { return _data + _count; }
+    	const pointer begin() const{ return _data; }
+    	const pointer end() const{ return _data+ _count; }
+    	constexpr buffer_base(storage_pointer data, size_type capacity) : _data(data), _capacity(capacity), _start_idx(0), _count(0) {}
+    	uint8_t* data() { return _data; }
+    	const uint8_t* data() const { return _data; }
+	private:
+    	storage_pointer _data;
+    	size_type _capacity;
+    	size_type _start_idx;
+    	size_type _count;		// elements in queue
+	};
     //------------------------------------------------------------------------------
     //
     ///     The Circular Buffer
@@ -94,10 +176,181 @@ namespace usr
         size_t  _first;
         size_t  _last;
     };
+#if 0
     //------------------------------------------------------------------------------
+    class TBuf {
+        uint8_t* _buf;
+    	const size_t  _size;
+    	volatile size_t  _pos;
+    public:
+    	uint8_t* begin() { return _buf; }
+    	uint8_t* end() { return _buf+ _pos; }
+    	const uint8_t* begin() const{ return _buf; }
+    	const uint8_t* end() const{ return _buf+ _pos; }
+    	uint8_t& operator[](size_t i) { return _buf[i]; }
+    	uint8_t operator[](size_t i) const { return _buf[i]; }
+    	uint8_t* data() { return _buf; }
+    	const uint8_t* data() const { return _buf; }
+        TBuf() : _buf(nullptr), _size(0), _pos(0)  {}
+        TBuf(uint8_t* buf, size_t size) : _buf(buf), _size(size), _pos(0)  {}
+    	template<size_t N>
+    	TBuf(uint8_t (&arr)[N]): _buf(&arr[0]), _size(N), _pos(0)  {}
+    	template<size_t N>
+    	TBuf(char (&arr)[N]): _buf(static_cast<char*>(&arr[0])), _size(N), _pos(0)  {}
+    	// no copy
+    	TBuf(const TBuf& copy) = delete;
+    	TBuf& operator=(const TBuf& copy) = delete;
+    	// move is fine though
+    	TBuf(TBuf&& move) = default;
+    	TBuf& operator=(TBuf&& move) = default;
 
+        size_t count() const { return _pos; }
+        void clear() { _pos = 0; }
+        size_t size() const { return _size; }
+        size_t write(const uint8_t* data, const size_t cnt) {
+    		const size_t items = cnt <= count() ? cnt : size();
+    	    std::copy_n(data,items,&_buf[_pos]);
+    	    _pos+=items;
+    	    return items;
+        }
+        // write helpers
+        inline size_t write(const char* data, const size_t cnt) { return write(reinterpret_cast<const uint8_t*>(data),cnt); }
+    	template<typename T>
+    	size_t write(const T* data, const size_t cnt) { return write(reinterpret_cast<const uint8_t*>(data),cnt*sizeof(T))/sizeof(T);  }
+    	template<typename T, size_t N>
+    	size_t write(const T (&arr)[N]) { return write(reinterpret_cast<const uint8_t*>(&arr[0]),N*sizeof(T))/sizeof(T);  }
 
+    	size_t read(uint8_t* data, const size_t cnt)
+    	{
+    		size_t items = cnt <= count() ? cnt : size();
+    	    std::copy_n(_buf,items,data);
+    		if(items < count())
+        	    std::copy_n(&_buf[_pos],items,&_buf[0]);
+    		_pos-=items;
+    		return items;
+    	}
 
+		// read helpers
+		inline size_t read(char* data, const size_t cnt) { return read(reinterpret_cast<uint8_t*>(data),cnt); }
+		template<typename T>
+		size_t read(T* data, const size_t cnt) { return read(reinterpret_cast<uint8_t*>(data),cnt*sizeof(T))/sizeof(T);  }
+		template<typename T, size_t N>
+		size_t read(T (&arr)[N]) { return read(reinterpret_cast<uint8_t*>(&arr[0]),N*sizeof(T))/sizeof(T);  }
+
+    	bool push_back(uint8_t v) {
+    		if(_pos == size()) return false;
+    		_buf[_pos++] = v;
+    		return true;
+    	}
+    	bool pop_back(uint8_t& v) {
+    		if(_pos == 0) return false;
+    		v = std::move(_buf[--_pos]);
+    		return true;
+    	}
+    	bool pop_back(char& v) { return pop_back(reinterpret_cast<uint8_t&>(v)); }
+    	bool push_back(char v) { return push_back(static_cast<uint8_t>(v)); }
+
+    	template<typename T>
+    	bool pop_back(T& v) { return read(&v,1) == 1; }
+
+    	template<typename T>
+    	bool push_back(T v) { return write(&v,1) == 1; }
+
+    	template<typename T>
+    	bool push_back(const T& v) {
+    		return 1 == write(v,1);
+    	}
+    	template<typename T>
+    	bool pop_back(const T& v) {
+    		return 1 == read(v,1);
+    	}
+    };
+    // one way buffer
+    template<typename T, std::size_t _COUNT, typename _SIZE_TYPE = std::size_t>
+    class buffer {
+
+    public:
+    	using size_type = _SIZE_TYPE;
+    	static constexpr size_t COUNT = _COUNT;
+    	static constexpr size_t ELEMENT_SIZE = sizeof(T);
+    	static constexpr size_t ARRAY_SIZE = ELEMENT_SIZE * COUNT;
+    	using type = buffer<T,_COUNT,_SIZE_TYPE>;
+
+    	using value_type = T;
+    	using refrence = value_type&;
+    	using pointer = value_type*;
+    	using const_refrence = const value_type&;
+    	using const_pointer = const value_type*;
+    	using iterator = pointer;
+       	using const_iterator = const_pointer;
+
+    	constexpr size_t size() const { return _buf.size(); }
+    	size_type count() const { return _pos; }
+    	size_type free() const { return size() - _pos; }
+    	iterator begin() { return  _buf.begin(); }
+    	const_iterator begin() const { return  _buf.begin(); }
+    	iterator end() { return  _buf.begin()  + _pos;}
+    	const_iterator end() const { return  _buf.begin()  + _pos; }
+    	refrence operator[](size_t i) { return _buf[i]; }
+    	const_refrence operator[](size_t i) const { return _buf[i]; }
+    	const_pointer data() const { return _buf.data(); }
+
+    	template<typename U>
+    	bool push_back(U&& new_elm) {
+    		if(_pos == size()) return false;
+			auto* ptr = &_buf[_pos++];
+			new(ptr) value_type(std::forward<U>(new_elm));
+    		return true;
+    	}
+    	template<typename U>
+    	bool pop_back(U&& v) {
+    		if(_pos == 0) return false;
+    		auto* space = &_buf[--_pos];
+    		auto* elm  = reinterpret_cast<value_type*>(space);
+    		v = std::move(*elm);
+    		return true;
+    	}
+    	void clear() { _pos = 0; }
+
+    	template<size_t N>
+    	size_type write(value_type (&arr)[N]) {
+    		const size_t items = N <= count() ? N : size();
+    	    std::copy(data,data+items,&_buf[_pos]);
+    	    _pos+=N;
+    	    return items;
+    	}
+    	size_type write(const_pointer data, const size_t cnt)
+    	{
+    		const size_type items = cnt <= count() ? cnt : size();
+    	    std::copy(data,data+items,&_buf[_pos]);
+    	    _pos+=items;
+    	    return items;
+    	}
+    	template<size_t N>
+    	size_type read(value_type (&arr)[N]) {
+    		const size_type items = N <= count() ? N : SIZE;
+    		std::copy(begin(),begin() + items, data);
+    		if(items <= count()){
+        		std::copy(begin()+ N,end(), begin()); // move the data
+    		}
+    		return items;
+    	}
+    	size_type read(pointer data, const size_t cnt)
+    	{
+    		size_t items = cnt <= count() ? cnt : SIZE;
+    		std::copy(begin(),begin() + items, data);
+    		if(items <= count()){
+        		std::copy(begin()+ cnt,end(), begin()); // move the data
+    		}
+    		return items;
+    	}
+    private:
+        using storage_type =  typename std::aligned_storage<sizeof(value_type),std::alignment_of<value_type>::value>::type;
+        using array_type = std::array<T,_COUNT>;
+        size_type _pos;
+    	array_type _buf;
+    };
+#endif
     //-----------------------------------------------------------------------
     //
     ///     The Ring Buffer Template

@@ -20,7 +20,6 @@ ETH_HandleTypeDef heth;
 
 RTC_HandleTypeDef hrtc;
 
-UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_usart1_tx;
 static void MX_DMA_Init(void);
 
@@ -34,6 +33,8 @@ static void SystemClock_Config(void);
 static void CPU_CACHE_Enable(void);
 void MX_USART1_UART_Init(void);
 
+
+UART_HandleTypeDef huart1;
 void usart_sync_write(const uint8_t* data, size_t length) {
 	while(HAL_BUSY!=HAL_UART_Transmit(&huart1, (uint8_t*)data, length,500));
 }
@@ -125,18 +126,7 @@ void test_switch() {
 void traps_v7m_init(void);
 void v7_test();
 uint32_t kstack[256];
-int uartputc(int c) {
-	while(__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TXE) == 0);
-	huart1.Instance->TDR = c & 0xFF;
-	while(__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TC) == 0);
-	return c & 0xFF;
-}
-int panic_usart(int c) {
-	while(__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TXE) == 0);
-	huart1.Instance->TDR = c & 0xFF;
-	while(__HAL_UART_GET_FLAG(&huart1, UART_FLAG_TC) == 0);
-	return c & 0xFF;
-}
+
 
 void xv6_init() {
 	printk("Yea! We are running xv6_init!\b");
@@ -151,30 +141,28 @@ void console_print(const char* str) {
 }
 #include "lcd_dbg\lcd_log.h"
 static void LCD_Config(void);
-// fuck this lets get itm working
-
-void print_itm(const char* test) {
-	while(*test) ITM_SendChar(*test++);
-
-}
-
+void mark3_init();
 int main(void)
 {
 
 	 /* Configure the system clock @ 200 Mhz */
 		HAL_Init();
 	  SystemClock_Config();
+	//  DBGMCU->CR = 0x00000020;
+	//  ITM->TCR |= ITM_TCR_ITMENA_Msk;
+	//  ITM->TER |= 1; /* ITM Port #0 enabled */
 
 	  MX_GPIO_Init();
 	  MX_USART1_UART_Init();
-	  printk_setup(uartputc, NULL, SERIAL_OPTIONS);
-	  ITM->TCR |= ITM_TCR_ITMENA_Msk;
-	  ITM->TER |= 1; /* ITM Port #0 enabled */
+	  mark3_init();
+
 	  printk("Booting %s\r\n", __TIME__);
 	  printk("CoreClock %d \r\n", SystemCoreClock);
+	 // semi_str("semihostin\r\n");
+
 	  while(1) {
-		  print_itm("ITM output \r\n");
-		  printk("SERIAL output \r\n");
+		//  trace_printf("Trace is working! wee!\n");
+		  printk("SERIAL output %i\r\n",7);
 		  HAL_Delay(1000);
 	  }
 

@@ -15,6 +15,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef int (*printk_write_t)(const char*,size_t);
 typedef enum printk_options_s {
 	PRINTK_IGNORENEWLINE		= 0x01,	// any \n it sees it will not print
 	PRINTK_IGNORERETURN			= 0x02,	// any \r it sees it will not print
@@ -29,7 +31,8 @@ void putck(int c);
 void putsk(const char* str);
 void writek(const uint8_t* data, size_t len);
 void vprintk(const char* msg, va_list va);
-void printk_setup(int (*outchar)(int), void(*flush)(),printk_options_t options);
+
+void printk_setup(printk_write_t out_write, printk_options_t options);
 void kpanic(const char*fmt,...);
 void panic_mode(); // sets the serial port to do blocking write, disable irq on evey printk
 

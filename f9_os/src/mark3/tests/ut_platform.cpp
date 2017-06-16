@@ -33,33 +33,8 @@ extern "C"
 static Thread AppThread;			//!< Main "application" thread
 static K_WORD aucAppStack[STACK_SIZE_APP];
 
-class trace_driver : public Driver {
-public:
-    void Init() { putsk("trace_driver: Init\r\n"); }
-    uint8_t Open()  { putsk("trace_driver: Open\r\n"); return 0; }
-    uint8_t Close()	{ putsk("trace_driver: Close\r\n"); return 0; }
-    virtual ~trace_driver() {}
-    uint16_t Read( uint16_t u16Bytes_, uint8_t *pu8Data_) {
-    	(void)u16Bytes_;(void)pu8Data_;
-    	//auto sz = trace_write(pu8Data_, u16Bytes_);
-    	return 0;
-    }
-    uint16_t Write( uint16_t u16Bytes_, uint8_t *pu8Data_){
-    	writek(pu8Data_, u16Bytes_);
-    	return u16Bytes_;
-    }
-    virtual uint16_t Control( uint16_t u16Event_,
-                                    void *pvDataIn_,
-                                    uint16_t u16SizeIn_,
-                                    void *pvDataOut_,
-                                    uint16_t u16SizeOut_ ) {
-    	// does NOTHING
-    	(void)u16Event_;(void)pvDataIn_;(void)u16SizeIn_;(void)pvDataOut_;(void)u16SizeOut_;
-    	return 0;
-    }
+static Driver* debug_out = nullptr;
 
-};
-static trace_driver clUART; 	//!< UART device driver object
 
 
 //---------------------------------------------------------------------------
@@ -148,7 +123,7 @@ void PrintString(const char *szStr_)
     char *szTemp = (char*)szStr_;
     while (*szTemp)
     {
-        while( 1 != clUART.Write( 1, (uint8_t*)szTemp ) ) { /* Do nothing */ }
+        while( 1 != debug_out->Write( 1, (uint8_t*)szTemp ) ) { /* Do nothing */ }
         szTemp++;
     }
 }
@@ -157,10 +132,11 @@ void PrintString(const char *szStr_)
 void AppEntry(void)
 {
     {
-        Driver *my_uart = DriverList::FindByPath("/dev/tty");
+    	debug_out = DriverList::FindByPath("/dev/tty");
+    	assert(debug_out);
 
        // my_uart->Control( CMD_SET_BUFFERS, aucRxBuffer, UART_SIZE_RX, aucTxBuffer, UART_SIZE_TX);
-        my_uart->Open();
+    	debug_out->Open();
 
         init_tests();
     }
@@ -188,8 +164,6 @@ void IdleEntry(void)
 //---------------------------------------------------------------------------
 int ut_main(void)
 {
-    Kernel::Init();						//!< MUST be before other kernel ops
-
     AppThread.Init(	aucAppStack,		//!< Pointer to the stack
                     STACK_SIZE_APP,		//!< Size of the stack
                     1,					//!< Thread priority
@@ -210,10 +184,7 @@ int ut_main(void)
     IdleThread.Start();
 #endif
 
-    clUART.SetName("/dev/tty");			//!< Add the serial driver
-    clUART.Init();
 
-    DriverList::Add( &clUART );
 
     Kernel::Start();					//!< Start the kernel!
 }
