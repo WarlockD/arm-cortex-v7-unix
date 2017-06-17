@@ -34,6 +34,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
 #include "pin_macros.h"
+#include <assert.h>
 
 extern DMA_HandleTypeDef hdma_usart1_tx;
 
@@ -235,10 +236,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     hdma_usart1_tx.Init.Mode = DMA_NORMAL;
     hdma_usart1_tx.Init.Priority = DMA_PRIORITY_MEDIUM;
     hdma_usart1_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    if (HAL_DMA_Init(&hdma_usart1_tx) != HAL_OK)
-    {
-      Error_Handler();
-    }
+    assert(HAL_DMA_Init(&hdma_usart1_tx) == HAL_OK);
 
     __HAL_LINKDMA(huart,hdmatx,hdma_usart1_tx);
 

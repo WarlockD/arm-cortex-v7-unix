@@ -3,7 +3,7 @@
   .cpu cortex-m7
   .fpu softvfp
   .thumb
-
+#if 0
 .extern do_debug_default
 
 .global HardFault_Handler
@@ -18,3 +18,4 @@ HardFault_Handler:
 	blx lr
 .size  HardFault_Handler, .-HardFault_Handler
 
+#endif

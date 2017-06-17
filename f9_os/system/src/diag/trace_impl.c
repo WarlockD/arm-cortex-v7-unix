@@ -1,24 +1,47 @@
 /*
- * semihosting.cpp
+ * This file is part of the µOS++ distribution.
+ *   (https://github.com/micro-os-plus)
+ * Copyright (c) 2014 Liviu Ionescu.
  *
- *  Created on: Jun 13, 2017
- *      Author: Paul
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom
+ * the Software is furnished to do so, subject to the following
+ * conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <os/semihosting.hpp>
-#include <os\trace.h>
-#include <cstring>
-#include <cstdlib>
-#include <cstdarg>
+// ----------------------------------------------------------------------------
+
+#include "diag/Trace.h"
+
+#if defined(TRACE)
+
+#include "cmsis/cmsis_device.h"
+
+
+// ----------------------------------------------------------------------------
+
+// One of these definitions must be passed via the compiler command line
+// Note: small Cortex-M0/M0+ might implement a simplified debug interface.
 
 //#define OS_USE_TRACE_ITM
-
-#define OS_USE_TRACE_SEMIHOSTING_DEBUG
+//#define OS_USE_TRACE_SEMIHOSTING_DEBUG
 //#define OS_USE_TRACE_SEMIHOSTING_STDOUT
-
-#ifndef OS_INTEGER_TRACE_PRINTF_TMP_ARRAY_SIZE
-#define OS_INTEGER_TRACE_PRINTF_TMP_ARRAY_SIZE (128)
-#endif
 
 #if !(defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__))
 #if defined(OS_USE_TRACE_ITM)
@@ -26,6 +49,16 @@
 #warning "ITM unavailable"
 #endif // defined(OS_USE_TRACE_ITM)
 #endif // !(defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__))
+
+#if defined(OS_DEBUG_SEMIHOSTING_FAULTS)
+#if defined(OS_USE_TRACE_SEMIHOSTING_STDOUT) || defined(OS_USE_TRACE_SEMIHOSTING_DEBUG)
+#error "Cannot debug semihosting using semihosting trace; use OS_USE_TRACE_ITM"
+#endif
+#endif
+
+// ----------------------------------------------------------------------------
+
+// Forward definitions.
 
 #if defined(OS_USE_TRACE_ITM)
 static ssize_t
@@ -38,9 +71,39 @@ _trace_write_semihosting_stdout(const char* buf, size_t nbyte);
 #endif
 
 #if defined(OS_USE_TRACE_SEMIHOSTING_DEBUG)
-static int
+static ssize_t
 _trace_write_semihosting_debug(const char* buf, size_t nbyte);
 #endif
+
+// ----------------------------------------------------------------------------
+
+void
+trace_initialize(void)
+{
+  // For regular ITM / semihosting, no inits required.
+}
+
+// ----------------------------------------------------------------------------
+
+// This function is called from _write() for fd==1 or fd==2 and from some
+// of the trace_* functions.
+
+ssize_t
+trace_write (const char* buf __attribute__((unused)),
+	     size_t nbyte __attribute__((unused)))
+{
+#if defined(OS_USE_TRACE_ITM)
+  return _trace_write_itm (buf, nbyte);
+#elif defined(OS_USE_TRACE_SEMIHOSTING_STDOUT)
+  return _trace_write_semihosting_stdout(buf, nbyte);
+#elif defined(OS_USE_TRACE_SEMIHOSTING_DEBUG)
+  return _trace_write_semihosting_debug(buf, nbyte);
+#endif
+
+  return -1;
+}
+
+// ----------------------------------------------------------------------------
 
 #if defined(OS_USE_TRACE_ITM)
 
@@ -58,9 +121,9 @@ _trace_write_semihosting_debug(const char* buf, size_t nbyte);
 #if !defined(OS_INTEGER_TRACE_ITM_STIMULUS_PORT)
 #define OS_INTEGER_TRACE_ITM_STIMULUS_PORT     (0)
 #endif
-#include <std32f7xx.h>
 
-static ssize_t _trace_write_itm (const char* buf, size_t nbyte)
+static ssize_t
+_trace_write_itm (const char* buf, size_t nbyte)
 {
   for (size_t i = 0; i < nbyte; i++)
     {
@@ -85,11 +148,11 @@ static ssize_t _trace_write_itm (const char* buf, size_t nbyte)
 
 #endif // OS_USE_TRACE_ITM
 
-
 // ----------------------------------------------------------------------------
 
 #if defined(OS_USE_TRACE_SEMIHOSTING_DEBUG) || defined(OS_USE_TRACE_SEMIHOSTING_STDOUT)
 
+#include "arm/semihosting.h"
 
 // Semihosting is the other output channel that can be used for the trace
 // messages. It comes in two flavours: STDOUT and DEBUG. The STDOUT channel
@@ -108,30 +171,22 @@ static ssize_t _trace_write_itm (const char* buf, size_t nbyte)
 // In OpenOCD, support for semihosting can be enabled using
 // "monitor arm semihosting enable".
 //
-// Note: Applications built with semihosting output active cannot be
-// executed without the debugger connected and active, since they use
-// BKPT to communicate with the host. Attempts to run them standalone or
-// without semihosting enabled will usually be terminated with hardware faults.
+// Note: Applications built with semihosting output active normally cannot
+// be executed without the debugger connected and active, since they use
+// BKPT to communicate with the host. However, with a carefully written
+// HardFault_Handler, the semihosting BKPT calls can be processed, making
+// possible to run semihosting applications as standalone, without being
+// terminated with hardware faults.
 
 #endif // OS_USE_TRACE_SEMIHOSTING_DEBUG_*
 
 // ----------------------------------------------------------------------------
 
 #if defined(OS_USE_TRACE_SEMIHOSTING_STDOUT)
-#include <std32f7xx.h>
-static int
+
+static ssize_t
 _trace_write_semihosting_stdout (const char* buf, size_t nbyte)
 {
-#if (defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)) && !defined(OS_HAS_NO_CORE_DEBUG)
-  // Check if the debugger is enabled. CoreDebug is available only on CM3/CM4.
-  // [Contributed by SourceForge user diabolo38]
-  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) == 0)
-    {
-      // If not, pretend we wrote all bytes
-      return (ssize_t) (nbyte);
-    }
-#endif // defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
   static int handle;
   void* block[3];
   int ret;
@@ -144,7 +199,7 @@ _trace_write_semihosting_stdout (const char* buf, size_t nbyte)
       // length of ":tt", except null terminator
       block[2] = (void*) (sizeof(":tt") - 1);
 
-      ret =       os::call_host (os::SEMIHOSTING::SYS_OPEN, (void*) block);
+      ret = call_host (SEMIHOSTING_SYS_OPEN, (void*) block);
       if (ret == -1)
         return -1;
 
@@ -155,7 +210,7 @@ _trace_write_semihosting_stdout (const char* buf, size_t nbyte)
   block[1] = (void*) buf;
   block[2] = (void*) nbyte;
   // send character array to host file/device
-  ret =       os::call_host (os::SEMIHOSTING::WRITE, (void*) block);
+  ret = call_host (SEMIHOSTING_SYS_WRITE, (void*) block);
   // this call returns the number of bytes NOT written (0 if all ok)
 
   // -1 is not a legal value, but SEGGER seems to return it
@@ -175,27 +230,18 @@ _trace_write_semihosting_stdout (const char* buf, size_t nbyte)
 // ----------------------------------------------------------------------------
 
 #if defined(OS_USE_TRACE_SEMIHOSTING_DEBUG)
-#include <stm32f7xx.h>
+
 #define OS_INTEGER_TRACE_TMP_ARRAY_SIZE  (16)
 
-static int _trace_write_semihosting_debug (const char* buf, size_t nbyte)
+static ssize_t
+_trace_write_semihosting_debug (const char* buf, size_t nbyte)
 {
-#if (defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)) && !defined(OS_HAS_NO_CORE_DEBUG)
-  // Check if the debugger is enabled. CoreDebug is available only on CM3/CM4.
-  // [Contributed by SourceForge user diabolo38]
-  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) == 0)
-    {
-      // If not, pretend we wrote all bytes
-      return  (nbyte);
-    }
-#endif // defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
-
   // Since the single character debug channel is quite slow, try to
   // optimise and send a null terminated string, if possible.
   if (buf[nbyte] == '\0')
     {
       // send string
-      os::call_host (os::SEMIHOSTING::SYS_WRITE0, (void*) buf);
+      call_host (SEMIHOSTING_SYS_WRITE0, (void*) buf);
     }
   else
     {
@@ -212,91 +258,19 @@ static int _trace_write_semihosting_debug (const char* buf, size_t nbyte)
             }
           tmp[i] = '\0';
 
-          os::call_host (os::SEMIHOSTING::SYS_WRITE0, (void*) tmp);
+          call_host (SEMIHOSTING_SYS_WRITE0, (void*) tmp);
 
           togo -= n;
         }
     }
 
   // All bytes written
-  return  nbyte;
+  return (ssize_t) nbyte;
 }
 
 #endif // OS_USE_TRACE_SEMIHOSTING_DEBUG
 
+#endif // TRACE
 
+// ----------------------------------------------------------------------------
 
-//	 extern "C"	void trace_initialize(void) { }  // No initialisations required for ITM / semihosting
-	 extern "C"	 void trace_initialize(bool line_timestamp) {}
-	 extern "C"		int
-	trace_write (const char* buf __attribute__((unused)),
-			 size_t nbyte __attribute__((unused)))
-	{
-	#if defined(OS_USE_TRACE_ITM)
-	  return _trace_write_itm (buf, nbyte);
-	#elif defined(OS_USE_TRACE_SEMIHOSTING_STDOUT)
-	  return _trace_write_semihosting_stdout(buf, nbyte);
-	#elif defined(OS_USE_TRACE_SEMIHOSTING_DEBUG)
-	  return _trace_write_semihosting_debug(buf, nbyte);
-	#endif
-
-	  return -1;
-	}
-	 extern "C"		int trace_printf(const char* format, ...)
-	{
-	  int ret;
-	  va_list ap;
-
-	  va_start (ap, format);
-
-	  // TODO: rewrite it to no longer use newlib, it is way too heavy
-
-	  static char buf[OS_INTEGER_TRACE_PRINTF_TMP_ARRAY_SIZE];
-
-	  // Print to the local buffer
-	  ret = vsnprintf (buf, sizeof(buf), format, ap);
-	  if (ret > 0)
-	    {
-	      // Transfer the buffer to the device
-	      ret = trace_write (buf, (size_t)ret);
-	    }
-
-	  va_end (ap);
-	  return ret;
-	}
-
-	 extern "C"		int
-	trace_puts(const char *s)
-	{
-	  trace_write(s, strlen(s));
-	  return trace_write("\n", 1);
-	}
-
-	 extern "C"		int trace_putchar(int c)
-	{
-	  trace_write((const char*)&c, 1);
-	  return c;
-	}
-
-	 extern "C"		void trace_dump_args(int argc, char* argv[])
-	{
-	  trace_printf("main(argc=%d, argv=[", argc);
-	  for (int i = 0; i < argc; ++i)
-	    {
-	      if (i != 0)
-	        {
-	          trace_printf(", ");
-	        }
-	      trace_printf("\"%s\"", argv[i]);
-	    }
-	  trace_printf("]);\n");
-	}
-
-// This function is called from _write() for fd==1 or fd==2 and from some
-// of the trace_* functions.
-
-
-
-namespace os {
-
-} /* namespace os */
