@@ -4,7 +4,8 @@
   .cpu cortex-m7
   .fpu softvfp
   .thumb
-
+  // this file is disabled but I keep it around
+#if 0
 .global  g_pfnVectors
 
 
@@ -605,6 +606,8 @@ g_pfnVectors:
    
    .weak      SPDIF_RX_IRQHandler            
    .thumb_set SPDIF_RX_IRQHandler,Default_Handler 
+
+   #endif
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/        
  

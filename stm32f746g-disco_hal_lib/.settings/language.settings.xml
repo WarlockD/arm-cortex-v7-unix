@@ -5,7 +5,11 @@
 			<provider copy-of="extension" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider"/>
 			<provider-reference id="org.eclipse.cdt.core.ReferencedProjectsLanguageSettingsProvider" ref="shared-provider"/>
 			<provider-reference id="org.eclipse.cdt.managedbuilder.core.MBSLanguageSettingsProvider" ref="shared-provider"/>
-			<provider class="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" console="false" env-hash="-1040148043716792131" id="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" keep-relative-paths="false" name="Ac6 SW4 STM32 MCU Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+<<<<<<< HEAD
+			<provider class="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" console="false" env-hash="1530038331695984666" id="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" keep-relative-paths="false" name="Ac6 SW4 STM32 MCU Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+=======
+			<provider class="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" console="false" env-hash="-1280326871575027818" id="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" keep-relative-paths="false" name="Ac6 SW4 STM32 MCU Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+>>>>>>> origin/master
 				<language-scope id="org.eclipse.cdt.core.gcc"/>
 				<language-scope id="org.eclipse.cdt.core.g++"/>
 			</provider>
@@ -16,7 +20,11 @@
 			<provider copy-of="extension" id="org.eclipse.cdt.ui.UserLanguageSettingsProvider"/>
 			<provider-reference id="org.eclipse.cdt.core.ReferencedProjectsLanguageSettingsProvider" ref="shared-provider"/>
 			<provider-reference id="org.eclipse.cdt.managedbuilder.core.MBSLanguageSettingsProvider" ref="shared-provider"/>
-			<provider class="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" console="false" env-hash="-1040148043716792131" id="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" keep-relative-paths="false" name="Ac6 SW4 STM32 MCU Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+<<<<<<< HEAD
+			<provider class="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" console="false" env-hash="1530038331695984666" id="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" keep-relative-paths="false" name="Ac6 SW4 STM32 MCU Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+=======
+			<provider class="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" console="false" env-hash="-1280326871575027818" id="fr.ac6.mcu.ide.build.CrossBuiltinSpecsDetector" keep-relative-paths="false" name="Ac6 SW4 STM32 MCU Built-in Compiler Settings" parameter="${COMMAND} ${FLAGS} -E -P -v -dD &quot;${INPUTS}&quot;" prefer-non-shared="true">
+>>>>>>> origin/master
 				<language-scope id="org.eclipse.cdt.core.gcc"/>
 				<language-scope id="org.eclipse.cdt.core.g++"/>
 			</provider>

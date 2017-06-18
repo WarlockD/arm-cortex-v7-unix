@@ -30,6 +30,7 @@
 
 #include "mark3/tests/ut_platform.h"
 #include "mark3/tests/ut_thread.cpp"
+
 //------------------------------------
 int ut_main(void);
 

@@ -69,6 +69,7 @@ void * operator new(size_t size)
    printk("new called! ptr=%p size =%d\n",p,size);
    return (p);
 }
+#if 0
 extern "C" caddr_t _sbrk(int incr)
 {
 	if(!memory_inited) kmemory_init();
@@ -86,5 +87,5 @@ extern "C" caddr_t _sbrk(int incr)
 
 	return reinterpret_cast<caddr_t>(prev_heap_end);
 }
-
+#endif
 

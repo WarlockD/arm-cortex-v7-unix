@@ -8,6 +8,9 @@
 #ifndef OS_CONTEXT_HPP_
 #define OS_CONTEXT_HPP_
 #include <os/slist.hpp>
+#include <cstdint>
+#include <cstddef>
+
 #include "types.hpp"
 
 namespace os {
@@ -33,6 +36,38 @@ namespace os {
 		recv_blocked,
 		send_blocked
 	} ;
+	 class ThreadContext {
+	 public:
+		 void ThreadContext::prepareSwitch(void){
+
+
+		     os::scheduler.prepareContextSwitchNoInterrupts();
+
+		     // update the context cache, where to save the stack pointer
+		     // for the next PendSV
+		     ms_ppStack = os::scheduler.getCurrentThread()->getContext().getPPStack();
+		     // ----- end of critical section ----------------------------------------
+		}
+	      void create(uint32_t* pStackBottom,
+	          size_t stackSizeBytes,
+	          uint32_t trampolineEntryPoint, void* p1, void* p2,void* p3);
+	      /// \brief Save the current context in the local storage.
+	      ///
+	      /// \par Parameters
+	      ///    None.
+	      /// \retval true  Context saved, returns for the first time
+	      /// \retval false Context restored, returns for the second time
+	      ///    Nothing.
+	      bool save();
+	      void restore();
+
+	      ThreadContext switch_to() const; // switches to this context, returning the previous context
+	      uint32_t** getPPStack(void) { return &_stack; }
+	      ThreadContext(void);
+	      ~ThreadContext(void);
+	 private:
+	      uint32_t* _stack;
+	 };
 	 struct context_t{
 		uint32_t sp;
 		uint32_t ret;
@@ -43,6 +78,7 @@ namespace os {
 		uint32_t fp_regs[16];
 		uint32_t fp_flag;
 	 #endif
+
 	 } ;
 	 class tcb_t {
 		l4_thread_t t_globalid;
