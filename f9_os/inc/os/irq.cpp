@@ -1,6 +1,6 @@
 #include "irq.hpp"
 #include <stm32f7xx.h>
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include <memory>
 #if 0
 
@@ -272,7 +272,7 @@ extern "C" __attribute__((naked))
 #endif
  extern "C"
   void no_exit() {
-	printk("process existed without exit function\r\n!");
+	trace_printf("process existed without exit function\r\n!");
 	while(1);
 }
 namespace irq {

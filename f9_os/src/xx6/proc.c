@@ -110,7 +110,7 @@ static struct proc* allocproc(void)
     // (if and when necessary). We need to skip that instruction and let
     // it use our implementation.
     p->context->lr = (uint32_t)forkret+4;
-    printk("allocproc: pid=%d stack=%08X\r\n",p->pid, sp = p->kstack);
+    trace_printf("allocproc: pid=%d stack=%08X\r\n",p->pid, sp = p->kstack);
     return p;
 }
 

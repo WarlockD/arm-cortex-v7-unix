@@ -42,7 +42,7 @@ extern "C" void kmemory_init(){
 	memory_heap_end=memory_heap_start=memory_start;
 	// and just ot make sure the math works up right
 	//ASSERT((memory_page_count*PAGE_SIZE)==memory_size);
-	printk("kmemory start=%p end=%p size=%d pages=%d\r\n",memory_start,memory_end, memory_end-memory_start,memory_page_count);
+	trace_printf("kmemory start=%p end=%p size=%d pages=%d\r\n",memory_start,memory_end, memory_end-memory_start,memory_page_count);
 //	uint32_t i;
 	//for(i=0;i<memory_page_count&&i < page_bitmap.size();i++)
 	//	page_bitmap[i].clear();
@@ -66,7 +66,7 @@ void * operator new(size_t size)
 {       // try to allocate size bytes
    void *p;
    while ((p = malloc(size)) == 0);
-   printk("new called! ptr=%p size =%d\n",p,size);
+   trace_printf("new called! ptr=%p size =%d\n",p,size);
    return (p);
 }
 #if 0
@@ -77,12 +77,12 @@ extern "C" caddr_t _sbrk(int incr)
 
 	if ((prev_heap_end + incr) > memory_end)
 	{
-		printk("Heap and stack collision\n");
+		trace_printf("Heap and stack collision\n");
 		errno = ENOMEM;
 		return (caddr_t) -1;
 	} else {
 		memory_heap_end += incr;
-		printk("_sbrk: heap increased=%d heap_end=%p\n", incr, memory_heap_end);
+		trace_printf("_sbrk: heap increased=%d heap_end=%p\n", incr, memory_heap_end);
 	}
 
 	return reinterpret_cast<caddr_t>(prev_heap_end);

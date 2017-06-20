@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include <unistd.h>
 #include <assert.h>
 #include <sys\stat.h>
@@ -87,31 +87,31 @@ static void pentry(struct lbuf *p)
 	if (p->lnum == -1)
 		return;
 	if (iflg)
-		printk("%5u ", p->lnum);
+		trace_printf("%5u ", p->lnum);
 	if (sflg)
-	printk("%4D ", nblock(p->lsize));
+	trace_printf("%4D ", nblock(p->lsize));
 	if (lflg) {
-		printk("%c%s%2d", p->ltype,pmode(p->lflags), p->lnl);
+		trace_printf("%c%s%2d", p->ltype,pmode(p->lflags), p->lnl);
 		t = p->luid;
 		if(gflg)
 			t = p->lgid;
 		if (getname(t, tbuf)==0)
-			printk("%-6.6s", tbuf);
+			trace_printf("%-6.6s", tbuf);
 		else
-			printk("%-6d", t);
+			trace_printf("%-6d", t);
 		if (p->ltype=='b' || p->ltype=='c')
-			printk("%3d,%3d", major((int)p->lsize), minor((int)p->lsize));
+			trace_printf("%3d,%3d", major((int)p->lsize), minor((int)p->lsize));
 		else
-			printk("%7ld", p->lsize);
+			trace_printf("%7ld", p->lsize);
 		cp = ctime(&p->lmtime);
 		if(p->lmtime < year)
-			printk(" %-7.7s %-4.4s ", cp+4, cp+20); else
-			printk(" %-12.12s ", cp+4);
+			trace_printf(" %-7.7s %-4.4s ", cp+4, cp+20); else
+			trace_printf(" %-12.12s ", cp+4);
 	}
 	if (p->lflags&ISARG)
-		printk("%s\n", p->ln.namep);
+		trace_printf("%s\n", p->ln.namep);
 	else
-		printk("%.14s\n", p->ln.lname);
+		trace_printf("%.14s\n", p->ln.lname);
 }
 static int getname(uid_t uid, char *buf)
 {
@@ -176,7 +176,7 @@ static void readdir(char *dir)
 	register struct lbuf *ep;
 	int fdes=0;
 	if ((fdes = open(dir, O_RDONLY))< 0) {
-		printk("%s unreadable\n", dir);
+		trace_printf("%s unreadable\n", dir);
 		return;
 	}
 	tblocks = 0;
@@ -288,7 +288,7 @@ void ls(int argc, const char *argv[])
 	//v7_fstat("/dev", & st);
 	//readdir("/dev");
 	if ((ep = gstat("/dev", 1))==NULL){
-		printk("error: %d\n", argc);
+		trace_printf("error: %d\n", argc);
 		while(1);
 	}
 
@@ -313,13 +313,13 @@ void ls(int argc, const char *argv[])
 		ep = *epp;
 		if (ep->ltype=='d' && dflg==0 || fflg) {
 			if (argc>1)
-				printk("\n%s:\n", ep->ln.namep);
+				trace_printf("\n%s:\n", ep->ln.namep);
 			lastp = slastp;
 			readdir(ep->ln.namep);
 			if (fflg==0)
 				qsort(slastp,lastp - slastp,sizeof *lastp,compar);
 			if (lflg || sflg)
-				printk("total %D\n", tblocks);
+				trace_printf("total %D\n", tblocks);
 			for (ep1=slastp; ep1<lastp; ep1++)
 				pentry(*ep1);
 		} else
@@ -358,7 +358,7 @@ static struct lbuf * gstat(char *file, int  argfl)
 	rep->ltype = '-';
 	if (argfl || statreq) {
 		if (stat(file, &statb)<0) {
-			printk("%s not found\n", file);
+			trace_printf("%s not found\n", file);
 			statb.st_ino = -1;
 			statb.st_size = 0;
 			statb.st_mode = 0;

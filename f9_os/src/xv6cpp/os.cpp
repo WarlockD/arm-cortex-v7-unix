@@ -7,7 +7,7 @@
 
 #include "os.h"
 
-#include <os\printk.h>
+#include <diag\Trace.h>
 
 namespace xv6 {
 #if 0
@@ -25,10 +25,10 @@ static const char* irq_proi_string[] = {
 };
 // sleep wakeup fuctions, fake ones are in the os.cpp
  void wakeup(void *p){
-	 printk("Woke up pointer: %08X\n", (long)p);
+	 trace_printf("Woke up pointer: %08X\n", (long)p);
  }
  void sleep(void* p, irq_prio pri){
-	 printk("Sleeping  pointer: %08X, pri = %s\n", (long)p, irq_proi_string[(int)pri]);
+	 trace_printf("Sleeping  pointer: %08X, pri = %s\n", (long)p, irq_proi_string[(int)pri]);
 	 assert(0); // have to die cause sleep not working yet
  }
 

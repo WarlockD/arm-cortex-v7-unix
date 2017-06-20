@@ -11,7 +11,7 @@
 #include "Utilities\Fatfs\src\ff_gen_drv.h"
 #include "Utilities\Fatfs\src\drivers\sd_diskio.h"
 #include <assert.h>
-void printk(const char* fmt, ...);
+void trace_printf(const char* fmt, ...);
 
 struct user u;
 struct inode* rootdir=NULL;
@@ -63,11 +63,11 @@ static FRESULT display_fresult(FRESULT fr){
 	if(fr != FR_OK){
 		for_each_array(m, fresult_messages){ // slower but failsafe
 			if(m->value == fr) {
-				printk("FRESULT(%d,%s): %s\r\n", m->value, m->value_str, m->message);
+				trace_printf("FRESULT(%d,%s): %s\r\n", m->value, m->value_str, m->message);
 				return fr;
 			}
 		}
-		printk("FRESULT(?,?): ?\r\n");
+		trace_printf("FRESULT(?,?): ?\r\n");
 	}
 	return fr;
 }
@@ -75,11 +75,11 @@ static FRESULT display_fresult(FRESULT fr){
 //({ if((FR) != FR_OK) display_fresult(FR); (FR);   })
 
 static void print_debug(const char* message, struct buf* bp,off_t n1, off_t n2) {
-	printk("%s: ", message);
+	trace_printf("%s: ", message);
 	if(bp != NULL){
-		printk("blkno=%d ", bp->b_blkno);
+		trace_printf("blkno=%d ", bp->b_blkno);
 	}
-	printk("n1=%d n2=%d\r\n", n1,n2);
+	trace_printf("n1=%d n2=%d\r\n", n1,n2);
 }
 /*------------------------------------------------------------/
 / Open or create a file in append mode
@@ -144,7 +144,7 @@ int nor_strat(struct buf* bp ) {
 	if (bp->b_flags & B_READ)
 		BSP_QSPI_Read((uint8_t*)bp->b_addr, x, BSIZE);
 	else{
-		printk("NOR WRITE!\r\n");
+		trace_printf("NOR WRITE!\r\n");
 		BSP_QSPI_Write((uint8_t*)bp->b_addr, x, BSIZE);
 	}
 	bp->b_resid = 0;
@@ -235,10 +235,10 @@ int v6_setup() {
     fr = f_open(&v6_root.fp, v6_root.path, FA_WRITE | FA_READ);
     if (CHECK_FRESULT(fr)  == FR_OK) {
     	v6_root.size = f_size(&v6_root.fp);
-    	printk("root '%s' opened! size=%i\n", v6_root.path, v6_root.size);
+    	trace_printf("root '%s' opened! size=%i\n", v6_root.path, v6_root.size);
     } else {
     	v6_root.size = 0;
-    	printk("root not opened! '%s' size=%i\n" ,v6_root.path, v6_root.size);
+    	trace_printf("root not opened! '%s' size=%i\n" ,v6_root.path, v6_root.size);
     }
 #endif
     binit();

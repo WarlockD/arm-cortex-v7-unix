@@ -1,4 +1,4 @@
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include <os\atomic.h>
 
 #include <stdarg.h>
@@ -133,7 +133,7 @@ void putsk(const char* str){
 }
 
 void __l4_vprintf(const char *fmt, va_list va);
-static void  vprintk(const char* fmt, va_list va){
+static void  vtrace_printf(const char* fmt, va_list va){
 	__l4_vprintf(fmt,va);
 	//static char buffer[128];
 	//int len = vsnprintf(buffer,127,fmt,va);
@@ -177,16 +177,16 @@ void panic(const char* fmt, ...){
 	dbg_uart.status = DBG_PANIC;
 	va_list va;
 	va_start(va, fmt);
-	vprintk(fmt, va);
+	vtrace_printf(fmt, va);
 	va_end(va);
 	exit_critical(flags);
 }
-void printk(const char* fmt, ...)
+void trace_printf(const char* fmt, ...)
 {
 	uint32_t flags = enter_critical();
 	va_list va;
 	va_start(va, fmt);
-	vprintk(fmt, va);
+	vtrace_printf(fmt, va);
 	va_end(va);
 	exit_critical(flags);
 }

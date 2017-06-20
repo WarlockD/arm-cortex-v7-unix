@@ -162,7 +162,7 @@ void Thread_Switch(void)
 {
 	g_pclCurrent = const_cast<Thread*>(g_pclNext);
 }
-extern "C" void printk(const char*,...);
+extern "C" void trace_printf(const char*,...);
 //---------------------------------------------------------------------------
 void ThreadPort::StartThreads()
 {
@@ -186,9 +186,9 @@ void ThreadPort::StartThreads()
     SCB->CPACR |= 0x00F00000;        // Enable floating-point
 
     FPU->FPCCR |= (FPU_FPCCR_ASPEN_Msk | FPU_FPCCR_LSPEN_Msk); // Enable lazy-stacking
-    printk("Hard Float Enabled\n");
+    trace_printf("Hard Float Enabled\n");
 #else
-    printk("Soft Float Enabled\n");
+    trace_printf("Soft Float Enabled\n");
 #endif
 
 

@@ -20,7 +20,7 @@ namespace v6_mini {
 	proc procs[NPROC];
 
 	void panic() {
-		printk("V6_MINI PANIC!\r\n");
+		trace_printf("V6_MINI PANIC!\r\n");
 		assert(0); // for now
 	}
 	/*

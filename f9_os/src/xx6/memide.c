@@ -6,7 +6,7 @@
 #include "buf.h"
 #include <stm32746g_discovery_qspi.h>
 #include <stm32746g_discovery_sdram.h>
-#include <os\printk.h>
+#include <diag\Trace.h>
 
 typedef int	(*bdevsw_open)(dev_t,int,...);
 typedef int	(*bdevsw_close)(dev_t);
@@ -35,7 +35,7 @@ int sdram_close(dev_t d) {
 int sdram_read(dev_t dev, uint8_t* data, off_t o, size_t n) {
 	if(o <= 0 || o >= SDRAM_DEVICE_SIZE) return 0;
 	if(!diskmem) {
-		printk("uint sdram_read\r\n");
+		trace_printf("uint sdram_read\r\n");
 		sdram_init();
 	}
 	uint8_t* p = diskmem + o;
@@ -46,7 +46,7 @@ int sdram_read(dev_t dev, uint8_t* data, off_t o, size_t n) {
 int sdram_write(dev_t dev, const uint8_t* data, off_t o, size_t n) {
 	if(o <= 0 || o >= SDRAM_DEVICE_SIZE) return 0;
 	if(!diskmem) {
-		printk("uint sdram_write\r\n");
+		trace_printf("uint sdram_write\r\n");
 		sdram_init();
 	}
 	uint8_t* p = diskmem + o;
@@ -59,7 +59,7 @@ int sdram_write(dev_t dev, const uint8_t* data, off_t o, size_t n) {
 void sdram_strategy(struct buf *b)
 {
 	if(!diskmem) {
-		printk("uint sdram_strategy\r\n");
+		trace_printf("uint sdram_strategy\r\n");
 		sdram_init();
 	}
     if(b->sector >= disksize)  panic("iderw: sector out of range");

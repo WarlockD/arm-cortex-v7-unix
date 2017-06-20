@@ -4,81 +4,40 @@
 
 
 
-    namespace InterruptHandler
-    {
-      void
-      __attribute__ ((naked))
-      PendService(void)
-      {
-        asm volatile
-        (
-            // Registers R0-R3 are free to use. LR = R14.
-            "       mrs r0, psp                         \n"// Get the main stack in R0
-            "                                           \n"
-            "       ldr     r3, ppStack                 \n"// Get the address of ms_ppStack
-            "       ldr     r2, [r3]                    \n"
-            "                                           \n"
-#if 0
-            "       tst r14, #0x10                      \n" // Is the task using the FPU context?
-            "       it eq                               \n"
-            "       vstmdbeq r0!, {s16-s31}             \n"// If so, push high vfp registers.
-#endif
-            "                                           \n"
-            "       stmdb r0!, {r4-r11}                 \n" // Save the core registers.
-            "                                           \n"
-            "       str r0, [r2]                        \n"// Save the new top of stack into the first member of the TCB.
-            "                                           \n"
-            "       stmdb sp!, {r3, lr}                 \n"
-            "                                           \n"
-            "       mov r0, %[pri]                      \n"// Disable interrupts allowed to make system calls
-            "       msr basepri, r0                     \n"
-            "                                           \n"
-            "       bl %[csw]                           \n"// bl contextSwitch
-            "                                           \n"
-            "       mov r0, #0                          \n"// Setting a value of 0 will cancel masking completely,
-            "       msr basepri, r0                     \n"// enabling all interrupts
-            "                                           \n"
-            "       ldmia sp!, {r3, lr}                 \n"
-            "                                           \n"
-            "       ldr r1, [r3]                        \n"// At *ms_ppStack is the new stack pointer.
-            "       ldr r0, [r1]                        \n"
-            "                                           \n"
-            "       ldmia r0!, {r4-r11}                 \n"// Pop the core registers.
-            "                                           \n"
-#if 0
-            "       tst r14, #0x10                      \n" // Is the task using the FPU context?
-            "       it eq                               \n"
-            "       vldmiaeq r0!, {s16-s31}             \n"// If so, pop the high vfp registers too.
-#endif
-            "                                           \n"
-            "       msr psp, r0                         \n" // Restore the main stack register
-            "                                           \n"
-            "       bx lr                               \n"// Branch to LR (R14) to return from exception
-            "                                           \n"
-            "       .align 2                            \n"
-            "ppStack: .word _ZN3hal7cortexm13ThreadContext10ms_ppStackE       \n"
-
-            : /* out */
-            : /* in */
-            [pri] "i"(configMAX_SYSCALL_INTERRUPT_PRIORITY),
-            [csw] "i"(&hal::cortexm::ThreadContext::prepareSwitch)
-            //[pps] "m"(&hal::cortexm::ArchitectureImplementation::ms_ppStack)
-            : "memory", "cc"
-        );
-      }
-
-    } // namespace InterruptHandler
-
-
 
 namespace os {
-ThreadContext::ThreadContext(void) : _stack(nullptr) {}
-ThreadContext::~ThreadContext(void){}
+	static ThreadContext* g_switch_to_thread=nullptr;
+	static ThreadContext* g_switch_from_thread=nullptr;
 
-ThreadContext ThreadContext::switch_to() const{
+	__attribute__((weak))  uintptr_t switch_thread(uintptr_t from){
+		g_switch_from_thread->_set_manaual(from);
+		return reinterpret_cast<uintptr_t>(g_switch_to_thread->_sw_stack);
+	}
 
-	// switches to this context, returning the previous context
-}
+	static int make_id() {
+		static int id = 1;
+		int ret = id++;
+		if(id < 0) id = 1;
+		return ret;
+	}
+	ThreadContext::ThreadContext() : ThreadContext(make_id()) {}
+	ThreadContext::ThreadContext(int id): _id(id) {}
+
+	void ThreadContext::thread_switch(ThreadContext& from, ThreadContext& to){
+		g_switch_to_thread = &to;
+		g_switch_from_thread = &from;
+		arch::ENTER_CRITICAL();
+		arch::yield();
+		arch::EXIT_CRITICAL();
+	}
+	/* For strict compliance with the Cortex-M spec the task start address should
+	have bit-0 clear, as it is loaded into the PC on exit from an ISR. */
+
+	static constexpr uint32_t THUMB_ADDRES_MASK = 0xfffffffeUL;
+	void ThreadContext::_set_manaual(uintptr_t from){
+		_sw_stack = reinterpret_cast<uint32_t*>(from);
+		_hw_stack = reinterpret_cast<uint32_t*>(_sw_stack[0]);
+	}
 void ThreadContext::create(uint32_t* pStackBottom,
     size_t stackSizeBytes,
     uint32_t trampolineEntryPoint, void* p1, void* p2,void* p3){
@@ -105,7 +64,12 @@ void ThreadContext::create(uint32_t* pStackBottom,
 	            {
 	              *--pStack = 0x12345678;       // one more magic
 	            }
-
+	          init_stack(true,false,reinterpret_cast<uintptr_t>(pStack),trampolineEntryPoint,
+	        		  reinterpret_cast<uintptr_t>(p1),
+					  reinterpret_cast<uintptr_t>(p2),
+					  reinterpret_cast<uintptr_t>(p3)
+	          );
+#if 0
 	          // Simulate the Cortex-M exception stack frame, i.e. how the stack
 	          // would look after a call to yield().
 
@@ -116,7 +80,7 @@ void ThreadContext::create(uint32_t* pStackBottom,
 	          // The address of the trampoline code will be popped off the stack last,
 	          // so place it first.
 
-	          *--pStack = (hal::arch::stackElement_t) trampolineEntryPoint; // PCL     +14*4=60
+	          *--pStack = (uint32_t)trampolineEntryPoint; // PCL     +14*4=60
 
 	          // Create the stack as if after a context save.
 
@@ -144,6 +108,7 @@ void ThreadContext::create(uint32_t* pStackBottom,
 
 	          // Store the current stack pointer in the context
 	          _stack = pStack;
+#endif
 	        }
 }
 /// \brief Save the current context in the local storage.

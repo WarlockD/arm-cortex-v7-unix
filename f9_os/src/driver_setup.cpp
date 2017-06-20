@@ -2,7 +2,7 @@
 #include "mark3/drivers/tracedriver.hpp"
 #include "kernel.h"
 #include <stm32f7xx.h>
-#include <os\printk.h>
+#include <diag\Trace.h>
 
 static mark3::TraceDriver clUART; 	//!< UART device driver object
 
@@ -48,7 +48,7 @@ void mark3_driver_setup() {
     DriverList::Add( &clUART );
     clUART.Open();
     debug_string("mark3_init: done\r\n");
-    printk_setup(mark3::_trace_write_semihosting_debug, SERIAL_OPTIONS);
+
 }
 
 extern "C" void mark3_init() {

@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <cassert>
 
-#include <os\printk.h>
+#include <diag\Trace.h>
 
 
 

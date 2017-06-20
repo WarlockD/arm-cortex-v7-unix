@@ -23,7 +23,6 @@
 #include <sys\time.h>
 
 extern "C" 	void panic(const char*,...);
-extern "C" 	void printk(const char*,...);
 
 namespace os {
 

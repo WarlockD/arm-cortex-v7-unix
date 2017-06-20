@@ -6,7 +6,7 @@
  */
 
 #include "syscall.hpp"
-#include <os\printk.hpp>
+#include <diag\Trace.h>
 
 
 namespace os {

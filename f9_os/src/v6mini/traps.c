@@ -1,5 +1,5 @@
 
-//#include <os\printk.h>
+//#include <diag\Trace.h>
 #include <assert.h>
 #include "asm.h"
 #define __KERNEL__
@@ -106,33 +106,33 @@ void __show_regs(struct pt_regs *regs)
 	unsigned long flags;
 	char buf[64];
 
-	//printk("CPU: %d    %s  (%s %.*s)\n",
+	//trace_printf("CPU: %d    %s  (%s %.*s)\n",
 	//	raw_smp_processor_id(), print_tainted(),
 	//	init_utsname()->release,
 	//	(int)strcspn(init_utsname()->version, " "),
 	//	init_utsname()->version);
 	print_symbol("PC is at %s\n", instruction_pointer(regs));
 	print_symbol("LR is at %s\n", regs->ARM_lr);
-	printk("pc : [<%08lx>]    lr : [<%08lx>]    psr: %08lx\n"
+	trace_printf("pc : [<%08lx>]    lr : [<%08lx>]    psr: %08lx\n"
 	       "sp : %08lx  ip : %08lx  fp : %08lx\n",
 		regs->ARM_pc, regs->ARM_lr, regs->ARM_cpsr,
 		regs->ARM_sp, regs->ARM_ip, regs->ARM_fp);
 	{
 		int i;
 		int *ptr = (int *)regs->ARM_pc;
-		printk("Code dump at pc [%08lx]:\n", regs->ARM_pc);
+		trace_printf("Code dump at pc [%08lx]:\n", regs->ARM_pc);
 		for (i = 0; i < 4; i ++, ptr++) {
-			printk("%08x ", *ptr);
+			trace_printf("%08x ", *ptr);
 		}
-		printk("\n");
+		trace_printf("\n");
 	}
-	printk("r10: %08lx  r9 : %08lx  r8 : %08lx\n",
+	trace_printf("r10: %08lx  r9 : %08lx  r8 : %08lx\n",
 		regs->ARM_r10, regs->ARM_r9,
 		regs->ARM_r8);
-	printk("r7 : %08lx  r6 : %08lx  r5 : %08lx  r4 : %08lx\n",
+	trace_printf("r7 : %08lx  r6 : %08lx  r5 : %08lx  r4 : %08lx\n",
 		regs->ARM_r7, regs->ARM_r6,
 		regs->ARM_r5, regs->ARM_r4);
-	printk("r3 : %08lx  r2 : %08lx  r1 : %08lx  r0 : %08lx\n",
+	trace_printf("r3 : %08lx  r2 : %08lx  r1 : %08lx  r0 : %08lx\n",
 		regs->ARM_r3, regs->ARM_r2,
 		regs->ARM_r1, regs->ARM_r0);
 
@@ -143,7 +143,7 @@ void __show_regs(struct pt_regs *regs)
 	buf[3] = flags & PSR_V_BIT ? 'V' : 'v';
 	buf[4] = '\0';
 
-	printk("Flags: %s  IRQs o%s  FIQs o%s  Mode %s  ISA %s  Segment %s\n",
+	trace_printf("Flags: %s  IRQs o%s  FIQs o%s  Mode %s  ISA %s  Segment %s\n",
 		buf, interrupts_enabled(regs) ? "n" : "ff",
 		fast_interrupts_enabled(regs) ? "n" : "ff",
 		processor_mode(regs) < PM_NUM ?
@@ -168,15 +168,15 @@ void __show_regs(struct pt_regs *regs)
 #endif
 		asm("mrc p15, 0, %0, c1, c0\n" : "=r" (ctrl));
 
-		printk("Control: %08x%s\n", ctrl, buf);
+		trace_printf("Control: %08x%s\n", ctrl, buf);
 	}
 #endif
 }
 
 void show_regs(struct pt_regs * regs)
 {
-	printk("\n");
-	//printk("Pid: %d, comm: %20s\n", task_pid_nr(current), current->comm);
+	trace_printf("\n");
+	//trace_printf("Pid: %d, comm: %20s\n", task_pid_nr(current), current->comm);
 	__show_regs(regs);
 //	__backtrace();
 }
@@ -210,15 +210,15 @@ static void traps_v7m_print_message(char *name, struct pt_regs *regs,
 		unsigned long hstatus, unsigned long lstatus)
 {
 	int i;
-	printk("\n\n%s: fault at 0x%08lx [pc=0x%08lx, sp=0x%08lx]\n",
+	trace_printf("\n\n%s: fault at 0x%08lx [pc=0x%08lx, sp=0x%08lx]\n",
 			name, addr, instruction_pointer(regs), regs->ARM_sp);
 	for (i = 0; traps[i].name != NULL; ++i) {
 		if ((traps[i].handler == HARDFAULT ? hstatus : lstatus)
 				& traps[i].test_bit) {
-			printk("%s\n", traps[i].name);
+			trace_printf("%s\n", traps[i].name);
 		}
 	}
-	printk("\n");
+	trace_printf("\n");
 }
 
 /*
@@ -313,7 +313,7 @@ void do_systick(struct pt_regs *regs){
 void asm_do_IRQ(volatile int isr, struct pt_regs *regs){
 	//if(isr == 15) do_systick(regs);
 	//else {
-		printk("IRQ %i\n", isr);
+		trace_printf("IRQ %i\n", isr);
 		while(1);
 	//}
 

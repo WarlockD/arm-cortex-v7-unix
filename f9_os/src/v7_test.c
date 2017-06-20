@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <os\printk.h>
+#include <diag\Trace.h>
 #if 0
 
 
@@ -24,7 +24,7 @@
 
 #endif
 #if 0
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include "sos\v7_user.h"
 #include "sos\v7_bio.h"
 #include "sos\v7_inode.h"
@@ -43,7 +43,7 @@
 #include <errno.h>
 #undef errno
 extern int errno;
-void printk(const char*,...);
+
 void _putchar(char c);
 
 

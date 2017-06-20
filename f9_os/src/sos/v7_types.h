@@ -91,7 +91,7 @@ extern void channel_wakeup(void* chan);
 #define release(PTR) atomic_flag_clear(PTR)
 
 
-void printk(const char*,...);
+void trace_printf(const char*,...);
 void panic(const char*,...);
 
 #define NODEV ((dev_t)-1)

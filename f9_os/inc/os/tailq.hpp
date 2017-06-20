@@ -12,7 +12,7 @@
 #ifndef _DEBUG_STRUCTURES_DEFINED
 #define _DEBUG_STRUCTURES_DEFINED
 
-#include <os\printk.h>
+#include <diag\Trace.h>
 //#define TRACK_LIST_OWNER
 
 #ifdef QUEUE_MACRO_DEBUG

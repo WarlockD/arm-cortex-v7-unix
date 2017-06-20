@@ -48,13 +48,13 @@ void TraceBuffer::Init()
     m_u16SyncNumber = 0;
     m_pfCallback = 0;
 }
-#include <os\printk.hpp>
+#include <diag\Trace.h>
 //---------------------------------------------------------------------------
 void TraceBuffer::Write( uint16_t *pu16Data_, uint16_t u16Size_ )
 {
 	// hardline
     CS_ENTER();
-    writek( (uint8_t*)pu16Data_,(size_t)u16Size_);
+	trace_write( (const char*)pu16Data_,(size_t)u16Size_);
     CS_EXIT();
 return;
 	// Pipe the data directly to the circular buffer

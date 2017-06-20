@@ -220,7 +220,7 @@ void UnwPrintf(const char *format, ...)
     va_list args;
 
     va_start( args, format );
-    vprintk(format, args );
+    vtrace_printf(format, args );
     va_end(args);
 }
 #endif
@@ -1085,7 +1085,7 @@ static bool CliReport(void *data, uint32_t address)
     CliStack *s = (CliStack *)data;
 
 #if defined(UNW_DEBUG)
-    printk("\nCliReport: 0x%08x\n", address);
+    trace_printf("\nCliReport: 0x%08x\n", address);
 #endif
 
     s->address[s->frameCount] = address;
@@ -1125,7 +1125,7 @@ bool CliInvalidateW(const uint32_t a)
     return true;
 }
 /* Table of function pointers for passing to the unwinder */
-extern void printk(const char*,...);
+extern void trace_printf(const char*,...);
 const UnwindCallbacks cliCallbacks =
     {
         CliReport,

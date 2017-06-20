@@ -2,7 +2,7 @@
 // The ARM UART, a memory mapped device
 #include <stm32f7xx_hal.h>
 #include <stm32f7xx.h>
-#include <os\printk.h>
+#include <diag\Trace.h>
 
 struct trapframe {
 
@@ -169,9 +169,9 @@ static const enum_info trap_strings[] = {
 
 
 void dump_hw_trap(hw_trap * trap) {
-	printk("r0: 0x%08x r1: 0x%08x r2: 0x%08x r3: 0x%08x\r\n", trap->r0,trap->r1, trap->r2,trap->r3);
-	printk("ip: 0x%08x lr: 0x%08x pc: 0x%08x\r\n", trap->ip,trap->lr, trap->r2,trap->pc);
-	printk("xpsr: 0x%08x\r\n", trap->r2,trap->xpsr);
+	trace_printf("r0: 0x%08x r1: 0x%08x r2: 0x%08x r3: 0x%08x\r\n", trap->r0,trap->r1, trap->r2,trap->r3);
+	trace_printf("ip: 0x%08x lr: 0x%08x pc: 0x%08x\r\n", trap->ip,trap->lr, trap->r2,trap->pc);
+	trace_printf("xpsr: 0x%08x\r\n", trap->r2,trap->xpsr);
 }
 
 /*
@@ -204,47 +204,47 @@ void dump_hw_trap(hw_trap * trap) {
 
 void dump_trapframe (trapframe *tf)
 {
-	printk(" r0: 0x%08x  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x  r4: 0x%08x\r\n", tf->r0,tf->r1, tf->r2,tf->r3,tf->r4);
-	printk(" r5: 0x%08x  r6: 0x%08x  r7: 0x%08x  r8: 0x%08x  r9: 0x%08x\r\n", tf->r5,tf->r6, tf->r7,tf->r8,tf->r9);
-	printk("r10: 0x%08x  fp: 0x%08x  ip: 0x%08x  lr: 0x%08x  pc: 0x%08x\r\n", tf->r10,tf->fp, tf->ip,tf->lr,tf->pc);
-	printk(" sp: 0x%08x  ret: 0x%08x  ", tf->sp, tf->ex_lr);
+	trace_printf(" r0: 0x%08x  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x  r4: 0x%08x\r\n", tf->r0,tf->r1, tf->r2,tf->r3,tf->r4);
+	trace_printf(" r5: 0x%08x  r6: 0x%08x  r7: 0x%08x  r8: 0x%08x  r9: 0x%08x\r\n", tf->r5,tf->r6, tf->r7,tf->r8,tf->r9);
+	trace_printf("r10: 0x%08x  fp: 0x%08x  ip: 0x%08x  lr: 0x%08x  pc: 0x%08x\r\n", tf->r10,tf->fp, tf->ip,tf->lr,tf->pc);
+	trace_printf(" sp: 0x%08x  ret: 0x%08x  ", tf->sp, tf->ex_lr);
 	char buf[5];
 	buf[0] = tf->xpsr & PSR_N_BIT ? 'N' : 'n';
 	buf[1] = tf->xpsr & PSR_Z_BIT ? 'Z' : 'z';
 	buf[2] = tf->xpsr & PSR_C_BIT ? 'C' : 'c';
 	buf[3] = tf->xpsr & PSR_V_BIT ? 'V' : 'v';
 	buf[4] = '\0';
-	printk(" xpsr: %s\r\n", buf);
+	trace_printf(" xpsr: %s\r\n", buf);
 }
 #define STACK_END ((uint32_t*)0x20050000)
 void dump_stack_intresting_addresses(struct hw_trap *tf){
 	uint32_t* stack = (uint32_t*)(tf+1);
 	int pos = 0;
-	printk("intresting addresses from: 0x%08x to: 0x%08x\n",(uint32_t)stack,(uint32_t)STACK_END);
+	trace_printf("intresting addresses from: 0x%08x to: 0x%08x\n",(uint32_t)stack,(uint32_t)STACK_END);
 	while(stack < STACK_END){
 		uint32_t value = *stack ;
 		if(value > 0x80000000) {
-			printk("lr  0x%08x(%d): 0x%08x\n",((uint32_t)stack), pos, value);
+			trace_printf("lr  0x%08x(%d): 0x%08x\n",((uint32_t)stack), pos, value);
 		} else {
-			printk("    0x%08x(%d): 0x%08x\n",((uint32_t)stack), pos, value);
+			trace_printf("    0x%08x(%d): 0x%08x\n",((uint32_t)stack), pos, value);
 		}
 		stack++;
 		pos--;
 	}
-	printk("end stack addresses %d\n",pos);
+	trace_printf("end stack addresses %d\n",pos);
 }
 void dump_debug_trapframe (struct hw_trap *tf)
 {
 	uint32_t* stack = (uint32_t*)(tf+1);
-	printk(" r0: 0x%08x  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x\r\n", tf->r0,tf->r1, tf->r2,tf->r3);
-	printk(" ip: 0x%08x  lr: 0x%08x  pc: 0x%08x  sp: 0x%08x ", tf->ip,tf->lr,tf->pc, (uint32_t)stack);
+	trace_printf(" r0: 0x%08x  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x\r\n", tf->r0,tf->r1, tf->r2,tf->r3);
+	trace_printf(" ip: 0x%08x  lr: 0x%08x  pc: 0x%08x  sp: 0x%08x ", tf->ip,tf->lr,tf->pc, (uint32_t)stack);
 	char buf[5];
 	buf[0] = tf->xpsr & PSR_N_BIT ? 'N' : 'n';
 	buf[1] = tf->xpsr & PSR_Z_BIT ? 'Z' : 'z';
 	buf[2] = tf->xpsr & PSR_C_BIT ? 'C' : 'c';
 	buf[3] = tf->xpsr & PSR_V_BIT ? 'V' : 'v';
 	buf[4] = '\0';
-	printk(" xpsr: %s\r\n", buf);
+	trace_printf(" xpsr: %s\r\n", buf);
 	// we need to dump the stack as well
 	dump_stack_intresting_addresses(tf);
 }
@@ -265,8 +265,8 @@ int do_trap(int irq, trapframe* tf) {
 	int ipsr;
 	__asm volatile("mrs %0, ipsr" : "=r"(ipsr) : :);
 	const struct enum_info* info = get_irq_info(irq);
-	printk ("     ispr: %d\n", ipsr);
-	if(info) printk ("     irq: %s\n", info->text);
+	trace_printf ("     ispr: %d\n", ipsr);
+	if(info) trace_printf ("     irq: %s\n", info->text);
 	dump_trapframe(tf);
 	while(1);
 	return 0;
@@ -313,15 +313,15 @@ template<size_t N>
 static void display_faults(uint32_t value, fault_info(&fault_list)[N]){
 	static constexpr const char* comma_fmt = ",%s";
 	static constexpr const char* no_comma_fmt = "%s";
-	printk("%x<",value);
+	trace_printf("%x<",value);
 	const char* fmt = no_comma_fmt;
 	for(auto& f : fault_list) {
 		if((f.mask & value)!=0) {
-			printk(fmt, f.text);
+			trace_printf(fmt, f.text);
 			fmt = comma_fmt;
 		}
 	}
-	printk(">");
+	trace_printf(">");
 }
 #define for_each_fault(V,VAL, A) for(auto& V, A) if(V.mask & (VAL))
 void display_faults(){
@@ -332,23 +332,23 @@ void display_faults(){
 	uint32_t bus_fault = (cfsr & SCB_CFSR_BUSFAULTSR_Msk)>> SCB_CFSR_BUSFAULTSR_Pos;
 	uint32_t use_fault = (cfsr & SCB_CFSR_USGFAULTSR_Msk)>> SCB_CFSR_USGFAULTSR_Pos;
 
-	printk("     hfsr:");
+	trace_printf("     hfsr:");
 	display_faults(hfsr,hard_fault_info);
-	printk("\r\n");
+	trace_printf("\r\n");
 
-	printk("     mmfsr:");
+	trace_printf("     mmfsr:");
 	display_faults(mem_fault,mem_fault_info);
-	printk("\r\n");
+	trace_printf("\r\n");
 
-	printk("     bfsr:");
+	trace_printf("     bfsr:");
 	display_faults(bus_fault,bus_fault_info);
-	printk("\r\n");
+	trace_printf("\r\n");
 
-	printk("     ufsr:");
+	trace_printf("     ufsr:");
 	display_faults(use_fault,use_fault_info);
-	printk("\r\n");
+	trace_printf("\r\n");
 
-	printk("     bar: %x\r\n<",SCB->BFAR);
+	trace_printf("     bar: %x\r\n<",SCB->BFAR);
 
 }
 struct irq_info{
@@ -376,8 +376,8 @@ static const char* find_exception_string(int ipsr) {
 extern "C" void panic(const char*,...);
 
 extern "C" void do_debug_default(int ipsr, struct hw_trap* tf) {
-	printk("\r\n\r\n");
-	printk("UNHANDED EXCEPTION (%d)%s\r\n", ipsr,find_exception_string(ipsr));
+	trace_printf("\r\n\r\n");
+	trace_printf("UNHANDED EXCEPTION (%d)%s\r\n", ipsr,find_exception_string(ipsr));
 	dump_debug_trapframe(tf);
 	display_faults();
 	while(ipsr < 16);
@@ -385,7 +385,6 @@ extern "C" void do_debug_default(int ipsr, struct hw_trap* tf) {
 	while(1);
 }
 extern "C" void do_default(int ipsr, trapframe* tf){
-	panic_mode();
 	dump_trapframe(tf);
 	display_faults();
 	panic("UNHANDED EXCEPTION (%d)%s\r\n", ipsr,find_exception_string(ipsr));
@@ -446,10 +445,10 @@ void do_hardfault(struct hw_trap * tf){
 	r = UnwindStartRet((uint32_t)(tf), tf->pc, &cliCallbacks, &results);
     for(int t = 0; t < results.frameCount; t++)
     {
-        printk("%c: 0x%08x\n",
+        trace_printf("%c: 0x%08x\n",
                (results.address[t] & 0x1) ? 'T' : 'A', results.address[t]);
     }
-    printk("\nResult: %d\n", r);
+    trace_printf("\nResult: %d\n", r);
 
 
 	//show_trap_callstk("callstack!", tf);

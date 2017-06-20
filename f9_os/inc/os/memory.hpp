@@ -14,7 +14,7 @@
 
 #include "types.hpp"
 #include "slist.hpp"
-#include <os\printk.h>
+#include <diag\Trace.h>
 
 namespace os {
 	namespace mpu {
@@ -271,11 +271,11 @@ namespace os {
 			         */
 			        if (fp->size > size) {
 			            /* range to free is smaller, so drop that */
-			            printk("rmfree: map '%s' loses space (%d)\n", _name, size);
+			            trace_printf("rmfree: map '%s' loses space (%d)\n", _name, size);
 			            return;
 			        } else {
 			            /* drop the smallest slot in the list */
-			        	printk("rmfree: map '%s' loses space (%d)\n", _name,
+			        	trace_printf("rmfree: map '%s' loses space (%d)\n", _name,
 			                   fp->size);
 			        	 std::copy(fp+1,_maps.end(),fp); /* copy over the remaining slots ... */
 			            //ovbcopy(fp + 1,fp,(char *)(mp->m_limit - 1) - (char *)fp);

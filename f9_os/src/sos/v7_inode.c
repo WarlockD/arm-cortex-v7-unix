@@ -42,7 +42,7 @@ void fsinit() {
  */
 void  prdev (const char *str, dev_t dev)
 {
-	printk("%s on dev %u/%u\n", str, major(dev), minor(dev));
+	trace_printf("%s on dev %u/%u\n", str, major(dev), minor(dev));
 }
 
 /*
@@ -55,7 +55,7 @@ void  prdev (const char *str, dev_t dev)
 void deverror (register struct buf *bp, int o1, int o2)
 {
 	prdev("err", bp->b_dev);
-	printk("bn=%D er=%o,%o\n", bp->b_blkno, o1, o2);
+	trace_printf("bn=%D er=%o,%o\n", bp->b_blkno, o1, o2);
 }
 
 
@@ -467,7 +467,7 @@ loop:
 	}
 	ip = oip;
 	if(ip == NULL) {
-		printk("Inode table overflow\n");
+		trace_printf("Inode table overflow\n");
 	u.errno = ENFILE;
 		return(NULL);
 	}
@@ -557,7 +557,7 @@ void iupdat (struct inode *ip, time_t *ta, time_t *tm)
 			*p1++ = *p2++;
 			if(*p2++ != 0 && (ip->i_mode&IFMT)!=IFMPC
 			   && (ip->i_mode&IFMT)!=IFMPB)
-				printk("iaddress > 2^24\n");
+				trace_printf("iaddress > 2^24\n");
 			*p1++ = *p2++;
 			*p1++ = *p2++;
 		}

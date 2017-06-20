@@ -17,7 +17,7 @@
 #include <memory>
 #include <array>
 
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include <sys\queue.h>
 #include <os\atomic.h>
 
@@ -404,13 +404,13 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 		}
 		void debug_print() {
 			for(auto& a : _map) {
-				printk("%p[%b] ",a,a);
+				trace_printf("%p[%b] ",a,a);
 			}
-			printk(": ");
+			trace_printf(": ");
 			for(size_t b=0;b < BIT_COUNT;b++){
-				if(_bitmap[b] == 1) printk("1"); else printk("0");
+				if(_bitmap[b] == 1) trace_printf("1"); else trace_printf("0");
 			}
-			printk("\r\n");
+			trace_printf("\r\n");
 		}
 		bitchunk_t(): _bitmap(ADDR_BITBAND(_map.data())) {}
 		inline constexpr size_t size() const { return BIT_COUNT; }
@@ -606,15 +606,15 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 		bitmap_cursor_t end() { return bitmap_cursor_t(_bitmap, BITCOUNT); }
 
 		void debug_print() {
-			printk("WORDS: ");
+			trace_printf("WORDS: ");
 			for(auto& a : _bitmap) {
-				printk("%p ",a);
+				trace_printf("%p ",a);
 			}
-			printk("\r\nBITS: ");
+			trace_printf("\r\nBITS: ");
 			for(size_t b=0;b < BITCOUNT;b++){
-				if(test(b)) printk("1"); else printk("0");
+				if(test(b)) trace_printf("1"); else trace_printf("0");
 			}
-			printk("\r\n");
+			trace_printf("\r\n");
 		}
 
 		inline uint32_t first_clear_index() {
@@ -692,8 +692,8 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 		using const_pointer = const value_type*;
 		using reference = value_type&;
 		using const_reference = const value_type&;
-#define VAR_DEBUG(NAME) printk(#NAME " = %d\r\n",NAME)
-#define BMP_DEBUG(...) do {  printk(__VA_ARGS__); } while(0);
+#define VAR_DEBUG(NAME) trace_printf(#NAME " = %d\r\n",NAME)
+#define BMP_DEBUG(...) do {  trace_printf(__VA_ARGS__); } while(0);
 		void debug() {
 			VAR_DEBUG(ELEMENT_COUNT);
 			VAR_DEBUG(TYPE_SIZE);
@@ -715,7 +715,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 			}
 			if(_bitmap.first_clear_and_set(i)){
 				void* ptr = get_slot(i);
-				printk("bitmap_alloc_t: %d allocated [%p]\n", i,ptr);
+				trace_printf("bitmap_alloc_t: %d allocated [%p]\n", i,ptr);
 				return ptr;
 			}else {
 				BMP_DEBUG("bitmap_table: allocated failed, out of space\n");
@@ -726,7 +726,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 		{
 			uint32_t i = get_index(elm);
 			assert(i < TOTAL_SIZE);
-			printk("bitmap_alloc_t: %d dellocated [%p]\n", i,elm);
+			trace_printf("bitmap_alloc_t: %d dellocated [%p]\n", i,elm);
 			_bitmap.clear(i);
 		}
 	private:
@@ -735,7 +735,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 		void* get_slot(uint32_t i) {
 			assert(i < ELEMENT_COUNT);
 			uint8_t* ptr = _data + (i * ELEMENT_SIZE);
-			printk("alloc_id: %d allocated [%p]\n", i, ptr);
+			trace_printf("alloc_id: %d allocated [%p]\n", i, ptr);
 			return ptr;
 		}
 		uint32_t get_index(void* element) {
@@ -745,7 +745,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 			if(ielm >= ifirst && ielm <=ilast){
 				return (ielm - ifirst) / sizeof(type);
 			} else {
-				printk("Not found but trying to release it anyway!\r\n");
+				trace_printf("Not found but trying to release it anyway!\r\n");
 			}
 			return TOTAL_SIZE;
 		}
@@ -831,10 +831,10 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 				bitmap_cursor_t	cursor = _bitmap[i];
 				if(cursor.test_and_set()){
 					uint8_t* ptr = _data + (i * ELEMENT_SIZE);
-					printk("alloc_id: %d allocated [%p]\n", i, ptr);
+					trace_printf("alloc_id: %d allocated [%p]\n", i, ptr);
 					return ptr;
 				}
-				printk("alloc_id: %d already allocated! \n", i);
+				trace_printf("alloc_id: %d already allocated! \n", i);
 			}
 			return nullptr;
 		}
@@ -846,7 +846,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 			}
 			if(_bitmap.first_clear_and_set(i)){
 				void* ptr = alloc_id(i);
-				printk("bitmap_table: %d allocated [%p]\n", i,ptr);
+				trace_printf("bitmap_table: %d allocated [%p]\n", i,ptr);
 				return ptr;
 			}else {
 				BMP_DEBUG("bitmap_table: allocated failed, out of space\n");
@@ -860,7 +860,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 			if(size<=ELEMENT_SIZE) {
 				return reinterpret_cast<pointer>(alloc(size));
 			} else {
-				printk("watch this allocate!\r\n");
+				trace_printf("watch this allocate!\r\n");
 				size_t block_count = size / ELEMENT_SIZE;
 				if(size % ELEMENT_SIZE) block_count++;
 				uint32_t s = 0;
@@ -869,7 +869,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 						if(_bitmap[c].test_and_set()) {
 							if(b == block_count) {
 								uint8_t* ptr = _data + (s * ELEMENT_SIZE);
-								printk("allocate(%d): %d blocks allocated [%p]\n", size, block_count, ptr);
+								trace_printf("allocate(%d): %d blocks allocated [%p]\n", size, block_count, ptr);
 								return reinterpret_cast<pointer>(ptr);
 							}
 						}
@@ -889,7 +889,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 				size_t block_count = size / ELEMENT_SIZE;
 				if(size % ELEMENT_SIZE) block_count++;
 				while(block_count--) _bitmap[s++].clear();
-				printk("deallocate(%p): %d blocks  [%p]\n", ptr, block_count);
+				trace_printf("deallocate(%p): %d blocks  [%p]\n", ptr, block_count);
 			}
 		}
 		inline size_type max_size() const {  return TOTAL_SIZE; }
@@ -911,7 +911,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 			if(id < ELEMENT_COUNT){
 				bitmap_cursor_t	c = _bitmap[id];
 				if(!c.test_and_set())
-					printk("free_id: trying to free something already freed!\n");
+					trace_printf("free_id: trying to free something already freed!\n");
 				c.clear();
 			}
 		}
@@ -939,7 +939,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 				if(!is_trivialy_deconstructed) ~(*elm);
 				c.clear();
 			} else {
-				printk("bitmap_table: trying to free something not on map!\n");
+				trace_printf("bitmap_table: trying to free something not on map!\n");
 				assert(0);
 			}
 		}
@@ -1035,7 +1035,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 			void aquire(id_t id){
 				assert(id < ELEMENT_COUNT);
 				if(++_objs[id].ref == 1) {
-					printk("tryiing to refrence a deleted object %d!\r\n",id);
+					trace_printf("tryiing to refrence a deleted object %d!\r\n",id);
 				}
 			}
 			void aquire(void *elm){
@@ -1048,7 +1048,7 @@ static constexpr volatile uint32_t* BITBAND_SRAM(uint32_t* a,size_t bit){
 				if(id < ELEMENT_COUNT){
 					if(_objs[id].ref >=  0) --_objs[id].ref;
 					if(_objs[id].ref == 0){
-						printk("freed %d!\n, id");
+						trace_printf("freed %d!\n, id");
 						_last_free = _objs.begin() + id;
 					}
 				}

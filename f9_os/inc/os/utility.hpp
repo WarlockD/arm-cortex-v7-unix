@@ -14,7 +14,7 @@
 #include <functional>
 #include <cassert>
 #include <memory>
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include <sys\queue.h>
 #include <os\atomic.h>
 

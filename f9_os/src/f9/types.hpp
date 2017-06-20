@@ -13,12 +13,11 @@
 #include "link.hpp"
 
 #include <sys\time.h>
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include <os\bitmap.hpp>
 #include <stm32f7xx.h>
 
 extern "C" 	void panic(const char*,...);
-extern "C" 	void printk(const char*,...);
 
 
 
@@ -110,13 +109,13 @@ namespace f9 {
 		} ;
 		static constexpr  dbg_layer_t dbg_layer = DL_ALL;
 		static inline void puts(const char* str) {
-			printk("%s",str);
+			trace_printf("%s",str);
 		}
 		static inline void print(dbg_layer_t layer, const char* fmt,va_list va){
 
 			if (layer != DL_EMERG && !(dbg_layer & layer))
 				return;
-			printk(fmt,va);
+			trace_printf(fmt,va);
 		}
 		static inline void print(dbg_layer_t layer, const char* fmt,...){
 			va_list va;

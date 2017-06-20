@@ -452,7 +452,7 @@ __attribute__((weak)) void root_thread() { while(1); }
 	}
 
 	void tcb_t::startup(){
-		printk("tcb_t::startup()\r\n");
+		trace_printf("tcb_t::startup()\r\n");
 		create_idle_thread();
 		create_root_thread();
 		ktimer_event_init();

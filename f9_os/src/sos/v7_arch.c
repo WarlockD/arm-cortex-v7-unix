@@ -94,16 +94,16 @@ void asm_do_IRQ(int irq, struct pt_regs *regs)
 {
 
 	if(irq < 16) {
-		printk("UNHANDLED FAULT! ISR:%d\n", irq);
+		trace_printf("UNHANDLED FAULT! ISR:%d\n", irq);
 		show_regs(regs);
 		while(1) ;
 	} else {
-		printk("UNHANDLED IRQ! ISR:%d\n", irq);
+		trace_printf("UNHANDLED IRQ! ISR:%d\n", irq);
 		show_regs(regs);
 
 	}
 
-	//printk("ISR %d \n",irq);
+	//trace_printf("ISR %d \n",irq);
 	if(regs->ARM_EXC_lr == 0xfffffffd){
 		// check if we have work and raise pendf
 	}

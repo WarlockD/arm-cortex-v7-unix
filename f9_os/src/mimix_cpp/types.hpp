@@ -13,7 +13,7 @@
 #include <sys\time.h>
 #include <utility>
 
-#include <os\printk.hpp>
+#include <diag\Trace.h>
 
 
 // combo of lite bsd and a few links here
@@ -370,17 +370,17 @@ to_voidp(T* v) { return reinterpret_cast<void*>(v); }
 
 		void dump()
 		{
-			printk(" r0: %p  r1: %p  r2: %p  r3: %p  r4: %p\r\n", r0(),r1(), r2(),r3(),r4());
-			printk(" r5: %p  r6: %p  r7: %p  r8: %p  r9: %p\r\n", r5(),r6(), r7(),r8(),r9());
-			printk("r10: %p r11: %p  ip: %p  pc: %p  lr: %p\r\n", r10(),r11(), ip(),pc(),lr());
-			printk(" sp: %p ret: %p\r\n",reinterpret_cast<uint32_t>(this), ret());
+			trace_printf(" r0: %p  r1: %p  r2: %p  r3: %p  r4: %p\r\n", r0(),r1(), r2(),r3(),r4());
+			trace_printf(" r5: %p  r6: %p  r7: %p  r8: %p  r9: %p\r\n", r5(),r6(), r7(),r8(),r9());
+			trace_printf("r10: %p r11: %p  ip: %p  pc: %p  lr: %p\r\n", r10(),r11(), ip(),pc(),lr());
+			trace_printf(" sp: %p ret: %p\r\n",reinterpret_cast<uint32_t>(this), ret());
 			char buf[5];
 			buf[0] = xpsr() & PSR_N_BIT ? 'N' : 'n';
 			buf[1] = xpsr() & PSR_Z_BIT ? 'Z' : 'z';
 			buf[2] = xpsr() & PSR_C_BIT ? 'C' : 'c';
 			buf[3] = xpsr() & PSR_V_BIT ? 'V' : 'v';
 			buf[4] = '\0';
-			printk(" xpsr: %s\r\n", buf);
+			trace_printf(" xpsr: %s\r\n", buf);
 		}
 	} ;//__attribute__((aligned(8)));
 

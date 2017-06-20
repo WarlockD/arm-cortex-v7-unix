@@ -13,6 +13,8 @@
 
 #include "types.hpp"
 
+#include "arch\arch.hpp"
+
 namespace os {
 
 	class as_t;
@@ -36,21 +38,13 @@ namespace os {
 		recv_blocked,
 		send_blocked
 	} ;
-	 class ThreadContext {
+
+	 uintptr_t switch_thread(uintptr_t from);
+	 class ThreadContext : public arch::context_t {
 	 public:
-		 void ThreadContext::prepareSwitch(void){
-
-
-		     os::scheduler.prepareContextSwitchNoInterrupts();
-
-		     // update the context cache, where to save the stack pointer
-		     // for the next PendSV
-		     ms_ppStack = os::scheduler.getCurrentThread()->getContext().getPPStack();
-		     // ----- end of critical section ----------------------------------------
-		}
 	      void create(uint32_t* pStackBottom,
 	          size_t stackSizeBytes,
-	          uint32_t trampolineEntryPoint, void* p1, void* p2,void* p3);
+	          uint32_t trampolineEntryPoint, void* p1=nullptr, void* p2=nullptr,void* p3=nullptr);
 	      /// \brief Save the current context in the local storage.
 	      ///
 	      /// \par Parameters
@@ -62,12 +56,22 @@ namespace os {
 	      void restore();
 
 	      ThreadContext switch_to() const; // switches to this context, returning the previous context
-	      uint32_t** getPPStack(void) { return &_stack; }
-	      ThreadContext(void);
-	      ~ThreadContext(void);
+	      ThreadContext();
+	      ThreadContext(int id);
+
+		  int id() const { return _id; }
+		  static void thread_switch(ThreadContext& from, ThreadContext& to); // hard context swap
 	 private:
-	      uint32_t* _stack;
+		  friend uintptr_t os::switch_thread(uintptr_t from);
+		  void _set_manaual(uintptr_t from);
+	      int _id;
 	 };
+
+	 // called from pendsv_handler on a switch or thread request
+	 // its weak right now
+	 // if *to is null then it was a reschdeual, if its not, then it was a direct request
+
+
 	 struct context_t{
 		uint32_t sp;
 		uint32_t ret;

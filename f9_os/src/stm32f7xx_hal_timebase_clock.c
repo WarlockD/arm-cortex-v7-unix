@@ -43,7 +43,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include <assert.h>
 
 #define MY_CLOCK

@@ -14,7 +14,7 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <os\printk.h>
+#include <diag\Trace.h>
 #include <diag\Trace.h>
 
 
@@ -50,7 +50,7 @@ int main(void)
 
 	  while(1) {
 		//  trace_printf("Trace is working! wee!\n");
-		  printk("SERIAL output %i\r\n",7);
+		  trace_printf("SERIAL output %i\r\n",7);
 		  HAL_Delay(1000);
 	  }
 #if 0
@@ -78,17 +78,17 @@ int main(void)
    */
 #if 0
 void __assert_func (const char* filename, int lineno, const char* func, const char* val) {
-	printk("%d:%s: %s - %s\r\n",lineno, filename,func,val);
+	trace_printf("%d:%s: %s - %s\r\n",lineno, filename,func,val);
 	while(1);
 }
 
 void assert_failed(uint8_t* file, uint32_t line)
 {
-	printk("assert_failed: file %s on line %d\r\n", file, line);
+	trace_printf("assert_failed: file %s on line %d\r\n", file, line);
 	while(1);
 }
 void up_assert(const uint8_t *filename, int linenum)  {
-	printk("assert_failed: file %s on line %d\r\n", filename, linenum);
+	trace_printf("assert_failed: file %s on line %d\r\n", filename, linenum);
 	while(1);
 }
 #endif

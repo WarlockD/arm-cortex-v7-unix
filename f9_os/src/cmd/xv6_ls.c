@@ -28,7 +28,7 @@ void ls(const char *path)
     struct stat st;
 
     if((fd = open(path, 0)) < 0){
-        printk( "ls: cannot open %s\n", path);
+        trace_printf( "ls: cannot open %s\n", path);
         return;
     }
 
@@ -40,12 +40,12 @@ void ls(const char *path)
 
     switch(st.st_mode & _IFMT){
         case _IFREG:
-        	printk( "%s %d %d %d\n", fmtname(path), st.st_mode, st.st_ino, st.st_size);
+        	trace_printf( "%s %d %d %d\n", fmtname(path), st.st_mode, st.st_ino, st.st_size);
             break;
 
         case _IFDIR:
             if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
-            	printk( "ls: path too long\n");
+            	trace_printf( "ls: path too long\n");
                 break;
             }
             strcpy(buf, path);
@@ -57,10 +57,10 @@ void ls(const char *path)
                 memmove(p, de.name, DIRSIZ);
                 p[DIRSIZ] = 0;
                 if(stat(buf, &st) < 0){
-                	printk(  "ls: cannot stat %s\n", buf);
+                	trace_printf(  "ls: cannot stat %s\n", buf);
                     continue;
                 }
-                printk( "%s %d %d %d\n", fmtname(buf), st.st_mode , st.st_ino, st.st_size);
+                trace_printf( "%s %d %d %d\n", fmtname(buf), st.st_mode , st.st_ino, st.st_size);
             }
             break;
     }

@@ -286,7 +286,7 @@ void ilock (struct inode *ip)
     while (ip->flags & I_BUSY) {
     	xv6_sleep(ip, &icache.lock);
     }
-   // printk("ilock: %d\r\n",ip->inum);
+   // trace_printf("ilock: %d\r\n",ip->inum);
     ip->flags |= I_BUSY;
     release(&icache.lock);
 
@@ -314,7 +314,7 @@ void iunlock (struct inode *ip)
     if (ip == 0 || !(ip->flags & I_BUSY) || ip->ref < 1) {
         panic("iunlock");
     }
-  //  printk("iunlock: %d\r\n",ip->inum);
+  //  trace_printf("iunlock: %d\r\n",ip->inum);
     acquire(&icache.lock);
     ip->flags &= ~I_BUSY;
     xv6_wakeup(ip);

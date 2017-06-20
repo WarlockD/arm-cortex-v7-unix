@@ -15,13 +15,13 @@ See license.txt for more information
 //---------------------------------------------------------------------------
 
 #include "mark3.h"
-#include <os\printk.hpp>
+#include <diag\Trace.h>
 
 #include "unit_test.h"
 #include "ut_platform.h"
 #include "memutil.h"
 
-
+#include <cassert>
 
 extern "C"
 {

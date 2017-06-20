@@ -10,7 +10,7 @@
 #include <stm32f7xx.h>
 
 
-#define dbg_printf(VAL,...) printk(__VA_ARGS__)
+#define dbg_printf(VAL,...) trace_printf(__VA_ARGS__)
 namespace os {
 using ktimer_head_t = list::head<ktimer_event_t,&ktimer_event_t::link>;
 #define CONFIG_MAX_KT_EVENTS 30

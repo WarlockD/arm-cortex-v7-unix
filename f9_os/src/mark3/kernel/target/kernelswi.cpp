@@ -65,7 +65,7 @@ static void svc_restore_context(f9_context_t* ctx, uint32_t* sw_regs, uint32_t* 
 //static f9_context_t syscall_context;
 // otherwise we will have to schedual a call back on kernel mode for the syscall
 extern Thread *g_pclCurrent;   //!< Pointer to the currently-running thread
-extern "C" void printk(const char*, ...);
+extern "C" void trace_printf(const char*, ...);
 extern "C" void SVC_Handler(void)
 {
 	// so we are fucking up r4 here damnit
@@ -78,7 +78,7 @@ extern "C" void SVC_Handler(void)
 	__asm volatile("stmdb sp!, { r3-r11, lr}");// backup eveything
 	f9_context_t* ctx;
 	uint32_t svc_num = get_swi(hw_regs);
-	printk("SVC handler %d %p %p\n", svc_num,hw_regs[REG_R0],hw_regs[REG_R2] );
+	trace_printf("SVC handler %d %p %p\n", svc_num,hw_regs[REG_R0],hw_regs[REG_R2] );
 	if(svc_num <= static_cast<uint32_t>(SysCall::SysCallSize)){
 		switch(static_cast<SysCall>(svc_num)){
 			case SysCall::SaveContext:

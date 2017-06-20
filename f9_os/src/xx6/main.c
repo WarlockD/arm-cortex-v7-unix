@@ -14,7 +14,7 @@
 #include <stm32746g_discovery.h>
 #include "sysfile.h"
 
-void printk(const char*,...);
+void trace_printf(const char*,...);
 
 struct cpu	cpus[NCPU];
 struct cpu	*cpu;
@@ -25,7 +25,7 @@ uint8_t temp_kernel[1024*64];
 
 static void  mkfs_balloc(struct superblock* sb, uint32_t used)
 {
-  printk("balloc: first %d blocks have been allocated\n", used);
+  trace_printf("balloc: first %d blocks have been allocated\n", used);
   assert(used < BSIZE);
   uint32_t bn = sb->ninodes / IPB + 3;
   struct buf * bp = bread(0,bn);
@@ -33,7 +33,7 @@ static void  mkfs_balloc(struct superblock* sb, uint32_t used)
   for(int i = 0; i < used; i++) {
     buf[i/8] = buf[i/8] | (0x1 << (i%8));
   }
-  printk("balloc: write bitmap block at sector %lu\n", sb->ninodes/IPB + 3);
+  trace_printf("balloc: write bitmap block at sector %lu\n", sb->ninodes/IPB + 3);
 	bwrite(bp);
 	brelse(bp);
 }
@@ -53,7 +53,7 @@ void write_root_sb(int dev) {
 	uint32_t  usedblocks = sb.ninodes / IPB + 3 + bitblocks;
 	uint32_t freeblock = usedblocks;
 	// format and make file system
-	printk("used %d (bit %d ninode %lu) free %u total %d\n", usedblocks,
+	trace_printf("used %d (bit %d ninode %lu) free %u total %d\n", usedblocks,
 	         bitblocks, sb.ninodes/IPB + 1, freeblock, sb.nblocks+usedblocks);
 	bp = bread(dev, 1);
 	memmove(bp->data, &sb, sizeof(sb));
@@ -63,7 +63,7 @@ void write_root_sb(int dev) {
 
 	initlog(); // init the log here so the standard os stuff works
 	begin_trans();
-	printk("Staring root dir creationg\r\n");
+	trace_printf("Staring root dir creationg\r\n");
 	ip= ialloc (ROOTDEV, _IFDIR);
 	assert(ip->inum == ROOTINO);
 
@@ -71,15 +71,15 @@ void write_root_sb(int dev) {
 	ip->dev = ROOTDEV;
 	ip->nlink = 2;
 	iupdate(ip);
-	printk("root inode updated creationg\r\n");
+	trace_printf("root inode updated creationg\r\n");
 	// No ip->nlink++ for ".": avoid cyclic ref count.
 	assert(dirlink(ip, ".", ip->inum)==0); // panic("create dots");
-	printk("dirlink .\r\n");
+	trace_printf("dirlink .\r\n");
 	//iupdate(ip); // force an update?
 	assert(dirlink(ip, "..", ip->inum)==0); // panic("create dots");
-	printk("dirlink ..\r\n");
+	trace_printf("dirlink ..\r\n");
     iunlockput(ip);
-    printk("iunlockput ..\r\n");
+    trace_printf("iunlockput ..\r\n");
     commit_trans();
 
     struct proc _p;
@@ -140,7 +140,7 @@ void kmain (void)
 
 
     sti ();
-    printk("Ok, starting user init!\r\n");
+    trace_printf("Ok, starting user init!\r\n");
     // hard set it so we can test the file system ugh
     proc=userinit();					// first user process
 
