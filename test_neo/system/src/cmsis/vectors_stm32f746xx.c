@@ -35,6 +35,7 @@
 
 extern unsigned int _estack;
 typedef void (* const pHandler)(void);
+
 // ----------------------------------------------------------------------------
 
 void __attribute__((weak)) Default_Handler(void);
@@ -517,6 +518,7 @@ const char* g_vector_names[] = {
 		    "SPDIF_RX_IRQHandler",               // SPDIF_RX
 };
 // ----------------------------------------------------------------------------
+#if 0
 typedef void (*ram_handler_t)(void);
 extern ram_handler_t __ram_vectors_start[];
 extern ram_handler_t __ram_vectors_end[];
@@ -531,14 +533,13 @@ void install_isr(IRQn_Type isr, ram_handler_t handler) {
 		__DSB();
 		volatile SCB_Type* scb = SCB;
 		scb->VTOR = (uint32_t)__ram_vectors_start;
-		assert(SCB->VTOR == (uint32_t)__ram_vectors_start);
+		assert(SCB->VTOR == (uint32_t)__ram_vectors_start); // sanity check, has to be alligned 256?
 		g_isr_count = ((size_t)(__ram_vectors_end - __ram_vectors_start));
 		for(size_t i=0; i < g_isr_count;i++)
 			__ram_vectors_start[i] = __isr_vectors[i];
 	}
 	uint32_t pos = (uint32_t)(isr);
 	pos+=16;
-	trace_printf("installing %d %d\n",pos,g_isr_count);
 	assert(pos < g_isr_count);
 	if(isr >= 0) {
 		NVIC_DisableIRQ(isr);
@@ -557,7 +558,7 @@ void install_isr(IRQn_Type isr, ram_handler_t handler) {
 }
 
 #endif
-
+#endif
 // Processor ends up here if an unexpected interrupt occurs or a
 // specific handler is not present in the application code.
 // When in DEBUG, trigger a debug exception to clearly notify

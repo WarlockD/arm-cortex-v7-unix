@@ -31,8 +31,8 @@ struct timer_config {
 	time_t usec_left;
 };
 
-
-#define OVERFLOW_ON_SECOND
+// disabed so I don't have second interrupts each time
+//#define OVERFLOW_ON_SECOND
 
 #ifdef OVERFLOW_ON_SECOND
 #define OC_MAX_INCRMENT (USEC-1)
@@ -239,6 +239,7 @@ extern "C" uint32_t HAL_GetTick(void)
 void isr_mem_test() {
 	TIM2_IRQHandler() ;
 }
+
 // configures TIM2 as a clock source
 extern "C" HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
 {
@@ -251,6 +252,7 @@ extern "C" HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
   // TickPriority RELALY needs to be super high
  // HAL_NVIC_SetPriority(TIM2_IRQn, TickPriority ,0U);
   install_isr(TIM2_IRQn,isr_mem_test);
+
   HAL_NVIC_SetPriority(TIM2_IRQn, TickPriority ,0U);
   HAL_NVIC_EnableIRQ(TIM2_IRQn);
   __HAL_RCC_TIM2_CLK_ENABLE();
